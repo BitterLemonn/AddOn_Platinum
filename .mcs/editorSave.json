@@ -1,0 +1,35 @@
+{
+    "Addon": {
+        "EnchantSetting": {
+            "amplifier": 1
+        },
+        "PackResourceSortData": {
+
+        },
+        "PlayerEffectSetting": {
+            "amplifier": 1,
+            "duration": 10
+        },
+        "PresetInstanceTreeData": [
+
+        ]
+    },
+    "UI": {
+        "customPrefabGroupExpand": [
+
+        ],
+        "expandData": {
+            "prefab": {
+                "bauble_base_panel.item_renderer": [
+                    "/netease_prefab_screen"
+                ]
+            },
+            "screen": {
+                "D:\\MCStudioDownload\\work\\yuchu_liu@126.com\\Cpp\\AddOn\\1da03bf120d94943817e67ea11e0e5dc\\resource_pack_VfGuyCTi\\ui\\bauble_base_panel.json": [
+                    "/main",
+                    "/main/item_renderer"
+                ]
+            }
+        }
+    }
+}

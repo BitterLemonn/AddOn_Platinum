@@ -1,0 +1,53 @@
+{
+    "Account": "yuchu_liu@126.com",
+    "AssertCacheDir": "D:\\MCStudioDownload\\EngineAssert",
+    "BlockNums": [
+        0,
+        0
+    ],
+    "BornPoint": [
+        0,
+        0,
+        0
+    ],
+    "CanPublishResourceComponent": true,
+    "CodeEnable": false,
+    "CreateNew": true,
+    "CreateVersion": "2.8.0.459165",
+    "DCWebUrl": "https://x19apigatewayexpr.nie.netease.com",
+    "EditAddOnPaths": [
+
+    ],
+    "EditLogFilePath": "D:\\MCStudioDownload\\work\\editor\\edit.log",
+    "EditMaterialPaths": [
+
+    ],
+    "EditName": "Platinum",
+    "EditType": 4,
+    "EditVersion": "2.8.0.459165",
+    "EditorResourcePackPath": "D:\\MCNetease\\MCStudio\\data\\inner_res",
+    "ElkUrl": "https://x19mclexpr.nie.netease.com/client-log",
+    "GameType": 1,
+    "Id": "f718abe5973a42659f33c2b88bd4aa30",
+    "IsMap": false,
+    "NewEditCount": 6,
+    "OldComponents": [
+
+    ],
+    "OldEditCount": 0,
+    "ResourceIds": [
+
+    ],
+    "SaveBackAddOnPath": "D:\\MCNetease\\MinecraftProject\\Platinum",
+    "SaveBackMapPath": null,
+    "Seed": "",
+    "ServerName": "EXPR",
+    "ShowGpuDriverTips": false,
+    "ShowGuide": false,
+    "Source": "import",
+    "StudioPort": 10887,
+    "StudioTempPath": "D:\\MCStudioDownload\\temp\\editorTemp",
+    "UserId": "45217",
+    "UserName": "Reinhart",
+    "WorldType": 1
+}

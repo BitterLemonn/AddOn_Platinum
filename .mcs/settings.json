@@ -1,0 +1,17 @@
+{
+    "Arena.Component.Namespace": "neogy",
+    "FirstTabSetting": 0,
+    "ShortItemSettings": [
+        "resource_pack_VfGuyCTi\\ui",
+        "behavior_pack_D2igTXNm\\Presets",
+        "behavior_pack_D2igTXNm\\Parts",
+        "behavior_pack_D2igTXNm\\BoxData",
+        "resource_pack_VfGuyCTi\\effects",
+        "resource_pack_VfGuyCTi\\models",
+        "resource_pack_VfGuyCTi\\textures"
+    ],
+    "Uluru.autoLayerDict": {
+        "bauble_base_panel": true
+    },
+    "Uluru.checkSuspectOldUI": true
+}

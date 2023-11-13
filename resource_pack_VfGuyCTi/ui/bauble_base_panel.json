@@ -1,0 +1,67 @@
+{
+   "main" : {
+      "controls" : [
+         {
+            "bg_img" : {
+               "clip_direction" : "left",
+               "clip_ratio" : 0.0,
+               "controls" : [],
+               "keep_ratio" : false,
+               "layer" : 1,
+               "offset" : [ -1.0, 0.0 ],
+               "size" : [ "100.0%+0.0px", "100.0%+0.0px" ],
+               "texture" : "textures/ui/background_panel",
+               "type" : "image"
+            }
+         },
+         {
+            "base_stack_panel" : {
+               "controls" : [
+                  {
+                     "grid" : {
+                        "collection_name" : "test_grid",
+                        "controls" : [],
+                        "grid_dimensions" : [ 2, 2 ],
+                        "grid_item_template" : "netease_editor_template_namespace.netease_editor_template_image",
+                        "grid_rescaling_type" : "horizontal",
+                        "layer" : 1,
+                        "maximum_grid_items" : 10,
+                        "size" : [ "100.0%+0.0px", "100.0%+0.0px" ],
+                        "type" : "grid"
+                     }
+                  }
+               ],
+               "layer" : 2,
+               "size" : [ "95.0%+0.0px", "95.0%+0.0px" ],
+               "type" : "stack_panel",
+               "visible" : false
+            }
+         },
+         {
+            "item_renderer" : {
+               "controls" : [
+                  {
+                     "image" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 1,
+                        "size" : [ 100, 100 ],
+                        "texture" : "textures/netease/common/image/default",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "layer" : 4,
+               "property_bag" : {
+                  "#item_id_aux" : 131072
+               },
+               "renderer" : "inventory_item_renderer",
+               "size" : [ 18.0, 18.0 ],
+               "type" : "custom"
+            }
+         }
+      ],
+      "type" : "screen"
+   },
+   "namespace" : "bauble_base_panel"
+}
