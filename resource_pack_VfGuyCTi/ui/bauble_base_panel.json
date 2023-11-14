@@ -1,39 +1,646 @@
 {
-   "main" : {
+   "bauble_button@common.button" : {
+      "$control_alpha" : 1.0,
+      "$default_texture" : "textures/ui/bauble_btn",
+      "$hover_texture" : "textures/ui/bauble_btn",
+      "$is_new_nine_slice" : false,
+      "$label_layer" : 3,
+      "$nine_slice_buttom" : 0,
+      "$nine_slice_left" : 0,
+      "$nine_slice_right" : 0,
+      "$nine_slice_top" : 0,
+      "$nineslice_size" : [ 0, 0, 0, 0 ],
+      "$pressed_button_name" : "%netease_editor_template_namespace.click",
+      "$pressed_texture" : "textures/ui/bauble_btn_pressed",
+      "$texture_layer" : 2,
+      "bindings" : [
+         {
+            "binding_collection_name" : "",
+            "binding_condition" : "always_when_visible",
+            "binding_type" : "collection_details"
+         }
+      ],
+      "button_mappings" : [],
       "controls" : [
          {
-            "bg_img" : {
-               "clip_direction" : "left",
-               "clip_ratio" : 0.0,
-               "controls" : [],
-               "keep_ratio" : false,
-               "layer" : 1,
-               "offset" : [ -1.0, 0.0 ],
-               "size" : [ "100.0%+0.0px", "100.0%+0.0px" ],
-               "texture" : "textures/ui/background_panel",
-               "type" : "image"
-            }
+            "default@netease_editor_template_namespace.default" : {}
          },
          {
-            "base_stack_panel" : {
+            "hover@netease_editor_template_namespace.hover" : {}
+         },
+         {
+            "pressed@netease_editor_template_namespace.pressed" : {}
+         },
+         {
+            "button_label@netease_editor_template_namespace.button_label" : {
+               "color" : [ 1, 1, 1 ],
+               "font_scale_factor" : 1.0,
+               "font_size" : "large",
+               "offset" : [ 0, 0 ],
+               "text" : "Button"
+            }
+         }
+      ],
+      "default_control" : "default",
+      "hover_control" : "hover",
+      "is_handle_button_move_event" : true,
+      "min_size" : [ 10.0, 10.0 ],
+      "offset" : [ "-35.0%+0.0px", "-40.0%+0.0px" ],
+      "pressed_control" : "pressed",
+      "size" : [ "5.0%+0.0px", "100.0%x+0.0px" ],
+      "sound_pitch" : 0.0,
+      "sound_volume" : 0.0,
+      "type" : "button"
+   },
+   "bauble_stack_panel" : {
+      "controls" : [
+         {
+            "bauble_helmet_panel" : {
                "controls" : [
                   {
-                     "grid" : {
-                        "collection_name" : "test_grid",
-                        "controls" : [],
-                        "grid_dimensions" : [ 2, 2 ],
-                        "grid_item_template" : "netease_editor_template_namespace.netease_editor_template_image",
-                        "grid_rescaling_type" : "horizontal",
-                        "layer" : 1,
-                        "maximum_grid_items" : 10,
-                        "size" : [ "100.0%+0.0px", "100.0%+0.0px" ],
-                        "type" : "grid"
+                     "bauble_helmet_btn@bauble_base_panel.slot_btn" : {}
+                  },
+                  {
+                     "bauble_helmet_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 29,
+                        "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
+                        "texture" : "textures/ui/bauble_halmet_slot",
+                        "type" : "image"
                      }
                   }
                ],
-               "layer" : 2,
-               "size" : [ "95.0%+0.0px", "95.0%+0.0px" ],
-               "type" : "stack_panel",
+               "layer" : 1,
+               "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
+               "type" : "panel"
+            }
+         },
+         {
+            "bauble_necklace_panel" : {
+               "controls" : [
+                  {
+                     "bauble_necklace_btn@bauble_base_panel.slot_btn" : {}
+                  },
+                  {
+                     "bauble_necklace_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 29,
+                        "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
+                        "texture" : "textures/ui/bauble_necklace_slot",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "layer" : 31,
+               "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
+               "type" : "panel"
+            }
+         },
+         {
+            "bauble_back_panel" : {
+               "controls" : [
+                  {
+                     "bauble_back_btn@bauble_base_panel.slot_btn" : {}
+                  },
+                  {
+                     "bauble_back_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 29,
+                        "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
+                        "texture" : "textures/ui/bauble_back_slot",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "layer" : 61,
+               "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
+               "type" : "panel"
+            }
+         },
+         {
+            "bauble_armor_panel" : {
+               "controls" : [
+                  {
+                     "bauble_armor_btn@bauble_base_panel.slot_btn" : {}
+                  },
+                  {
+                     "bauble_armor_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 29,
+                        "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
+                        "texture" : "textures/ui/bauble_armor_slot",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "layer" : 91,
+               "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
+               "type" : "panel"
+            }
+         },
+         {
+            "bauble_hand_panel_1" : {
+               "controls" : [
+                  {
+                     "bauble_hand_btn@bauble_base_panel.slot_btn" : {}
+                  },
+                  {
+                     "bauble_hand_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 29,
+                        "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
+                        "texture" : "textures/ui/bauble_hand_slot",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "layer" : 121,
+               "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
+               "type" : "panel"
+            }
+         },
+         {
+            "bauble_hand_panel_2" : {
+               "controls" : [
+                  {
+                     "bauble_hand_btn@bauble_base_panel.slot_btn" : {}
+                  },
+                  {
+                     "bauble_hand_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 29,
+                        "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
+                        "texture" : "textures/ui/bauble_hand_slot",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "layer" : 151,
+               "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
+               "type" : "panel"
+            }
+         },
+         {
+            "bauble_belt_panel" : {
+               "controls" : [
+                  {
+                     "bauble_belt_btn@bauble_base_panel.slot_btn" : {}
+                  },
+                  {
+                     "bauble_belt_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 29,
+                        "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
+                        "texture" : "textures/ui/bauble_belt_slot",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "layer" : 181,
+               "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
+               "type" : "panel"
+            }
+         },
+         {
+            "bauble_shoes_panel" : {
+               "controls" : [
+                  {
+                     "bauble_shoes_btn@bauble_base_panel.slot_btn" : {}
+                  },
+                  {
+                     "bauble_shoes_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 29,
+                        "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
+                        "texture" : "textures/ui/bauble_shoes_slot",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "layer" : 211,
+               "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
+               "type" : "panel"
+            }
+         },
+         {
+            "bauble_other_panel_1" : {
+               "controls" : [
+                  {
+                     "bauble_other_btn@bauble_base_panel.slot_btn" : {}
+                  },
+                  {
+                     "bauble_other_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 29,
+                        "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
+                        "texture" : "textures/ui/bauble_other_slot",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "layer" : 241,
+               "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
+               "type" : "panel"
+            }
+         },
+         {
+            "bauble_other_panel_2" : {
+               "controls" : [
+                  {
+                     "bauble_other_btn@bauble_base_panel.slot_btn" : {}
+                  },
+                  {
+                     "bauble_other_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 29,
+                        "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
+                        "texture" : "textures/ui/bauble_other_slot",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "layer" : 271,
+               "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
+               "type" : "panel"
+            }
+         },
+         {
+            "bauble_other_panel_3" : {
+               "controls" : [
+                  {
+                     "bauble_other_btn@bauble_base_panel.slot_btn" : {}
+                  },
+                  {
+                     "bauble_other_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 29,
+                        "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
+                        "texture" : "textures/ui/bauble_other_slot",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "layer" : 301,
+               "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
+               "type" : "panel"
+            }
+         },
+         {
+            "bauble_other_panel_4" : {
+               "controls" : [
+                  {
+                     "bauble_other_btn@bauble_base_panel.slot_btn" : {}
+                  },
+                  {
+                     "bauble_other_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "layer" : 29,
+                        "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
+                        "texture" : "textures/ui/bauble_other_slot",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "layer" : 331,
+               "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
+               "type" : "panel"
+            }
+         }
+      ],
+      "layer" : 1,
+      "size" : [ "100.0%cm+0.0px", "default" ],
+      "type" : "stack_panel"
+   },
+   "main" : {
+      "controls" : [
+         {
+            "swallow_input_panel" : {
+               "button_mappings" : [
+                  {
+                     "from_button_id" : "button.menu_select",
+                     "mapping_type" : "pressed",
+                     "to_button_id" : "#netease_to_button_id"
+                  }
+               ],
+               "controls" : [
+                  {
+                     "bg_dark" : {
+                        "alpha" : 0.80,
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "color" : [ 0.0, 0.0, 0.0 ],
+                        "fill" : true,
+                        "layer" : 1,
+                        "size" : [ "100.0%+0.0px", "100.0%+0.0px" ],
+                        "texture" : "textures/ui/white_duration",
+                        "type" : "image"
+                     }
+                  },
+                  {
+                     "bg_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "controls" : [
+                           {
+                              "base_stack_panel" : {
+                                 "controls" : [
+                                    {
+                                       "bauble_panel" : {
+                                          "clips_children" : true,
+                                          "controls" : [
+                                             {
+                                                "bauble_scroll@common.scrolling_panel" : {
+                                                   "$background_nine_slice_buttom" : 0,
+                                                   "$background_nine_slice_left" : 0,
+                                                   "$background_nine_slice_right" : 0,
+                                                   "$background_nine_slice_top" : 0,
+                                                   "$background_nineslice_size" : [ 0, 0, 0, 0 ],
+                                                   "$box_nine_slice_buttom" : 0,
+                                                   "$box_nine_slice_left" : 0,
+                                                   "$box_nine_slice_right" : 0,
+                                                   "$box_nine_slice_top" : 0,
+                                                   "$box_nineslice_size" : [ 0, 0, 0, 0 ],
+                                                   "$is_background_nine_slice" : false,
+                                                   "$is_box_nine_slice" : false,
+                                                   "$is_track_nine_slice" : false,
+                                                   "$scroll_background_image_control" : "netease_editor_template_namespace.scroll_background_image",
+                                                   "$scroll_background_texture" : "",
+                                                   "$scroll_box_mouse_image_control" : "netease_editor_template_namespace.scroll_box_image",
+                                                   "$scroll_box_texture" : "",
+                                                   "$scroll_box_touch_image_control" : "netease_editor_template_namespace.scroll_box_image",
+                                                   "$scroll_track_image_control" : "netease_editor_template_namespace.scroll_track_image",
+                                                   "$scroll_track_texture" : "",
+                                                   "$scrolling_content" : "bauble_base_panel.bauble_stack_panel",
+                                                   "$show_background" : false,
+                                                   "$track_nine_slice_buttom" : 0,
+                                                   "$track_nine_slice_left" : 0,
+                                                   "$track_nine_slice_right" : 0,
+                                                   "$track_nine_slice_top" : 0,
+                                                   "$track_nineslice_size" : [ 0, 0, 0, 0 ],
+                                                   "layer" : 1,
+                                                   "size" : [ "100.0%+7.0px", "default" ]
+                                                }
+                                             }
+                                          ],
+                                          "layer" : 1,
+                                          "size" : [ 21.0, "100.0%+0.0px" ],
+                                          "type" : "stack_panel"
+                                       }
+                                    },
+                                    {
+                                       "right_stack_panel" : {
+                                          "controls" : [
+                                             {
+                                                "tool_stack_panel" : {
+                                                   "controls" : [
+                                                      {
+                                                         "player_panel" : {
+                                                            "anchor_from" : "top_left",
+                                                            "controls" : [
+                                                               {
+                                                                  "paper_doll_bg" : {
+                                                                     "anchor_from" : "left_middle",
+                                                                     "clip_direction" : "left",
+                                                                     "clip_ratio" : 0.0,
+                                                                     "controls" : [
+                                                                        {
+                                                                           "player_paper_doll" : {
+                                                                              "anchor_from" : "top_middle",
+                                                                              "animation" : "",
+                                                                              "controls" : [],
+                                                                              "layer" : 1,
+                                                                              "offset" : [ "0.0%y+0.0px", "40.0%+0.0px" ],
+                                                                              "renderer" : "paper_doll_renderer",
+                                                                              "rotation" : "gesture_x",
+                                                                              "size" : [ "100.0%y+0.0px", "90.0%+0.0px" ],
+                                                                              "type" : "custom"
+                                                                           }
+                                                                        }
+                                                                     ],
+                                                                     "keep_ratio" : false,
+                                                                     "layer" : 1,
+                                                                     "nineslice_size" : [ 1.0, 1.0, 1.0, 1.0 ],
+                                                                     "offset" : [ "42.5%y+0.0px", 0.0 ],
+                                                                     "size" : [ "80.0%y+0.0px", "95.0%+0.0px" ],
+                                                                     "texture" : "textures/ui/cell_black",
+                                                                     "type" : "image"
+                                                                  }
+                                                               }
+                                                            ],
+                                                            "layer" : 1,
+                                                            "size" : [ "100.0%c+3.0px", "100.0%+0.0px" ],
+                                                            "type" : "panel"
+                                                         }
+                                                      },
+                                                      {
+                                                         "tool_right_stack_panel" : {
+                                                            "controls" : [
+                                                               {
+                                                                  "tool_panel" : {
+                                                                     "anchor_from" : "top_right",
+                                                                     "controls" : [
+                                                                        {
+                                                                           "close_btn@common.button" : {
+                                                                              "$control_alpha" : 1.0,
+                                                                              "$default_texture" : "textures/ui/close_button_default",
+                                                                              "$hover_texture" : "textures/ui/close_button_hover",
+                                                                              "$is_new_nine_slice" : false,
+                                                                              "$label_layer" : 3,
+                                                                              "$nine_slice_buttom" : 0,
+                                                                              "$nine_slice_left" : 0,
+                                                                              "$nine_slice_right" : 0,
+                                                                              "$nine_slice_top" : 0,
+                                                                              "$nineslice_size" : [ 0, 0, 0, 0 ],
+                                                                              "$pressed_button_name" : "%netease_editor_template_namespace.click",
+                                                                              "$pressed_texture" : "textures/ui/close_button_pressed",
+                                                                              "$texture_layer" : 2,
+                                                                              "anchor_from" : "right_middle",
+                                                                              "bindings" : [
+                                                                                 {
+                                                                                    "binding_collection_name" : "",
+                                                                                    "binding_condition" : "always_when_visible",
+                                                                                    "binding_type" : "collection_details"
+                                                                                 }
+                                                                              ],
+                                                                              "button_mappings" : [],
+                                                                              "controls" : [
+                                                                                 {
+                                                                                    "default@netease_editor_template_namespace.default" : {}
+                                                                                 },
+                                                                                 {
+                                                                                    "hover@netease_editor_template_namespace.hover" : {}
+                                                                                 },
+                                                                                 {
+                                                                                    "pressed@netease_editor_template_namespace.pressed" : {}
+                                                                                 },
+                                                                                 {
+                                                                                    "button_label@netease_editor_template_namespace.button_label" : {
+                                                                                       "color" : [ 1, 1, 1 ],
+                                                                                       "font_scale_factor" : 1.0,
+                                                                                       "font_size" : "large",
+                                                                                       "offset" : [ 0, 0 ],
+                                                                                       "text" : ""
+                                                                                    }
+                                                                                 }
+                                                                              ],
+                                                                              "default_control" : "default",
+                                                                              "hover_control" : "hover",
+                                                                              "is_handle_button_move_event" : true,
+                                                                              "offset" : [ -10.0, 0.0 ],
+                                                                              "pressed_control" : "pressed",
+                                                                              "size" : [ 20.0, 20.0 ],
+                                                                              "type" : "button"
+                                                                           }
+                                                                        }
+                                                                     ],
+                                                                     "layer" : 1,
+                                                                     "size" : [ "100.0%+0.0px", 20.0 ],
+                                                                     "type" : "panel"
+                                                                  }
+                                                               }
+                                                            ],
+                                                            "layer" : 4,
+                                                            "size" : [ "65.0%+-4.0px", "100.0%+0.0px" ],
+                                                            "type" : "stack_panel"
+                                                         }
+                                                      }
+                                                   ],
+                                                   "layer" : 1,
+                                                   "orientation" : "horizontal",
+                                                   "size" : [ "100.0%+0.0px", "50.0%+0.0px" ],
+                                                   "type" : "stack_panel"
+                                                }
+                                             },
+                                             {
+                                                "inventory_stack_panel" : {
+                                                   "anchor_from" : "right_middle",
+                                                   "controls" : [
+                                                      {
+                                                         "inventory_grid" : {
+                                                            "collection_name" : "inventory_group",
+                                                            "grid_dimensions" : [ 2, 2 ],
+                                                            "grid_item_template" : "bauble_base_panel.slot_btn",
+                                                            "grid_rescaling_type" : "horizontal",
+                                                            "layer" : 1,
+                                                            "maximum_grid_items" : 27,
+                                                            "size" : [ "100.0%+0.0px", "100.0%c+0.0px" ],
+                                                            "type" : "grid"
+                                                         }
+                                                      },
+                                                      {
+                                                         "individual_panel" : {
+                                                            "controls" : [],
+                                                            "layer" : 2,
+                                                            "size" : [ "100.0%+0.0px", 3.0 ],
+                                                            "type" : "panel"
+                                                         }
+                                                      },
+                                                      {
+                                                         "hotbar_grid" : {
+                                                            "collection_name" : "hotbar_group",
+                                                            "grid_dimensions" : [ 2, 2 ],
+                                                            "grid_item_template" : "bauble_base_panel.slot_btn",
+                                                            "grid_rescaling_type" : "horizontal",
+                                                            "layer" : 3,
+                                                            "maximum_grid_items" : 9,
+                                                            "size" : [ "100.0%+0.0px", "100.0%c+0.0px" ],
+                                                            "type" : "grid"
+                                                         }
+                                                      }
+                                                   ],
+                                                   "layer" : 17,
+                                                   "size" : [ "100.0%+2.0px", "50.0%+0.0px" ],
+                                                   "type" : "stack_panel"
+                                                }
+                                             }
+                                          ],
+                                          "layer" : 1678,
+                                          "size" : [ "100.0%+-20.0px", "100.0%+0.0px" ],
+                                          "type" : "stack_panel"
+                                       }
+                                    }
+                                 ],
+                                 "layer" : 1,
+                                 "orientation" : "horizontal",
+                                 "size" : [ "95.0%+0.0px", "95.0%+0.0px" ],
+                                 "type" : "stack_panel"
+                              }
+                           }
+                        ],
+                        "keep_ratio" : false,
+                        "layer" : 2,
+                        "max_size" : [ 220.0, 180.0 ],
+                        "min_size" : [ 210.0, 175.0 ],
+                        "offset" : [ "0.0%+0.0px", 0.0 ],
+                        "size" : [ "40.0%+2.0px", "60.0%+0.0px" ],
+                        "texture" : "textures/ui/background_panel",
+                        "type" : "image"
+                     }
+                  }
+               ],
+               "is_swallow" : true,
+               "layer" : 1,
+               "size" : [ "100.0%+0.0px", "100.0%+0.0px" ],
+               "type" : "input_panel",
+               "visible" : false
+            }
+         }
+      ],
+      "type" : "screen"
+   },
+   "namespace" : "bauble_base_panel",
+   "slot_btn@common.button" : {
+      "$control_alpha" : 1.0,
+      "$default_texture" : "textures/ui/cell_image",
+      "$hover_texture" : "textures/ui/sidebar_icons/side_drawer_button_hover_focused",
+      "$is_new_nine_slice" : false,
+      "$label_layer" : 3,
+      "$nine_slice_buttom" : 0,
+      "$nine_slice_left" : 0,
+      "$nine_slice_right" : 0,
+      "$nine_slice_top" : 0,
+      "$nineslice_size" : [ 0, 0, 0, 0 ],
+      "$pressed_button_name" : "%netease_editor_template_namespace.click",
+      "$pressed_texture" : "textures/ui/sidebar_icons/side_drawer_button_hover_focused",
+      "$texture_layer" : 2,
+      "bindings" : [
+         {
+            "binding_collection_name" : "",
+            "binding_condition" : "always_when_visible",
+            "binding_type" : "collection_details"
+         }
+      ],
+      "button_mappings" : [],
+      "controls" : [
+         {
+            "default@netease_editor_template_namespace.default" : {}
+         },
+         {
+            "hover@netease_editor_template_namespace.hover" : {}
+         },
+         {
+            "pressed@netease_editor_template_namespace.pressed" : {}
+         },
+         {
+            "item_selected_img" : {
+               "clip_direction" : "left",
+               "clip_ratio" : 0.0,
+               "layer" : 7,
+               "size" : [ "100.0%+0.0px", "100.0%+0.0px" ],
+               "texture" : "textures/ui/pocket_ui_highlight_selected_slot",
+               "type" : "image",
                "visible" : false
             }
          },
@@ -41,27 +648,66 @@
             "item_renderer" : {
                "controls" : [
                   {
-                     "image" : {
+                     "durability_base_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
+                        "color" : [ 0.0, 0.06274509803921569, 0.0 ],
+                        "keep_ratio" : false,
                         "layer" : 1,
-                        "size" : [ 100, 100 ],
-                        "texture" : "textures/netease/common/image/default",
-                        "type" : "image"
+                        "offset" : [ 0.0, "30.0%+0.0px" ],
+                        "size" : [ "80.0%+0.0px", 1.50 ],
+                        "texture" : "textures/ui/white_duration",
+                        "type" : "image",
+                        "visible" : false
+                     }
+                  },
+                  {
+                     "durability_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "color" : [ 0.0, 1.0, 0.0 ],
+                        "controls" : [],
+                        "keep_ratio" : false,
+                        "layer" : 2,
+                        "offset" : [ 0.0, "30.0%+0.0px" ],
+                        "size" : [ "80.0%+0.0px", 1.50 ],
+                        "texture" : "textures/ui/white_duration",
+                        "type" : "image",
+                        "visible" : false
+                     }
+                  },
+                  {
+                     "item_count" : {
+                        "anchor_from" : "bottom_middle",
+                        "font_type" : "unicode",
+                        "layer" : 3,
+                        "offset" : [ 0.0, -3.0 ],
+                        "size" : [ 18.0, 10.0 ],
+                        "text" : "64",
+                        "text_alignment" : "right",
+                        "type" : "label",
+                        "visible" : false
                      }
                   }
                ],
-               "layer" : 4,
+               "layer" : 8,
                "property_bag" : {
                   "#item_id_aux" : 131072
                },
                "renderer" : "inventory_item_renderer",
-               "size" : [ 18.0, 18.0 ],
-               "type" : "custom"
+               "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+               "type" : "custom",
+               "visible" : false
             }
          }
       ],
-      "type" : "screen"
-   },
-   "namespace" : "bauble_base_panel"
+      "default_control" : "default",
+      "hover_control" : "hover",
+      "is_handle_button_move_event" : true,
+      "pressed_control" : "pressed",
+      "size" : [ 20.0, 20.0 ],
+      "sound_pitch" : 0.0,
+      "sound_volume" : 0.0,
+      "type" : "button"
+   }
 }

@@ -30,7 +30,7 @@
     "GameType": 1,
     "Id": "f718abe5973a42659f33c2b88bd4aa30",
     "IsMap": false,
-    "NewEditCount": 6,
+    "NewEditCount": 13,
     "OldComponents": [
 
     ],
@@ -45,7 +45,7 @@
     "ShowGpuDriverTips": false,
     "ShowGuide": false,
     "Source": "import",
-    "StudioPort": 10887,
+    "StudioPort": 9892,
     "StudioTempPath": "D:\\MCStudioDownload\\temp\\editorTemp",
     "UserId": "45217",
     "UserName": "Reinhart",

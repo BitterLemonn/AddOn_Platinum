@@ -16,15 +16,48 @@
     },
     "UI": {
         "customPrefabGroupExpand": [
-
+            "bauble_base_panel"
         ],
         "expandData": {
             "prefab": {
+                "bauble_base_panel.bauble_button": [
+                    "/netease_prefab_screen"
+                ],
+                "bauble_base_panel.bauble_stack_panel": [
+                    "/netease_prefab_screen",
+                    "/netease_prefab_screen/bauble_stack_panel",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_necklace_panel"
+                ],
                 "bauble_base_panel.item_renderer": [
                     "/netease_prefab_screen"
+                ],
+                "bauble_base_panel.slot_btn": [
+                    "/netease_prefab_screen",
+                    "/netease_prefab_screen/slot_btn"
                 ]
             },
             "screen": {
+                "D:\\MCNetease\\MinecraftProject\\Platinum\\resource_pack_VfGuyCTi\\ui\\bauble_base_panel.json": [
+                    "/main",
+                    "/main/swallow_input_panel",
+                    "/main/swallow_input_panel/bg_img",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view/stack_panel",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view/stack_panel/background_and_viewport",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content/bauble_necklace_panel",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content/bauble_hand_panel_1/bauble_hand_btn/item_renderer",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/right_stack_panel",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/right_stack_panel/tool_stack_panel",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/right_stack_panel/tool_stack_panel/tool_right_stack_panel",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/right_stack_panel/tool_stack_panel/tool_right_stack_panel/tool_panel",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/right_stack_panel/inventory_stack_panel"
+                ],
                 "D:\\MCStudioDownload\\work\\yuchu_liu@126.com\\Cpp\\AddOn\\1da03bf120d94943817e67ea11e0e5dc\\resource_pack_VfGuyCTi\\ui\\bauble_base_panel.json": [
                     "/main",
                     "/main/item_renderer"
