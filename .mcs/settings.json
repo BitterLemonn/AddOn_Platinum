@@ -1,5 +1,5 @@
 {
-    "Arena.Component.Namespace": "neogy",
+    "Arena.Component.Namespace": "lemon_platinum",
     "FirstTabSetting": 0,
     "ShortItemSettings": [
         "resource_pack_VfGuyCTi\\ui",
@@ -11,7 +11,7 @@
         "resource_pack_VfGuyCTi\\textures"
     ],
     "Uluru.autoLayerDict": {
-        "bauble_base_panel": true
+        "bauble_base_panel": false
     },
     "Uluru.checkSuspectOldUI": true
 }

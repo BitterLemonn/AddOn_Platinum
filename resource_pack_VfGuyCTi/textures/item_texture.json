@@ -1,0 +1,9 @@
+{
+    "resource_pack_name": "vanilla",
+    "texture_data": {
+        "lemon_platinum:traveler_belt": {
+            "textures": "textures/items/traveler_belt"
+        }
+    },
+    "texture_name": "atlas.items"
+}

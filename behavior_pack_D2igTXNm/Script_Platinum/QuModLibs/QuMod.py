@@ -3,8 +3,8 @@
 from mod.common.mod import Mod
 import mod.server.extraServerApi as serverApi
 import mod.client.extraClientApi as clientApi
-from Information import ApiVersion, Version
-from Util import SetModDirName, import_module
+from Information import ApiVersion
+from Util import SetModDirName
 from uuid import uuid4
 
 RandomKey = "Q"+str(uuid4()).replace("-","") # 随机钥匙

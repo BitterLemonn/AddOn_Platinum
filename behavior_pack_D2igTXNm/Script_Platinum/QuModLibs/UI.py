@@ -358,7 +358,7 @@ class EasyScreenNodeCls(BaseScreenNode):
     def __CREAT__(uiNode,Data):
         # type: (EasyScreenNodeCls, dict) -> None
         # ======= 界面创建完毕后自动执行 ========
-        from Client import System,EnSp,EnSy, EasyThread
+        from Client import System,EnSp,EnSy
         uiNode.QUGRIDRENDER = []
         OnClick = Data["OnClick"] # type: dict
         OnTouch = Data["OnTouch"] # type: dict

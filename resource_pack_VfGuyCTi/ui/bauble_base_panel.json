@@ -323,6 +323,26 @@
       "size" : [ "100.0%cm+0.0px", "default" ],
       "type" : "stack_panel"
    },
+   "item_info" : {
+      "anchor_from" : "bottom_middle",
+      "clip_direction" : "left",
+      "clip_ratio" : 0.0,
+      "controls" : [
+         {
+            "item_info_text" : {
+               "font_type" : "unicode",
+               "layer" : 1,
+               "type" : "label"
+            }
+         }
+      ],
+      "layer" : 1,
+      "offset" : [ 0.0, "-10.0%+0.0px" ],
+      "priority" : 0,
+      "size" : [ "100.0%cm+10.0px", "100.0%cm+15.0px" ],
+      "texture" : "textures/ui/purpleBorder",
+      "type" : "image"
+   },
    "main" : {
       "controls" : [
          {
@@ -394,7 +414,7 @@
                                                 }
                                              }
                                           ],
-                                          "layer" : 1,
+                                          "layer" : 2,
                                           "size" : [ 21.0, "100.0%+0.0px" ],
                                           "type" : "stack_panel"
                                        }
@@ -566,13 +586,13 @@
                                                 }
                                              }
                                           ],
-                                          "layer" : 1678,
+                                          "layer" : 3,
                                           "size" : [ "100.0%+-20.0px", "100.0%+0.0px" ],
                                           "type" : "stack_panel"
                                        }
                                     }
                                  ],
-                                 "layer" : 1,
+                                 "layer" : 3,
                                  "orientation" : "horizontal",
                                  "size" : [ "95.0%+0.0px", "95.0%+0.0px" ],
                                  "type" : "stack_panel"
@@ -587,6 +607,17 @@
                         "size" : [ "40.0%+2.0px", "60.0%+0.0px" ],
                         "texture" : "textures/ui/background_panel",
                         "type" : "image"
+                     }
+                  },
+                  {
+                     "item_info_bg@bauble_base_panel.item_info" : {
+                        "alpha" : 0.0,
+                        "keep_ratio" : false,
+                        "layer" : 100,
+                        "max_size" : [ "default", 50.0 ],
+                        "offset" : [ 0.0, "-15.0%+0.0px" ],
+                        "priority" : 0,
+                        "propagate_alpha" : true
                      }
                   }
                ],

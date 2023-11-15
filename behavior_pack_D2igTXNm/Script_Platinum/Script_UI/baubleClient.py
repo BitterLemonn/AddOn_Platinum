@@ -1,10 +1,11 @@
 # coding=utf-8
-from .. import loggingUtils as logging
 from ..QuModLibs.Client import *
 from ..QuModLibs.UI import *
+from .. import loggingUtils as logging
+from ..CommonConfig import BaubleDict
+from ..CommonConfig import BaubleEnum
 import re
 
-import mod.client.extraClientApi as clientApi
 import mod.client.ui.screenNode as ScreenNode
 
 CustomUIScreenProxy = clientApi.GetUIScreenProxyCls()
@@ -15,13 +16,28 @@ class CommonConfig(object):
     UI_DEF_MAIN = "bauble_base_panel.main"
     UI_DEF_BAUBLE_BTN = "bauble_base_panel.bauble_button"
 
-    FLY_ANIMATION_DURATION = 5
+    PLATINUM_LOCAL_DATA = "platinum_local_data"
+    BAUBLE_SLOT_INFO = "bauble_slot_info"
+
+    SLOT_PATH_TO_NAME = {
+        "bauble_helmet_btn": BaubleEnum.HELMET,
+        "bauble_necklace_btn": BaubleEnum.NECKLACE,
+        "bauble_back_btn": BaubleEnum.BACK,
+        "bauble_armor_btn": BaubleEnum.ARMOR,
+        "bauble_hand_btn": BaubleEnum.HAND,
+        "bauble_belt_btn": BaubleEnum.BELT,
+        "bauble_shoes_btn": BaubleEnum.SHOES,
+        "bauble_other_btn": BaubleEnum.OTHER
+    }
+    NAME_TO_SLOT_PATH = {}
 
 
 class BaublePath(object):
     swallowInputPanel = "/swallow_input_panel"
     bgImgPath = swallowInputPanel + "/bg_img"
     baseStackPanelPath = bgImgPath + "/base_stack_panel"
+    itemInfoBgPath = swallowInputPanel + "/item_info_bg"
+    itemInfoTextPath = itemInfoBgPath + "/item_info_text"
     # bauble
     baublePanelPath = baseStackPanelPath + "/bauble_panel"
     baubleContentPCPath = baublePanelPath + "/bauble_scroll/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content"
@@ -37,7 +53,6 @@ class BaublePath(object):
     inventoryStackPanelPath = rightStackPanelPath + "/inventory_stack_panel"
     inventoryGridPath = inventoryStackPanelPath + "/inventory_grid"
     hotbarGridPath = inventoryStackPanelPath + "/hotbar_grid"
-
     # base
     slotBtnBasePath = "/slot_btn"
     itemRenderBasePath = "/item_renderer"
@@ -66,7 +81,7 @@ class BaublePath(object):
 class GlobalData(object):
     try:
         uiNode = ScreenNode.ScreenNode()
-    except Exception as e:
+    except:
         uiNode = None
 
     bagInfo = {}
@@ -75,6 +90,8 @@ class GlobalData(object):
 
     slotSelect = -1
     baubleSlotSelect = -1
+
+    itemInfoAlpha = 0.0
 
 
 # 代理类
@@ -88,21 +105,48 @@ class InventoryProxy(CustomUIScreenProxy):
 
     def CreateCustomButton(self):
         screen = self.GetScreenNode()
-        PocketPanelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg"
-        panel = screen.GetBaseUIControl(PocketPanelPath)
+        panelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg"
+        panel = screen.GetBaseUIControl(panelPath)
         if not panel:
-            ClassicPanelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/player_inventory/inventory_panel_top_half/player_armor_panel/player_bg"
-            panel = screen.GetBaseUIControl(ClassicPanelPath)
+            panelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/player_inventory/inventory_panel_top_half/player_armor_panel/player_bg"
+            panel = screen.GetBaseUIControl(panelPath)
         if not panel:
             logging.error("铂: 无法找到特定界面")
             return
-        button = screen.CreateChildControl(self.config.UI_DEF_BAUBLE_BTN, "bauble_button", panel).asButton()
-        button.AddTouchEventParams({"isSwallow": True})
-        button.SetButtonTouchUpCallback(self.OnBaubleButtonClicked)
+        try:
+            baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button").asButton()
+        except:
+            baubleBtn = screen.CreateChildControl(self.config.UI_DEF_BAUBLE_BTN, "bauble_button", panel).asButton()
+        baubleBtn.AddTouchEventParams({"isSwallow": True})
+        baubleBtn.SetButtonTouchUpCallback(self.OnBaubleButtonClicked)
 
     def OnBaubleButtonClicked(self, args):
         clientApi.PopTopUI()
         CallOTClient(clientApi.GetLocalPlayerId(), "OpenBaubleUi")
+
+
+# 监听客户端mod加载完成读取饰品文件
+@Listen(Events.OnLocalPlayerStopLoading)
+def OnLoadClientAddonScriptsAfter(data):
+    comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
+    configData = comp.GetConfigData(CommonConfig.PLATINUM_LOCAL_DATA)
+    GlobalData.baubleInfo = configData.get(CommonConfig.BAUBLE_SLOT_INFO, {})
+    if len(GlobalData.baubleInfo) == 0:
+        logging.error("铂: 未找到玩家饰品数据, 或读取失败!!!")
+    else:
+        logging.info("铂: 读取饰品数据成功")
+
+
+# 监听客户端关闭保存饰品文件
+def QuDestroy():
+    comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
+    configData = comp.GetConfigData(CommonConfig.PLATINUM_LOCAL_DATA)
+    configData[CommonConfig.BAUBLE_SLOT_INFO] = GlobalData.baubleInfo
+    isSave = comp.SetConfigData(CommonConfig.PLATINUM_LOCAL_DATA, configData)
+    if isSave:
+        logging.info("铂: 保存饰品数据成功")
+    else:
+        logging.error("铂: 保存饰品数据失败!!! 丢失玩家饰品数据")
 
 
 # 监听UI初始化注册代理类以及饰品栏UI
@@ -110,9 +154,9 @@ class InventoryProxy(CustomUIScreenProxy):
 def OnUiInitFinished(args):
     NativeScreenManager = clientApi.GetNativeScreenManagerCls()
     NativeScreenManager.instance().RegisterScreenProxy("crafting.inventory_screen",
-                                                       "Script_UI.UIClient.baubleClient.InventoryProxy")
+                                                       "Script_Platinum.Script_UI.baubleClient.InventoryProxy")
     NativeScreenManager.instance().RegisterScreenProxy("crafting_pocket.inventory_screen_pocket",
-                                                       "Script_UI.UIClient.baubleClient.InventoryProxy")
+                                                       "Script_Platinum.Script_UI.baubleClient.InventoryProxy")
 
     GlobalData.uiNode = BaubleUiNode()
 
@@ -127,7 +171,7 @@ def OpenBaubleUi():
 
 
 # 计算耐久度比例，用于显示耐久度槽
-def calculateDurabilityRatio(itemDict):
+def CalculateDurabilityRatio(itemDict):
     itemComp = clientApi.GetEngineCompFactory().CreateItem(clientApi.GetLevelId())
     basicInfo = itemComp.GetItemBasicInfo(itemDict.get("itemName", ""), itemDict.get("auxValue", 0))
     if basicInfo:
@@ -142,27 +186,81 @@ def calculateDurabilityRatio(itemDict):
 
 # 延迟执行函数
 @EasyThread.IsThread
-def DelayRun(func, delayTime=0.1):
+def DelayRun(func, delayTime=0.1, *args):
     comp = clientApi.GetEngineCompFactory().CreateGame(levelId)
-    comp.AddTimer(delayTime, func)
+    comp.AddTimer(delayTime, func, *args)
+
+
+# 检测物品槽位
+def CheckSlot(itemDict, slotPath):
+    if itemDict["newItemName"] in BaubleDict.keys():
+        endPath = slotPath.split("/")[-1]
+        baubleValue = BaubleDict[itemDict["newItemName"]]
+        if isinstance(baubleValue, type("")):
+            targetSlot = baubleValue
+        elif isinstance(baubleValue, type([])):
+            targetSlot = baubleValue[0]
+        else:
+            logging.error("铂: 饰品配置错误, 请检查Script_Platinum/CommonConfig.py")
+            return False
+
+        if CommonConfig.SLOT_PATH_TO_NAME[endPath] == targetSlot:
+            return True
+
+    return False
+
+
+# 玩家右键装备饰品
+@AllowCall
+def EquipBauble(itemDict, baubleSlot):
+    pass
+    # isEquipped = False
+    # if GlobalData.baubleInfo.get(baubleSlot, None) is None:
+    #     EquipBaubleWithSlot(baubleSlot, itemDict)
+    #     isEquipped = True
+    # elif baubleSlot == BaubleEnum.HAND and len(GlobalData.baubleInfo[BaubleEnum.HAND]) < 2:
+    #     EquipBaubleWithSlot(baubleSlot, itemDict)
+    #     isEquipped = True
+    # elif baubleSlot == BaubleEnum.OTHER and len(GlobalData.baubleInfo[BaubleEnum.OTHER]) < 4:
+    #     EquipBaubleWithSlot(baubleSlot, itemDict)
+    #     isEquipped = True
+    # if isEquipped:
+    #     Call("RemoveItem", {"playerId": playerId})
 
 
 @EasyScreenNodeCls.Binding(CommonConfig.UI_DEF_MAIN)
 class BaubleUiNode(EasyScreenNodeCls):
 
     def __init__(self):
-        pass
+        self.InitBaubleBtnCallback()
+
+    @staticmethod
+    @Listen(Events.OnScriptTickClient)
+    def Update():
+        if GlobalData.itemInfoAlpha > 0:
+            GlobalData.itemInfoAlpha -= 0.05
+        else:
+            GlobalData.itemInfoAlpha = 0
+
+        try:
+            # 显示物品信息
+            itemInfoBg = GlobalData.uiNode.GetBaseUIControl(BaublePath.itemInfoBgPath).asImage()
+            itemInfoBg.SetAlpha(GlobalData.itemInfoAlpha)
+        except:
+            pass
 
     # 打开按钮点击回调
     def OnOpenBtnClick(self):
         self.SetAllResponse(False)
-        self.InitBaubleBtnCallback()
 
         baublePath = BaublePath
         swallowInputPanel = self.GetBaseUIControl(baublePath.swallowInputPanel).asInputPanel()
         swallowInputPanel.SetVisible(True)
         swallowInputPanel.SetIsModal(True)
+
         DelayRun(self.GetBagInfoAndRender)
+        for baubleSlotPath, itemDict in GlobalData.baubleInfo.items():
+            DelayRun(self.RenderBaubleUi, 0.1, baubleSlotPath, itemDict)
 
     # 关闭按钮点击回调
     @EasyScreenNodeCls.OnClick(BaublePath.closeBtnPath)
@@ -213,7 +311,7 @@ class BaubleUiNode(EasyScreenNodeCls):
 
                 # 耐久渲染
                 if item["durability"] > 0:
-                    durabilityRatio = calculateDurabilityRatio(item)
+                    durabilityRatio = CalculateDurabilityRatio(item)
                     durability.SetSpriteClipRatio(1)  # 重置耐久度偏移
                     if durabilityRatio != 1:
                         durabilityBg.SetVisible(True)
@@ -268,6 +366,17 @@ class BaubleUiNode(EasyScreenNodeCls):
         else:
             slot = int(re.findall(r"\d+", path)[-1]) - 1 + 9
 
+        itemInfo = GlobalData.bagInfo[slot]
+        # 显示物品信息
+        if itemInfo and len(itemInfo) > 0:
+            itemName = GlobalData.bagInfo[slot]["newItemName"]
+            customTips = GlobalData.bagInfo[slot]["customTips"]
+            comp = clientApi.GetEngineCompFactory().CreateItem(levelId)
+            itemName = comp.GetItemBasicInfo(itemName)["itemName"]
+
+            showText = itemName if len(customTips) == 0 else customTips
+            self.ShowInfo(showText)
+
         # 已选择饰品栏
         if GlobalData.baubleSlotSelect != -1:
             self.SwitchBauble(GlobalData.baubleSlotSelect, slot)
@@ -308,14 +417,38 @@ class BaubleUiNode(EasyScreenNodeCls):
             return
 
         for panelPath, btnPath in BaublePath.baubleSlotPanelList.items():
-            baubleBtn = self.GetBaseUIControl(targetBaublePath + panelPath + btnPath).asButton()
+            btnPath = targetBaublePath + panelPath + btnPath
+            baubleBtn = self.GetBaseUIControl(btnPath).asButton()
+
+            # 注册路径对应槽位
+            if CommonConfig.SLOT_PATH_TO_NAME.get(btnPath, None) is None:
+                CommonConfig.SLOT_PATH_TO_NAME[btnPath] = Path2SlotName(btnPath)
+                CommonConfig.NAME_TO_SLOT_PATH[Path2SlotName(btnPath)] = btnPath
+
             baubleBtn.AddTouchEventParams({"isSwallow": True})
             baubleBtn.SetButtonTouchUpCallback(self.OnBaubleSlotClick)
+
+        # 清除初始路径键值
+        for key in CommonConfig.SLOT_PATH_TO_NAME.keys():
+            if not key.startswith("/"):
+                CommonConfig.SLOT_PATH_TO_NAME.pop(key)
+        logging.error(CommonConfig.NAME_TO_SLOT_PATH)
 
     # 饰品栏槽位点击回调
     def OnBaubleSlotClick(self, data):
         path = data["ButtonPath"]
         itemSelected = self.GetBaseUIControl(path + "/item_selected_img").asImage()
+
+        itemInfo = GlobalData.baubleInfo.get(path, None)
+        # 显示物品信息
+        if itemInfo and len(itemInfo) > 0:
+            itemName = GlobalData.baubleInfo[path]["newItemName"]
+            customTips = GlobalData.baubleInfo[path]["customTips"]
+            comp = clientApi.GetEngineCompFactory().CreateItem(levelId)
+            itemName = comp.GetItemBasicInfo(itemName)["itemName"]
+
+            showText = itemName if len(customTips) == 0 else customTips
+            self.ShowInfo(showText)
 
         # 选择
         if len(GlobalData.baubleInfo.get(path, {})) > 0 and GlobalData.baubleSlotSelect == -1:
@@ -330,10 +463,11 @@ class BaubleUiNode(EasyScreenNodeCls):
 
         # 装备
         if GlobalData.slotSelect != -1:
-            # TODO(判断物品是否可以装备)
-            self.SwitchBauble(GlobalData.slotSelect, path)
-            GlobalData.slotSelect = -1
-            GlobalData.baubleSlotSelect = -1
+            # 判断是否能够装备
+            if CheckSlot(GlobalData.bagInfo[GlobalData.slotSelect], path):
+                self.SwitchBauble(GlobalData.slotSelect, path)
+                GlobalData.slotSelect = -1
+                GlobalData.baubleSlotSelect = -1
             return
 
     # 饰品栏切换逻辑
@@ -349,9 +483,10 @@ class BaubleUiNode(EasyScreenNodeCls):
                 # 移除玩家物品
                 Call("RemoveItem", {"playerId": clientApi.GetLocalPlayerId(), "slot": fromSlot})
             DelayRun(self.GetBagInfoAndRender)
-            # 饰品栏渲染
+            # 饰品栏信息
             GlobalData.baubleInfo[toSlot] = baubleItem
-            self.renderBaubleUi(toSlot, baubleItem)
+            # 饰品栏渲染
+            self.RenderBaubleUi(toSlot, baubleItem)
 
         # 饰品栏到物品栏
         elif isinstance(fromSlot, type("")) and isinstance(toSlot, type(1)):
@@ -365,29 +500,34 @@ class BaubleUiNode(EasyScreenNodeCls):
             # 添加玩家物品
             Call("AddItem", {"playerId": clientApi.GetLocalPlayerId(), "slot": toSlot, "itemDict": baubleItem})
             DelayRun(self.GetBagInfoAndRender)
-            # 饰品栏渲染
+            # 饰品栏信息
             GlobalData.baubleInfo[fromSlot] = needRenderItem
-            self.renderBaubleUi(fromSlot, needRenderItem)
+            # 饰品栏渲染
+            self.RenderBaubleUi(fromSlot, needRenderItem)
 
         # 饰品栏到饰品栏
         elif isinstance(fromSlot, type("")) and isinstance(toSlot, type("")):
-            fromItem = GlobalData.baubleInfo[fromSlot]
-            toItem = GlobalData.baubleInfo.get(toSlot, {})
-            # 饰品栏渲染
+            fromItem = GlobalData.baubleInfo[fromBaubleSlot]
+            toItem = GlobalData.baubleInfo.get(toBaubleSlot, {})
+            # 饰品栏信息
             GlobalData.baubleInfo[fromSlot] = toItem
             GlobalData.baubleInfo[toSlot] = fromItem
+            # 饰品栏渲染
             self.renderBaubleUi(fromSlot, toItem)
             self.renderBaubleUi(toSlot, fromItem)
 
         return False
 
     # 饰品栏渲染
-    def renderBaubleUi(self, slotPath, itemDict):
+    def RenderBaubleUi(self, slotPath, itemDict):
         imgPath = slotPath.split("/")[-1].replace("btn", "img")
         imgPath = "/".join(slotPath.split("/")[:-1]) + "/" + imgPath
-        baubleImg = self.GetBaseUIControl(imgPath).asImage()
-        itemRenderer = self.GetBaseUIControl(slotPath + "/item_renderer").asItemRenderer()
-        itemSelected = self.GetBaseUIControl(slotPath + "/item_selected_img").asImage()
+        try:
+            baubleImg = self.GetBaseUIControl(imgPath).asImage()
+            itemRenderer = self.GetBaseUIControl(slotPath + "/item_renderer").asItemRenderer()
+            itemSelected = self.GetBaseUIControl(slotPath + "/item_selected_img").asImage()
+        except Exception as e:
+            return
 
         durability = self.GetBaseUIControl(slotPath + BaublePath.durabilityBasePath).asImage()
         durabilityBg = self.GetBaseUIControl(slotPath + BaublePath.durabilityBgBasePath).asImage()
@@ -401,7 +541,7 @@ class BaubleUiNode(EasyScreenNodeCls):
             itemRenderer.SetVisible(True)
             # 耐久渲染
             if itemDict["durability"] > 0:
-                durabilityRatio = calculateDurabilityRatio(itemDict)
+                durabilityRatio = CalculateDurabilityRatio(itemDict)
                 durability.SetSpriteClipRatio(1)
                 if durabilityRatio != 1:
                     durabilityBg.SetVisible(True)
@@ -418,3 +558,13 @@ class BaubleUiNode(EasyScreenNodeCls):
             durability.SetVisible(False)
 
         itemSelected.SetVisible(False)
+
+    def ShowInfo(self, info):
+        itemInfoText = self.GetBaseUIControl(BaublePath.itemInfoTextPath).asLabel()
+        itemInfoText.SetText(info)
+        GlobalData.itemInfoAlpha = 2.5
+
+
+def Path2SlotName(path):
+    slotName = CommonConfig.SLOT_PATH_TO_NAME[path.split("/")[-1]]
+    return slotName
