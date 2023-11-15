@@ -2,8 +2,8 @@
 from ..QuModLibs.Client import *
 from ..QuModLibs.UI import *
 from .. import loggingUtils as logging
-from ..CommonConfig import BaubleDict
-from ..CommonConfig import BaubleEnum
+from ..commonConfig import BaubleDict
+from ..commonConfig import BaubleEnum
 import re
 
 import mod.client.ui.screenNode as ScreenNode
@@ -24,7 +24,7 @@ def BaubleUnequippedBroadcaster(baubleSlot, itemDict):
 
 
 # 基础常量
-class CommonConfig(object):
+class BaubleConfig(object):
     UI_DEF = "bauble_base_panel"
     UI_DEF_MAIN = "bauble_base_panel.main"
     UI_DEF_BAUBLE_BTN = "bauble_base_panel.bauble_button"
@@ -113,7 +113,7 @@ class GlobalData(object):
 class InventoryProxy(CustomUIScreenProxy):
     def __init__(self, screenName, screenNode):
         CustomUIScreenProxy.__init__(self, screenName, screenNode)
-        self.config = CommonConfig()
+        self.config = BaubleConfig()
 
     def OnCreate(self):
         self.CreateCustomButton()
@@ -144,23 +144,23 @@ class InventoryProxy(CustomUIScreenProxy):
 @Listen(Events.OnLocalPlayerStopLoading)
 def OnLoadClientAddonScriptsAfter(data):
     comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-    configData = comp.GetConfigData(CommonConfig.PLATINUM_LOCAL_DATA)
-    GlobalData.baubleInfo = configData.get(CommonConfig.BAUBLE_SLOT_INFO, {})
+    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA)
+    GlobalData.baubleInfo = configData.get(BaubleConfig.BAUBLE_SLOT_INFO, {})
     if len(GlobalData.baubleInfo) == 0:
         logging.error("铂: 未找到玩家饰品数据, 或读取失败!!!")
     else:
         logging.info("铂: 读取饰品数据成功")
         for path, bauble in GlobalData.baubleInfo.items():
             if len(bauble) > 0:
-                BaubleEquippedBroadcaster(CommonConfig.SLOT_PATH_TO_NAME[path.split("/")[-1]], bauble)
+                BaubleEquippedBroadcaster(BaubleConfig.SLOT_PATH_TO_NAME[path.split("/")[-1]], bauble)
 
 
 # 监听客户端关闭保存饰品文件
 def QuDestroy():
     comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-    configData = comp.GetConfigData(CommonConfig.PLATINUM_LOCAL_DATA)
-    configData[CommonConfig.BAUBLE_SLOT_INFO] = GlobalData.baubleInfo
-    isSave = comp.SetConfigData(CommonConfig.PLATINUM_LOCAL_DATA, configData)
+    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA)
+    configData[BaubleConfig.BAUBLE_SLOT_INFO] = GlobalData.baubleInfo
+    isSave = comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA, configData)
     if isSave:
         logging.info("铂: 保存饰品数据成功")
     else:
@@ -212,6 +212,11 @@ def DelayRun(func, delayTime=0.1, *args):
 
 # 检测物品槽位
 def CheckSlot(itemDict, slotPath):
+    comp = clientApi.GetEngineCompFactory().CreateItem(levelId)
+    baseInfo = comp.GetItemBasicInfo(itemDict["newItemName"], itemDict["newAuxValue"])
+    if baseInfo["maxStackSize"] > 1:
+        logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(itemDict["newItemName"]))
+        return False
     if itemDict["newItemName"] in BaubleDict.keys():
         baubleValue = BaubleDict[itemDict["newItemName"]]
         if isinstance(baubleValue, type("")):
@@ -219,10 +224,10 @@ def CheckSlot(itemDict, slotPath):
         elif isinstance(baubleValue, type([])):
             targetSlot = baubleValue[0]
         else:
-            logging.error("铂: {}饰品配置错误, 请检查Script_Platinum/CommonConfig.py".format(itemDict["newItemName"]))
+            logging.error("铂: 饰品 {} 配置错误, 请检查Script_Platinum/commonConfig.py".format(itemDict["newItemName"]))
             return False
 
-        if CommonConfig.SLOT_PATH_TO_NAME[slotPath] == targetSlot:
+        if BaubleConfig.SLOT_PATH_TO_NAME[slotPath] == targetSlot:
             return True
 
     return False
@@ -233,12 +238,12 @@ def CheckSlot(itemDict, slotPath):
 def EquipBauble(itemDict, baubleSlot):
     isEquip = False
     if baubleSlot != BaubleEnum.OTHER and baubleSlot != BaubleEnum.HAND:
-        baublePath = CommonConfig.NAME_TO_SLOT_PATH[baubleSlot]
+        baublePath = BaubleConfig.NAME_TO_SLOT_PATH[baubleSlot]
         if len(GlobalData.baubleInfo.get(baublePath, {})) == 0:
             GlobalData.baubleInfo[baublePath] = itemDict
             isEquip = True
     elif baubleSlot == BaubleEnum.OTHER:
-        baublePath = CommonConfig.NAME_TO_SLOT_PATH[BaubleEnum.OTHER]
+        baublePath = BaubleConfig.NAME_TO_SLOT_PATH[BaubleEnum.OTHER]
         baublePath = "/".join(baublePath.split("/")[:-2])
         baublePathList = [
             baublePath + "/bauble_other_panel_1/bauble_other_btn",
@@ -252,7 +257,7 @@ def EquipBauble(itemDict, baubleSlot):
                 isEquip = True
                 break
     elif baubleSlot == BaubleEnum.HAND:
-        baublePath = CommonConfig.NAME_TO_SLOT_PATH[BaubleEnum.HAND]
+        baublePath = BaubleConfig.NAME_TO_SLOT_PATH[BaubleEnum.HAND]
         baublePath = "/".join(baublePath.split("/")[:-2])
         baublePathList = [
             baublePath + "/bauble_hand_panel_1/bauble_hand_btn",
@@ -270,7 +275,7 @@ def EquipBauble(itemDict, baubleSlot):
         Call("RemoveItem", {"playerId": clientApi.GetLocalPlayerId()})
 
 
-@EasyScreenNodeCls.Binding(CommonConfig.UI_DEF_MAIN)
+@EasyScreenNodeCls.Binding(BaubleConfig.UI_DEF_MAIN)
 class BaubleUiNode(EasyScreenNodeCls):
 
     def __init__(self):
@@ -303,6 +308,16 @@ class BaubleUiNode(EasyScreenNodeCls):
         DelayRun(self.GetBagInfoAndRender)
         for baubleSlotPath, itemDict in GlobalData.baubleInfo.items():
             DelayRun(self.RenderBaubleUi, 0.1, baubleSlotPath, itemDict)
+        # 渲染玩家纸娃娃
+        DelayRun(self.RenderPlayerPaperDoll)
+
+    # 渲染玩家纸娃娃
+    def RenderPlayerPaperDoll(self):
+        try:
+            playerPaperDoll = self.GetBaseUIControl(BaublePath.playerPaperDollPath).asNeteasePaperDoll()
+            playerPaperDoll.RenderEntity({"entity_id": playerId, "scale": 0.4})
+        except:
+            pass
 
     # 关闭按钮点击回调
     @EasyScreenNodeCls.OnClick(BaublePath.closeBtnPath)
@@ -470,17 +485,17 @@ class BaubleUiNode(EasyScreenNodeCls):
             baubleBtn = self.GetBaseUIControl(btnPath).asButton()
 
             # 注册路径对应槽位
-            if CommonConfig.SLOT_PATH_TO_NAME.get(btnPath, None) is None:
-                CommonConfig.SLOT_PATH_TO_NAME[btnPath] = Path2SlotName(btnPath)
-                CommonConfig.NAME_TO_SLOT_PATH[Path2SlotName(btnPath)] = btnPath
+            if BaubleConfig.SLOT_PATH_TO_NAME.get(btnPath, None) is None:
+                BaubleConfig.SLOT_PATH_TO_NAME[btnPath] = Path2SlotName(btnPath)
+                BaubleConfig.NAME_TO_SLOT_PATH[Path2SlotName(btnPath)] = btnPath
 
             baubleBtn.AddTouchEventParams({"isSwallow": True})
             baubleBtn.SetButtonTouchUpCallback(self.OnBaubleSlotClick)
 
         # 清除初始路径键值
-        for key in CommonConfig.SLOT_PATH_TO_NAME.keys():
+        for key in BaubleConfig.SLOT_PATH_TO_NAME.keys():
             if not key.startswith("/"):
-                CommonConfig.SLOT_PATH_TO_NAME.pop(key)
+                BaubleConfig.SLOT_PATH_TO_NAME.pop(key)
 
     # 饰品栏槽位点击回调
     def OnBaubleSlotClick(self, data):
@@ -528,7 +543,7 @@ class BaubleUiNode(EasyScreenNodeCls):
                 # 添加玩家物品
                 Call("AddItem", {"playerId": clientApi.GetLocalPlayerId(), "slot": fromSlot, "itemDict": oldBaubleItem})
                 # 广播卸下饰品
-                BaubleUnequippedBroadcaster(CommonConfig.SLOT_PATH_TO_NAME[toSlot], oldBaubleItem)
+                BaubleUnequippedBroadcaster(BaubleConfig.SLOT_PATH_TO_NAME[toSlot], oldBaubleItem)
             else:
                 # 移除玩家物品
                 Call("RemoveItem", {"playerId": clientApi.GetLocalPlayerId(), "slot": fromSlot})
@@ -536,7 +551,7 @@ class BaubleUiNode(EasyScreenNodeCls):
             # 饰品栏信息
             GlobalData.baubleInfo[toSlot] = baubleItem
             # 广播装备饰品
-            BaubleEquippedBroadcaster(CommonConfig.SLOT_PATH_TO_NAME[toSlot], baubleItem)
+            BaubleEquippedBroadcaster(BaubleConfig.SLOT_PATH_TO_NAME[toSlot], baubleItem)
             # 饰品栏渲染
             self.RenderBaubleUi(toSlot, baubleItem)
 
@@ -550,14 +565,14 @@ class BaubleUiNode(EasyScreenNodeCls):
                 Call("RemoveItem", {"playerId": clientApi.GetLocalPlayerId(), "slot": toSlot})
                 needRenderItem = bagItem
                 # 广播装备饰品
-                BaubleEquippedBroadcaster(CommonConfig.SLOT_PATH_TO_NAME[fromSlot], bagItem)
+                BaubleEquippedBroadcaster(BaubleConfig.SLOT_PATH_TO_NAME[fromSlot], bagItem)
             # 添加玩家物品
             Call("AddItem", {"playerId": clientApi.GetLocalPlayerId(), "slot": toSlot, "itemDict": baubleItem})
             DelayRun(self.GetBagInfoAndRender)
             # 饰品栏信息
             GlobalData.baubleInfo[fromSlot] = needRenderItem
             # 广播卸下饰品
-            BaubleUnequippedBroadcaster(CommonConfig.SLOT_PATH_TO_NAME[fromSlot], baubleItem)
+            BaubleUnequippedBroadcaster(BaubleConfig.SLOT_PATH_TO_NAME[fromSlot], baubleItem)
             # 饰品栏渲染
             self.RenderBaubleUi(fromSlot, needRenderItem)
 
@@ -622,5 +637,5 @@ class BaubleUiNode(EasyScreenNodeCls):
 
 
 def Path2SlotName(path):
-    slotName = CommonConfig.SLOT_PATH_TO_NAME[path.split("/")[-1]]
+    slotName = BaubleConfig.SLOT_PATH_TO_NAME[path.split("/")[-1]]
     return slotName

@@ -1,5 +1,6 @@
 from ..QuModLibs.Client import *
-from .. import CommonConfig
+from .. import commonConfig
+
 
 class BroadcasterClient(clientApi.GetClientSystemCls()):
 
@@ -9,11 +10,11 @@ class BroadcasterClient(clientApi.GetClientSystemCls()):
 
 @AllowCall
 def BaubleEquipped(data):
-    client = clientApi.GetSystem(CommonConfig.PLATINUM_NAMESPACE, CommonConfig.PLATINUM_BROADCAST_CLIENT)
-    client.BroadcastEvent(CommonConfig.BAUBLE_EQUIPPED_EVENT, data)
+    client = clientApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_CLIENT)
+    client.BroadcastEvent(commonConfig.BAUBLE_EQUIPPED_EVENT, data)
 
 
 @AllowCall
 def BaubleUnequipped(data):
-    client = clientApi.GetSystem(CommonConfig.PLATINUM_NAMESPACE, CommonConfig.PLATINUM_BROADCAST_CLIENT)
-    client.BroadcastEvent(CommonConfig.BAUBLE_UNEQUIPPED_EVENT, data)
+    client = clientApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_CLIENT)
+    client.BroadcastEvent(commonConfig.BAUBLE_UNEQUIPPED_EVENT, data)

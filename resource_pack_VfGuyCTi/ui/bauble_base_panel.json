@@ -438,12 +438,11 @@
                                                                         {
                                                                            "player_paper_doll" : {
                                                                               "anchor_from" : "top_middle",
-                                                                              "animation" : "",
-                                                                              "controls" : [],
                                                                               "layer" : 1,
-                                                                              "offset" : [ "0.0%y+0.0px", "40.0%+0.0px" ],
-                                                                              "renderer" : "paper_doll_renderer",
+                                                                              "offset" : [ 0.0, "40.0%+0.0px" ],
+                                                                              "renderer" : "netease_paper_doll_renderer",
                                                                               "rotation" : "gesture_x",
+                                                                              "screen_scale" : 1.0,
                                                                               "size" : [ "100.0%y+0.0px", "90.0%+0.0px" ],
                                                                               "type" : "custom"
                                                                            }

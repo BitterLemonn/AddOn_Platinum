@@ -46,7 +46,7 @@
             "screen": {
                 "D:\\MCNetease\\MinecraftProject\\Platinum\\resource_pack_VfGuyCTi\\ui\\bauble_base_panel.json": [
                     "/main",
-                    "/main/swallow_input_panel",
+                    "/main/swallow_input_panel/bg_img",
                     "/main/swallow_input_panel/bg_img/base_stack_panel",
                     "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse",
                     "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view",
@@ -56,6 +56,10 @@
                     "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content",
                     "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content/bauble_necklace_panel",
                     "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content/bauble_hand_panel_1/bauble_hand_btn/item_renderer",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/right_stack_panel",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/right_stack_panel/tool_stack_panel",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/right_stack_panel/tool_stack_panel/player_panel",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/right_stack_panel/tool_stack_panel/player_panel/paper_doll_bg",
                     "/main/swallow_input_panel/bg_img/base_stack_panel/right_stack_panel/tool_stack_panel/tool_right_stack_panel",
                     "/main/swallow_input_panel/bg_img/base_stack_panel/right_stack_panel/tool_stack_panel/tool_right_stack_panel/tool_panel",
                     "/main/swallow_input_panel/bg_img/base_stack_panel/right_stack_panel/inventory_stack_panel",

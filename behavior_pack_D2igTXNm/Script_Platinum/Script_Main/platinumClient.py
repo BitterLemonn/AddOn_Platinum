@@ -1,5 +1,5 @@
 # coding=utf-8
-from ..CommonConfig import BaubleDict
+from ..commonConfig import BaubleDict
 from .. import loggingUtils as logging
 from ..QuModLibs.Client import *
 
@@ -11,8 +11,9 @@ def OnInventoryItemChanged(data):
         try:
             baubleInfo = baubleValue if isinstance(baubleValue, type("")) else baubleValue[0] if len(
                 baubleValue) == 1 else baubleValue[0] + baubleValue[1]
+            baubleSlot = baubleInfo.split("\n")[0]
             item = newItemDict["newItemName"]
-            if baubleInfo not in newItemDict["customTips"]:
+            if baubleSlot not in newItemDict["customTips"]:
                 itemI18nName = clientApi.GetEngineCompFactory(). \
                     CreateItem(levelId).GetItemBasicInfo(item)["itemName"]
                 baubleInfo = itemI18nName + "\n" + baubleInfo
@@ -21,7 +22,8 @@ def OnInventoryItemChanged(data):
             else:
                 return
         except:
-            logging.error("铂: 饰品描述格式错误, 请检查Script_Platinum/PlatinumCommon/CommonConfig.py")
+            logging.error(
+                "铂: 饰品 {} 描述格式错误, 请检查Script_Platinum/commonConfig.py".format(newItemDict["newItemName"]))
 
 
 ListenForEvent("InventoryItemChangedClientEvent", None, OnInventoryItemChanged)

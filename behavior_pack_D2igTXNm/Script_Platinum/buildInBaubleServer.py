@@ -1,7 +1,7 @@
 # coding=utf-8
 import logging
 
-import CommonConfig
+import commonConfig
 import mod.server.extraServerApi as serverApi
 
 
@@ -13,11 +13,11 @@ class BuildInBaubleServer(serverApi.GetServerSystemCls()):
 
     def listenEvent(self):
         # 监听饰品装备事件
-        self.ListenForEvent(CommonConfig.PLATINUM_NAMESPACE, CommonConfig.PLATINUM_BROADCAST_SERVER,
-                            CommonConfig.BAUBLE_EQUIPPED_EVENT, self, self.onBaubleEquipped)
+        self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
+                            commonConfig.BAUBLE_EQUIPPED_EVENT, self, self.onBaubleEquipped)
         # 监听饰品卸下事件
-        self.ListenForEvent(CommonConfig.PLATINUM_NAMESPACE, CommonConfig.PLATINUM_BROADCAST_SERVER,
-                            CommonConfig.BAUBLE_UNEQUIPPED_EVENT, self, self.onBaubleUnequipped)
+        self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
+                            commonConfig.BAUBLE_UNEQUIPPED_EVENT, self, self.onBaubleUnequipped)
 
     def onBaubleEquipped(self, data):
         """

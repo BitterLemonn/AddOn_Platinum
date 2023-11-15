@@ -1,5 +1,5 @@
 from ..QuModLibs.Server import *
-from ..CommonConfig import BaubleDict
+from ..commonConfig import BaubleDict
 
 
 @AllowCall

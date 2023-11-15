@@ -2,7 +2,7 @@
 import logging
 
 from QuModLibs.QuMod import *
-import CommonConfig
+import commonConfig
 
 MyMod = EasyMod()
 
@@ -19,7 +19,7 @@ def SERVER():
 
     # 注册原版系统
     import mod.server.extraServerApi as serverApi
-    serverApi.RegisterSystem(CommonConfig.PLATINUM_NAMESPACE, CommonConfig.PLATINUM_BROADCAST_SERVER,
+    serverApi.RegisterSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
                              "Script_Platinum.Script_Main.broadcasterServer.BroadcasterServer")
     serverApi.RegisterSystem("buildInBauble", "buildInBaubleServer",
                              "Script_Platinum.buildInBaubleServer.BuildInBaubleServer")
@@ -37,11 +37,10 @@ def CLIENT():
 
     # 注册原版系统
     import mod.client.extraClientApi as clientApi
-    clientApi.RegisterSystem(CommonConfig.PLATINUM_NAMESPACE, CommonConfig.PLATINUM_BROADCAST_CLIENT,
+    clientApi.RegisterSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_CLIENT,
                              "Script_Platinum.Script_Main.broadcasterClient.BroadcasterClient")
     isR = clientApi.RegisterSystem("buildInBauble", "buildInBaubleClient",
-                             "Script_Platinum.buildInBaubleClient.BuildInBaubleClient")
-    logging.error("isR: %s" % isR)
+                                   "Script_Platinum.buildInBaubleClient.BuildInBaubleClient")
 
 
 MyMod.addServerFunc(SERVER)

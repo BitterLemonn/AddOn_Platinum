@@ -1,7 +1,5 @@
-import logging
-
 from ..QuModLibs.Server import *
-from .. import CommonConfig
+from .. import commonConfig
 
 
 class BroadcasterServer(serverApi.GetServerSystemCls()):
@@ -12,11 +10,11 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
 
 @AllowCall
 def BaubleEquipped(data):
-    server = serverApi.GetSystem(CommonConfig.PLATINUM_NAMESPACE, CommonConfig.PLATINUM_BROADCAST_SERVER)
-    server.BroadcastEvent(CommonConfig.BAUBLE_EQUIPPED_EVENT, data)
+    server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+    server.BroadcastEvent(commonConfig.BAUBLE_EQUIPPED_EVENT, data)
 
 
 @AllowCall
 def BaubleUnequipped(data):
-    server = serverApi.GetSystem(CommonConfig.PLATINUM_NAMESPACE, CommonConfig.PLATINUM_BROADCAST_SERVER)
-    server.BroadcastEvent(CommonConfig.BAUBLE_UNEQUIPPED_EVENT, data)
+    server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+    server.BroadcastEvent(commonConfig.BAUBLE_UNEQUIPPED_EVENT, data)
