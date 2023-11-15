@@ -11,6 +11,19 @@ import mod.client.ui.screenNode as ScreenNode
 CustomUIScreenProxy = clientApi.GetUIScreenProxyCls()
 
 
+# 饰品装备广播
+def BaubleEquippedBroadcaster(baubleSlot, itemDict):
+    Call("BaubleEquipped", {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict})
+    CallOTClient(playerId, "BaubleEquipped", {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict})
+
+
+# 饰品卸下广播
+def BaubleUnequippedBroadcaster(baubleSlot, itemDict):
+    Call("BaubleUnequipped", {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict})
+    CallOTClient(playerId, "BaubleUnequipped", {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict})
+
+
+# 基础常量
 class CommonConfig(object):
     UI_DEF = "bauble_base_panel"
     UI_DEF_MAIN = "bauble_base_panel.main"
@@ -32,6 +45,7 @@ class CommonConfig(object):
     NAME_TO_SLOT_PATH = {}
 
 
+# ui路径
 class BaublePath(object):
     swallowInputPanel = "/swallow_input_panel"
     bgImgPath = swallowInputPanel + "/bg_img"
@@ -78,6 +92,7 @@ class BaublePath(object):
     }
 
 
+# 全局变量
 class GlobalData(object):
     try:
         uiNode = ScreenNode.ScreenNode()
@@ -94,7 +109,7 @@ class GlobalData(object):
     itemInfoAlpha = 0.0
 
 
-# 代理类
+# 背包界面代理类
 class InventoryProxy(CustomUIScreenProxy):
     def __init__(self, screenName, screenNode):
         CustomUIScreenProxy.__init__(self, screenName, screenNode)
@@ -135,6 +150,9 @@ def OnLoadClientAddonScriptsAfter(data):
         logging.error("铂: 未找到玩家饰品数据, 或读取失败!!!")
     else:
         logging.info("铂: 读取饰品数据成功")
+        for path, bauble in GlobalData.baubleInfo.items():
+            if len(bauble) > 0:
+                BaubleEquippedBroadcaster(CommonConfig.SLOT_PATH_TO_NAME[path.split("/")[-1]], bauble)
 
 
 # 监听客户端关闭保存饰品文件
@@ -161,6 +179,7 @@ def OnUiInitFinished(args):
     GlobalData.uiNode = BaubleUiNode()
 
 
+# 打开饰品栏界面
 @CallBackKey("OpenBaubleUi")
 def OpenBaubleUi():
     uiNode = GlobalData.uiNode
@@ -194,17 +213,16 @@ def DelayRun(func, delayTime=0.1, *args):
 # 检测物品槽位
 def CheckSlot(itemDict, slotPath):
     if itemDict["newItemName"] in BaubleDict.keys():
-        endPath = slotPath.split("/")[-1]
         baubleValue = BaubleDict[itemDict["newItemName"]]
         if isinstance(baubleValue, type("")):
             targetSlot = baubleValue
         elif isinstance(baubleValue, type([])):
             targetSlot = baubleValue[0]
         else:
-            logging.error("铂: 饰品配置错误, 请检查Script_Platinum/CommonConfig.py")
+            logging.error("铂: {}饰品配置错误, 请检查Script_Platinum/CommonConfig.py".format(itemDict["newItemName"]))
             return False
 
-        if CommonConfig.SLOT_PATH_TO_NAME[endPath] == targetSlot:
+        if CommonConfig.SLOT_PATH_TO_NAME[slotPath] == targetSlot:
             return True
 
     return False
@@ -213,19 +231,43 @@ def CheckSlot(itemDict, slotPath):
 # 玩家右键装备饰品
 @AllowCall
 def EquipBauble(itemDict, baubleSlot):
-    pass
-    # isEquipped = False
-    # if GlobalData.baubleInfo.get(baubleSlot, None) is None:
-    #     EquipBaubleWithSlot(baubleSlot, itemDict)
-    #     isEquipped = True
-    # elif baubleSlot == BaubleEnum.HAND and len(GlobalData.baubleInfo[BaubleEnum.HAND]) < 2:
-    #     EquipBaubleWithSlot(baubleSlot, itemDict)
-    #     isEquipped = True
-    # elif baubleSlot == BaubleEnum.OTHER and len(GlobalData.baubleInfo[BaubleEnum.OTHER]) < 4:
-    #     EquipBaubleWithSlot(baubleSlot, itemDict)
-    #     isEquipped = True
-    # if isEquipped:
-    #     Call("RemoveItem", {"playerId": playerId})
+    isEquip = False
+    if baubleSlot != BaubleEnum.OTHER and baubleSlot != BaubleEnum.HAND:
+        baublePath = CommonConfig.NAME_TO_SLOT_PATH[baubleSlot]
+        if len(GlobalData.baubleInfo.get(baublePath, {})) == 0:
+            GlobalData.baubleInfo[baublePath] = itemDict
+            isEquip = True
+    elif baubleSlot == BaubleEnum.OTHER:
+        baublePath = CommonConfig.NAME_TO_SLOT_PATH[BaubleEnum.OTHER]
+        baublePath = "/".join(baublePath.split("/")[:-2])
+        baublePathList = [
+            baublePath + "/bauble_other_panel_1/bauble_other_btn",
+            baublePath + "/bauble_other_panel_2/bauble_other_btn",
+            baublePath + "/bauble_other_panel_3/bauble_other_btn",
+            baublePath + "/bauble_other_panel_4/bauble_other_btn"
+        ]
+        for baublePath in baublePathList:
+            if len(GlobalData.baubleInfo.get(baublePath, {})) == 0:
+                GlobalData.baubleInfo[baublePath] = itemDict
+                isEquip = True
+                break
+    elif baubleSlot == BaubleEnum.HAND:
+        baublePath = CommonConfig.NAME_TO_SLOT_PATH[BaubleEnum.HAND]
+        baublePath = "/".join(baublePath.split("/")[:-2])
+        baublePathList = [
+            baublePath + "/bauble_hand_panel_1/bauble_hand_btn",
+            baublePath + "/bauble_hand_panel_2/bauble_hand_btn"
+        ]
+        for baublePath in baublePathList:
+            if len(GlobalData.baubleInfo.get(baublePath, {})) == 0:
+                GlobalData.baubleInfo[baublePath] = itemDict
+                isEquip = True
+                break
+    if isEquip:
+        # 广播装备饰品
+        BaubleEquippedBroadcaster(baubleSlot, itemDict)
+        # 移除玩家手上物品
+        Call("RemoveItem", {"playerId": clientApi.GetLocalPlayerId()})
 
 
 @EasyScreenNodeCls.Binding(CommonConfig.UI_DEF_MAIN)
@@ -270,6 +312,11 @@ class BaubleUiNode(EasyScreenNodeCls):
         swallowInputPanel = self.GetBaseUIControl(baublePath.swallowInputPanel).asInputPanel()
         swallowInputPanel.SetVisible(False)
         swallowInputPanel.SetIsModal(False)
+
+        # 重置临时变量
+        GlobalData.slotSelect = -1
+        GlobalData.baubleSlotSelect = -1
+        GlobalData.itemInfoAlpha = 0.0
 
     # 设置是否响应玩家输入
     def SetAllResponse(self, canResponse):
@@ -379,8 +426,10 @@ class BaubleUiNode(EasyScreenNodeCls):
 
         # 已选择饰品栏
         if GlobalData.baubleSlotSelect != -1:
-            self.SwitchBauble(GlobalData.baubleSlotSelect, slot)
-            GlobalData.baubleSlotSelect = -1
+            # 判断是否能够装备
+            if itemInfo is None or CheckSlot(itemInfo, GlobalData.baubleSlotSelect):
+                self.SwitchBauble(GlobalData.baubleSlotSelect, slot)
+                GlobalData.baubleSlotSelect = -1
             return
 
         # 选择
@@ -432,7 +481,6 @@ class BaubleUiNode(EasyScreenNodeCls):
         for key in CommonConfig.SLOT_PATH_TO_NAME.keys():
             if not key.startswith("/"):
                 CommonConfig.SLOT_PATH_TO_NAME.pop(key)
-        logging.error(CommonConfig.NAME_TO_SLOT_PATH)
 
     # 饰品栏槽位点击回调
     def OnBaubleSlotClick(self, data):
@@ -479,12 +527,16 @@ class BaubleUiNode(EasyScreenNodeCls):
             if oldBaubleItem and len(oldBaubleItem) > 0:
                 # 添加玩家物品
                 Call("AddItem", {"playerId": clientApi.GetLocalPlayerId(), "slot": fromSlot, "itemDict": oldBaubleItem})
+                # 广播卸下饰品
+                BaubleUnequippedBroadcaster(CommonConfig.SLOT_PATH_TO_NAME[toSlot], oldBaubleItem)
             else:
                 # 移除玩家物品
                 Call("RemoveItem", {"playerId": clientApi.GetLocalPlayerId(), "slot": fromSlot})
             DelayRun(self.GetBagInfoAndRender)
             # 饰品栏信息
             GlobalData.baubleInfo[toSlot] = baubleItem
+            # 广播装备饰品
+            BaubleEquippedBroadcaster(CommonConfig.SLOT_PATH_TO_NAME[toSlot], baubleItem)
             # 饰品栏渲染
             self.RenderBaubleUi(toSlot, baubleItem)
 
@@ -497,24 +549,28 @@ class BaubleUiNode(EasyScreenNodeCls):
                 # 移除玩家物品
                 Call("RemoveItem", {"playerId": clientApi.GetLocalPlayerId(), "slot": toSlot})
                 needRenderItem = bagItem
+                # 广播装备饰品
+                BaubleEquippedBroadcaster(CommonConfig.SLOT_PATH_TO_NAME[fromSlot], bagItem)
             # 添加玩家物品
             Call("AddItem", {"playerId": clientApi.GetLocalPlayerId(), "slot": toSlot, "itemDict": baubleItem})
             DelayRun(self.GetBagInfoAndRender)
             # 饰品栏信息
             GlobalData.baubleInfo[fromSlot] = needRenderItem
+            # 广播卸下饰品
+            BaubleUnequippedBroadcaster(CommonConfig.SLOT_PATH_TO_NAME[fromSlot], baubleItem)
             # 饰品栏渲染
             self.RenderBaubleUi(fromSlot, needRenderItem)
 
         # 饰品栏到饰品栏
         elif isinstance(fromSlot, type("")) and isinstance(toSlot, type("")):
-            fromItem = GlobalData.baubleInfo[fromBaubleSlot]
-            toItem = GlobalData.baubleInfo.get(toBaubleSlot, {})
+            fromItem = GlobalData.baubleInfo[fromSlot]
+            toItem = GlobalData.baubleInfo.get(toSlot, {})
             # 饰品栏信息
             GlobalData.baubleInfo[fromSlot] = toItem
             GlobalData.baubleInfo[toSlot] = fromItem
             # 饰品栏渲染
-            self.renderBaubleUi(fromSlot, toItem)
-            self.renderBaubleUi(toSlot, fromItem)
+            self.RenderBaubleUi(fromSlot, toItem)
+            self.RenderBaubleUi(toSlot, fromItem)
 
         return False
 

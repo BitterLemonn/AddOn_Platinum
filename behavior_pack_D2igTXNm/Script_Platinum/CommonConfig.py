@@ -1,5 +1,14 @@
 # coding=utf-8
-# 槽位名称
+
+# 装备饰品广播事件 (请勿更改)
+BAUBLE_EQUIPPED_EVENT = "BaubleEquipped"
+BAUBLE_UNEQUIPPED_EVENT = "BaubleUnequipped"
+PLATINUM_NAMESPACE = "platinum"
+PLATINUM_BROADCAST_SERVER = "broadcasterServer"
+PLATINUM_BROADCAST_CLIENT = "broadcasterClient"
+
+
+# 槽位名称 (请勿更改)
 class BaubleEnum(object):
     HELMET = "§6栏位: §g头饰§r\n"
     NECKLACE = "§6栏位: §g项链§r\n"
