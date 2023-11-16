@@ -1,23 +1,22 @@
 # coding=utf-8
-import logging
+import loggingUtils as logging
 
 import commonConfig
-import mod.client.extraClientApi as clientApi
+import mod.server.extraServerApi as serverApi
 
 
-class BuildInBaubleClient(clientApi.GetClientSystemCls()):
+class BuildInBaubleServer(serverApi.GetServerSystemCls()):
 
     def __init__(self, namespace, name):
-        super(BuildInBaubleClient, self).__init__(namespace, name)
+        super(BuildInBaubleServer, self).__init__(namespace, name)
         self.listenEvent()
 
     def listenEvent(self):
         # 监听饰品装备事件
-        self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_CLIENT,
+        self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
                             commonConfig.BAUBLE_EQUIPPED_EVENT, self, self.onBaubleEquipped)
         # 监听饰品卸下事件
-        # 监听饰品卸下事件
-        self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_CLIENT,
+        self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
                             commonConfig.BAUBLE_UNEQUIPPED_EVENT, self, self.onBaubleUnequipped)
 
     def onBaubleEquipped(self, data):
@@ -29,6 +28,10 @@ class BuildInBaubleClient(clientApi.GetClientSystemCls()):
         bauble = data["itemDict"]
         slot = data["baubleSlot"]
 
+        if bauble["newItemName"] == "lemon_platinum:traveler_belt":
+            comp = serverApi.GetEngineCompFactory().CreateAttr(playerId)
+            comp.SetStepHeight(1.0625)
+
     def onBaubleUnequipped(self, data):
         """
         饰品卸下事件
@@ -38,3 +41,7 @@ class BuildInBaubleClient(clientApi.GetClientSystemCls()):
         playerId = data["playerId"]
         bauble = data["itemDict"]
         slot = data["baubleSlot"]
+
+        if bauble["newItemName"] == "lemon_platinum:traveler_belt":
+            comp = serverApi.GetEngineCompFactory().CreateAttr(playerId)
+            comp.SetStepHeight(0.5626)

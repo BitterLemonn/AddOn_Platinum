@@ -1,3 +1,4 @@
+# coding=utf-8
 from ..QuModLibs.Server import *
 from ..commonConfig import BaubleDict
 
@@ -40,8 +41,12 @@ def OnServerItemTryUseEvent(data):
     itemUsed = data["itemDict"]
     playerId = data["playerId"]
     if itemUsed["newItemName"] in BaubleDict.keys():
-        baubleSlot = ItemName2BaubleSlot(itemUsed)
-        Call(playerId, "EquipBauble", itemUsed, baubleSlot)
+        comp = serverApi.GetEngineCompFactory().CreateItem(playerId)
+        itemInfo = comp.GetItemBasicInfo(itemUsed["newItemName"])
+        # 不为盔甲时判断穿戴饰品
+        if itemInfo["itemType"] != "armor":
+            baubleSlot = ItemName2BaubleSlot(itemUsed)
+            Call(playerId, "EquipBauble", itemUsed, baubleSlot)
 
 
 def ItemName2BaubleSlot(itemDict):
