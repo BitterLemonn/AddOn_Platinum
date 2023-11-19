@@ -3,7 +3,7 @@
   <component name="Statistic">
     <option name="excludedDirectories">
       <list>
-        <option value="$PROJECT_DIR$/behavior_pack_D2igTXNm/Script_Platinum/QuModLibs" />
+        <option value="$PROJECT_DIR$/behavior_pack_Platinum/Script_Platinum/QuModLibs" />
       </list>
     </option>
   </component>

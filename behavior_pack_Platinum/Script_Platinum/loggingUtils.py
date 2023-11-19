@@ -22,6 +22,13 @@ def info(infoMsg):
     logging.info("====================")
 
 
+def infoLines(infoList):
+    logging.info("====================")
+    for i in infoList:
+        logging.info(i)
+    logging.info("====================")
+
+
 def warn(warnMsg):
     formattedList = []
     if len(warnMsg) <= 20:

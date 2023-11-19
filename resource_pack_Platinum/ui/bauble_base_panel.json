@@ -613,7 +613,218 @@
                         "alpha" : 0.0,
                         "keep_ratio" : false,
                         "layer" : 100,
-                        "max_size" : [ "default", 50.0 ],
+                        "max_size" : [ "default", 60.0 ],
+                        "offset" : [ 0.0, "-15.0%+0.0px" ],
+                        "priority" : 0,
+                        "propagate_alpha" : true
+                     }
+                  }
+               ],
+               "is_swallow" : true,
+               "layer" : 1,
+               "size" : [ "100.0%+0.0px", "100.0%+0.0px" ],
+               "type" : "input_panel",
+               "visible" : false
+            }
+         },
+         {
+            "mobile_input_panel" : {
+               "button_mappings" : [
+                  {
+                     "from_button_id" : "button.menu_select",
+                     "mapping_type" : "pressed",
+                     "to_button_id" : "#netease_to_button_id"
+                  }
+               ],
+               "controls" : [
+                  {
+                     "bg_dark" : {
+                        "alpha" : 0.80,
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "color" : [ 0.0, 0.0, 0.0 ],
+                        "fill" : true,
+                        "layer" : 1,
+                        "size" : [ "100.0%+0.0px", "100.0%+0.0px" ],
+                        "texture" : "textures/ui/white_duration",
+                        "type" : "image"
+                     }
+                  },
+                  {
+                     "bg_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "controls" : [
+                           {
+                              "base_stack_panel" : {
+                                 "controls" : [
+                                    {
+                                       "inventory_scroll_view@common.scrolling_panel" : {
+                                          "$background_nine_slice_buttom" : 0,
+                                          "$background_nine_slice_left" : 0,
+                                          "$background_nine_slice_right" : 0,
+                                          "$background_nine_slice_top" : 0,
+                                          "$background_nineslice_size" : [ 0, 0, 0, 0 ],
+                                          "$box_nine_slice_buttom" : 0,
+                                          "$box_nine_slice_left" : 0,
+                                          "$box_nine_slice_right" : 0,
+                                          "$box_nine_slice_top" : 0,
+                                          "$box_nineslice_size" : [ 0, 0, 0, 0 ],
+                                          "$is_background_nine_slice" : false,
+                                          "$is_box_nine_slice" : false,
+                                          "$is_track_nine_slice" : false,
+                                          "$scroll_background_image_control" : "netease_editor_template_namespace.scroll_background_image",
+                                          "$scroll_background_texture" : "textures/ui/ScrollRail",
+                                          "$scroll_box_mouse_image_control" : "netease_editor_template_namespace.scroll_box_image",
+                                          "$scroll_box_texture" : "",
+                                          "$scroll_box_touch_image_control" : "netease_editor_template_namespace.scroll_box_image",
+                                          "$scroll_track_image_control" : "netease_editor_template_namespace.scroll_track_image",
+                                          "$scroll_track_texture" : "",
+                                          "$scrolling_content" : "bauble_base_panel.mobile_inventory_grid",
+                                          "$show_background" : true,
+                                          "$track_nine_slice_buttom" : 0,
+                                          "$track_nine_slice_left" : 0,
+                                          "$track_nine_slice_right" : 0,
+                                          "$track_nine_slice_top" : 0,
+                                          "$track_nineslice_size" : [ 0, 0, 0, 0 ],
+                                          "anchor_from" : "left_middle",
+                                          "clip_offset" : [ 20.0, 0.0 ],
+                                          "layer" : 9,
+                                          "offset" : [ "50.0%+10.0px", 0.0 ],
+                                          "size" : [ "45.0%+0.0px", "100.0%+0.0px" ]
+                                       }
+                                    },
+                                    {
+                                       "info_stack_panel" : {
+                                          "controls" : [
+                                             {
+                                                "info_upper_panel" : {
+                                                   "controls" : [
+                                                      {
+                                                         "close_btn@common.button" : {
+                                                            "$control_alpha" : 1.0,
+                                                            "$default_texture" : "textures/ui/close_button_default",
+                                                            "$hover_texture" : "textures/ui/close_button_hover",
+                                                            "$is_new_nine_slice" : false,
+                                                            "$label_layer" : 3,
+                                                            "$nine_slice_buttom" : 0,
+                                                            "$nine_slice_left" : 0,
+                                                            "$nine_slice_right" : 0,
+                                                            "$nine_slice_top" : 0,
+                                                            "$nineslice_size" : [ 0, 0, 0, 0 ],
+                                                            "$pressed_button_name" : "%netease_editor_template_namespace.click",
+                                                            "$pressed_texture" : "textures/ui/close_button_pressed",
+                                                            "$texture_layer" : 2,
+                                                            "anchor_from" : "top_right",
+                                                            "bindings" : [
+                                                               {
+                                                                  "binding_collection_name" : "",
+                                                                  "binding_condition" : "always_when_visible",
+                                                                  "binding_type" : "collection_details"
+                                                               }
+                                                            ],
+                                                            "button_mappings" : [],
+                                                            "controls" : [
+                                                               {
+                                                                  "default@netease_editor_template_namespace.default" : {}
+                                                               },
+                                                               {
+                                                                  "hover@netease_editor_template_namespace.hover" : {}
+                                                               },
+                                                               {
+                                                                  "pressed@netease_editor_template_namespace.pressed" : {}
+                                                               },
+                                                               {
+                                                                  "button_label@netease_editor_template_namespace.button_label" : {
+                                                                     "color" : [ 1, 1, 1 ],
+                                                                     "font_scale_factor" : 1.0,
+                                                                     "font_size" : "large",
+                                                                     "offset" : [ 0, 0 ],
+                                                                     "text" : ""
+                                                                  }
+                                                               }
+                                                            ],
+                                                            "default_control" : "default",
+                                                            "hover_control" : "hover",
+                                                            "is_handle_button_move_event" : true,
+                                                            "layer" : 20,
+                                                            "offset" : [ -15.0, 15.0 ],
+                                                            "pressed_control" : "pressed",
+                                                            "size" : [ 30.0, 30.0 ],
+                                                            "type" : "button"
+                                                         }
+                                                      },
+                                                      {
+                                                         "paper_doll_background" : {
+                                                            "clip_direction" : "left",
+                                                            "clip_ratio" : 0.0,
+                                                            "keep_ratio" : false,
+                                                            "nineslice_size" : [ 1.0, 1.0, 1.0, 1.0 ],
+                                                            "offset" : [ "1.5%+0.0px", 0.0 ],
+                                                            "size" : [ "95.0%+0.0px", "100.0%+0.0px" ],
+                                                            "texture" : "textures/ui/cell_black",
+                                                            "type" : "image"
+                                                         }
+                                                      },
+                                                      {
+                                                         "netease_paper_doll" : {
+                                                            "layer" : 10,
+                                                            "offset" : [ "1.5%+0.0px", "-15.0%+0.0px" ],
+                                                            "renderer" : "netease_paper_doll_renderer",
+                                                            "rotation" : "gesture_x",
+                                                            "screen_scale" : 1.0,
+                                                            "size" : [ "95.0%+0.0px", "80.0%+0.0px" ],
+                                                            "type" : "custom"
+                                                         }
+                                                      }
+                                                   ],
+                                                   "size" : [ "100.0%+0.0px", "55.0%+0.0px" ],
+                                                   "type" : "panel"
+                                                }
+                                             },
+                                             {
+                                                "bauble_panel" : {
+                                                   "anchor_from" : "left_middle",
+                                                   "controls" : [
+                                                      {
+                                                         "bauble_stack_panel@bauble_base_panel.mobile_bauble_panel" : {
+                                                            "anchor_from" : "bottom_middle",
+                                                            "layer" : 31,
+                                                            "offset" : [ 0.0, -37.50 ]
+                                                         }
+                                                      }
+                                                   ],
+                                                   "layer" : 30,
+                                                   "size" : [ "100.0%+0.0px", "45.0%+0.0px" ],
+                                                   "type" : "panel"
+                                                }
+                                             }
+                                          ],
+                                          "layer" : 5,
+                                          "size" : [ "55.0%+0.0px", "100.0%+0.0px" ],
+                                          "type" : "stack_panel"
+                                       }
+                                    }
+                                 ],
+                                 "layer" : 1,
+                                 "orientation" : "horizontal",
+                                 "size" : [ "97.0%+0.0px", "94.0%+0.0px" ],
+                                 "type" : "stack_panel"
+                              }
+                           }
+                        ],
+                        "layer" : 2,
+                        "size" : [ "80.0%+0.0px", "85.0%+0.0px" ],
+                        "texture" : "textures/ui/background_panel",
+                        "type" : "image"
+                     }
+                  },
+                  {
+                     "item_info_bg@bauble_base_panel.item_info" : {
+                        "alpha" : 0.0,
+                        "keep_ratio" : false,
+                        "layer" : 100,
+                        "max_size" : [ "default", 60.0 ],
                         "offset" : [ 0.0, "-15.0%+0.0px" ],
                         "priority" : 0,
                         "propagate_alpha" : true
@@ -629,6 +840,305 @@
          }
       ],
       "type" : "screen"
+   },
+   "mobile_bauble_panel" : {
+      "controls" : [
+         {
+            "bauble_one_stack_panel" : {
+               "controls" : [
+                  {
+                     "bauble_helmet_panel" : {
+                        "controls" : [
+                           {
+                              "bauble_helmet_btn@bauble_base_panel.slot_btn_big" : {}
+                           },
+                           {
+                              "bauble_helmet_img" : {
+                                 "clip_direction" : "left",
+                                 "clip_ratio" : 0.0,
+                                 "layer" : 10,
+                                 "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+                                 "texture" : "textures/ui/bauble_halmet_slot",
+                                 "type" : "image"
+                              }
+                           }
+                        ],
+                        "size" : [ 25.0, 25.0 ],
+                        "type" : "panel"
+                     }
+                  },
+                  {
+                     "bauble_necklace_panel" : {
+                        "controls" : [
+                           {
+                              "bauble_necklace_btn@bauble_base_panel.slot_btn_big" : {}
+                           },
+                           {
+                              "bauble_necklace_img" : {
+                                 "clip_direction" : "left",
+                                 "clip_ratio" : 0.0,
+                                 "layer" : 10,
+                                 "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+                                 "texture" : "textures/ui/bauble_necklace_slot",
+                                 "type" : "image"
+                              }
+                           }
+                        ],
+                        "size" : [ 25.0, 25.0 ],
+                        "type" : "panel"
+                     }
+                  },
+                  {
+                     "bauble_back_panel" : {
+                        "controls" : [
+                           {
+                              "bauble_back_btn@bauble_base_panel.slot_btn_big" : {}
+                           },
+                           {
+                              "bauble_back_img" : {
+                                 "clip_direction" : "left",
+                                 "clip_ratio" : 0.0,
+                                 "layer" : 10,
+                                 "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+                                 "texture" : "textures/ui/bauble_back_slot",
+                                 "type" : "image"
+                              }
+                           }
+                        ],
+                        "size" : [ 25.0, 25.0 ],
+                        "type" : "panel"
+                     }
+                  },
+                  {
+                     "bauble_armor_panel" : {
+                        "controls" : [
+                           {
+                              "bauble_armor_btn@bauble_base_panel.slot_btn_big" : {}
+                           },
+                           {
+                              "bauble_armor_img" : {
+                                 "clip_direction" : "left",
+                                 "clip_ratio" : 0.0,
+                                 "layer" : 10,
+                                 "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+                                 "texture" : "textures/ui/bauble_armor_slot",
+                                 "type" : "image"
+                              }
+                           }
+                        ],
+                        "size" : [ 25.0, 25.0 ],
+                        "type" : "panel"
+                     }
+                  }
+               ],
+               "layer" : 1,
+               "orientation" : "horizontal",
+               "size" : [ "100.0%c+0.0px", "100.0%cm+0.0px" ],
+               "type" : "stack_panel"
+            }
+         },
+         {
+            "bauble_two_stack_panel" : {
+               "controls" : [
+                  {
+                     "bauble_hand_panel_1" : {
+                        "controls" : [
+                           {
+                              "bauble_hand_btn@bauble_base_panel.slot_btn_big" : {}
+                           },
+                           {
+                              "bauble_hand_img" : {
+                                 "clip_direction" : "left",
+                                 "clip_ratio" : 0.0,
+                                 "layer" : 10,
+                                 "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+                                 "texture" : "textures/ui/bauble_hand_slot",
+                                 "type" : "image"
+                              }
+                           }
+                        ],
+                        "size" : [ 25.0, 25.0 ],
+                        "type" : "panel"
+                     }
+                  },
+                  {
+                     "bauble_hand_panel_2" : {
+                        "controls" : [
+                           {
+                              "bauble_hand_btn@bauble_base_panel.slot_btn_big" : {}
+                           },
+                           {
+                              "bauble_hand_img" : {
+                                 "clip_direction" : "left",
+                                 "clip_ratio" : 0.0,
+                                 "layer" : 10,
+                                 "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+                                 "texture" : "textures/ui/bauble_hand_slot",
+                                 "type" : "image"
+                              }
+                           }
+                        ],
+                        "size" : [ 25.0, 25.0 ],
+                        "type" : "panel"
+                     }
+                  },
+                  {
+                     "bauble_belt_panel" : {
+                        "controls" : [
+                           {
+                              "bauble_belt_btn@bauble_base_panel.slot_btn_big" : {}
+                           },
+                           {
+                              "bauble_belt_img" : {
+                                 "clip_direction" : "left",
+                                 "clip_ratio" : 0.0,
+                                 "layer" : 10,
+                                 "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+                                 "texture" : "textures/ui/bauble_belt_slot",
+                                 "type" : "image"
+                              }
+                           }
+                        ],
+                        "size" : [ 25.0, 25.0 ],
+                        "type" : "panel"
+                     }
+                  },
+                  {
+                     "bauble_shoes_panel" : {
+                        "controls" : [
+                           {
+                              "bauble_shoes_btn@bauble_base_panel.slot_btn_big" : {}
+                           },
+                           {
+                              "bauble_shoes_img" : {
+                                 "clip_direction" : "left",
+                                 "clip_ratio" : 0.0,
+                                 "layer" : 10,
+                                 "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+                                 "texture" : "textures/ui/bauble_shoes_slot",
+                                 "type" : "image"
+                              }
+                           }
+                        ],
+                        "size" : [ 25.0, 25.0 ],
+                        "type" : "panel"
+                     }
+                  }
+               ],
+               "layer" : 1,
+               "orientation" : "horizontal",
+               "size" : [ "100.0%c+0.0px", "100.0%cm+0.0px" ],
+               "type" : "stack_panel"
+            }
+         },
+         {
+            "bauble_three_stack_panel" : {
+               "controls" : [
+                  {
+                     "bauble_other_panel_1" : {
+                        "controls" : [
+                           {
+                              "bauble_other_btn@bauble_base_panel.slot_btn_big" : {}
+                           },
+                           {
+                              "bauble_other_img" : {
+                                 "clip_direction" : "left",
+                                 "clip_ratio" : 0.0,
+                                 "layer" : 10,
+                                 "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+                                 "texture" : "textures/ui/bauble_other_slot",
+                                 "type" : "image"
+                              }
+                           }
+                        ],
+                        "size" : [ 25.0, 25.0 ],
+                        "type" : "panel"
+                     }
+                  },
+                  {
+                     "bauble_other_panel_2" : {
+                        "controls" : [
+                           {
+                              "bauble_other_btn@bauble_base_panel.slot_btn_big" : {}
+                           },
+                           {
+                              "bauble_other_img" : {
+                                 "clip_direction" : "left",
+                                 "clip_ratio" : 0.0,
+                                 "layer" : 10,
+                                 "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+                                 "texture" : "textures/ui/bauble_other_slot",
+                                 "type" : "image"
+                              }
+                           }
+                        ],
+                        "size" : [ 25.0, 25.0 ],
+                        "type" : "panel"
+                     }
+                  },
+                  {
+                     "bauble_other_panel_3" : {
+                        "controls" : [
+                           {
+                              "bauble_other_btn@bauble_base_panel.slot_btn_big" : {}
+                           },
+                           {
+                              "bauble_other_img" : {
+                                 "clip_direction" : "left",
+                                 "clip_ratio" : 0.0,
+                                 "layer" : 10,
+                                 "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+                                 "texture" : "textures/ui/bauble_other_slot",
+                                 "type" : "image"
+                              }
+                           }
+                        ],
+                        "size" : [ 25.0, 25.0 ],
+                        "type" : "panel"
+                     }
+                  },
+                  {
+                     "bauble_other_panel_4" : {
+                        "controls" : [
+                           {
+                              "bauble_other_btn@bauble_base_panel.slot_btn_big" : {}
+                           },
+                           {
+                              "bauble_other_img" : {
+                                 "clip_direction" : "left",
+                                 "clip_ratio" : 0.0,
+                                 "layer" : 10,
+                                 "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+                                 "texture" : "textures/ui/bauble_other_slot",
+                                 "type" : "image"
+                              }
+                           }
+                        ],
+                        "size" : [ 25.0, 25.0 ],
+                        "type" : "panel"
+                     }
+                  }
+               ],
+               "layer" : 1,
+               "orientation" : "horizontal",
+               "size" : [ "100.0%c+0.0px", "100.0%cm+0.0px" ],
+               "type" : "stack_panel"
+            }
+         }
+      ],
+      "layer" : 1,
+      "size" : [ "100.0%cm+0.0px", "100.0%c+0.0px" ],
+      "type" : "stack_panel"
+   },
+   "mobile_inventory_grid" : {
+      "collection_name" : "mobile_inventory_group",
+      "grid_dimensions" : [ 2, 2 ],
+      "grid_item_template" : "bauble_base_panel.slot_btn_big",
+      "grid_rescaling_type" : "horizontal",
+      "layer" : 1,
+      "maximum_grid_items" : 36,
+      "size" : [ "100.0%+0.0px", "default" ],
+      "type" : "grid"
    },
    "namespace" : "bauble_base_panel",
    "slot_btn@common.button" : {
@@ -736,6 +1246,115 @@
       "is_handle_button_move_event" : true,
       "pressed_control" : "pressed",
       "size" : [ 20.0, 20.0 ],
+      "sound_pitch" : 0.0,
+      "sound_volume" : 0.0,
+      "type" : "button"
+   },
+   "slot_btn_big@common.button" : {
+      "$control_alpha" : 1.0,
+      "$default_texture" : "textures/ui/cell_image",
+      "$hover_texture" : "textures/ui/sidebar_icons/side_drawer_button_hover_focused",
+      "$is_new_nine_slice" : false,
+      "$label_layer" : 3,
+      "$nine_slice_buttom" : 0,
+      "$nine_slice_left" : 0,
+      "$nine_slice_right" : 0,
+      "$nine_slice_top" : 0,
+      "$nineslice_size" : [ 0, 0, 0, 0 ],
+      "$pressed_button_name" : "%netease_editor_template_namespace.click",
+      "$pressed_texture" : "textures/ui/sidebar_icons/side_drawer_button_hover_focused",
+      "$texture_layer" : 2,
+      "bindings" : [
+         {
+            "binding_collection_name" : "",
+            "binding_condition" : "always_when_visible",
+            "binding_type" : "collection_details"
+         }
+      ],
+      "button_mappings" : [],
+      "controls" : [
+         {
+            "default@netease_editor_template_namespace.default" : {}
+         },
+         {
+            "hover@netease_editor_template_namespace.hover" : {}
+         },
+         {
+            "pressed@netease_editor_template_namespace.pressed" : {}
+         },
+         {
+            "item_selected_img" : {
+               "clip_direction" : "left",
+               "clip_ratio" : 0.0,
+               "layer" : 7,
+               "size" : [ "100.0%+0.0px", "100.0%+0.0px" ],
+               "texture" : "textures/ui/pocket_ui_highlight_selected_slot",
+               "type" : "image",
+               "visible" : false
+            }
+         },
+         {
+            "item_renderer" : {
+               "controls" : [
+                  {
+                     "durability_base_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "color" : [ 0.0, 0.06274509803921569, 0.0 ],
+                        "keep_ratio" : false,
+                        "layer" : 1,
+                        "offset" : [ 0.0, "30.0%+0.0px" ],
+                        "size" : [ "80.0%+0.0px", 1.50 ],
+                        "texture" : "textures/ui/white_duration",
+                        "type" : "image",
+                        "visible" : false
+                     }
+                  },
+                  {
+                     "durability_img" : {
+                        "clip_direction" : "left",
+                        "clip_ratio" : 0.0,
+                        "color" : [ 0.0, 1.0, 0.0 ],
+                        "controls" : [],
+                        "keep_ratio" : false,
+                        "layer" : 2,
+                        "offset" : [ 0.0, "30.0%+0.0px" ],
+                        "size" : [ "80.0%+0.0px", 1.50 ],
+                        "texture" : "textures/ui/white_duration",
+                        "type" : "image",
+                        "visible" : false
+                     }
+                  },
+                  {
+                     "item_count" : {
+                        "anchor_from" : "bottom_middle",
+                        "font_type" : "unicode",
+                        "layer" : 3,
+                        "offset" : [ 0.0, -3.0 ],
+                        "size" : [ 18.0, 10.0 ],
+                        "text" : "64",
+                        "text_alignment" : "right",
+                        "type" : "label",
+                        "visible" : false
+                     }
+                  }
+               ],
+               "layer" : 8,
+               "property_bag" : {
+                  "#item_id_aux" : 131072
+               },
+               "renderer" : "inventory_item_renderer",
+               "size" : [ "80.0%+0.0px", "80.0%+0.0px" ],
+               "type" : "custom",
+               "visible" : false
+            }
+         }
+      ],
+      "default_control" : "default",
+      "hover_control" : "hover",
+      "is_handle_button_move_event" : true,
+      "pressed_control" : "pressed",
+      "size" : [ 25.0, 25.0 ],
       "sound_pitch" : 0.0,
       "sound_volume" : 0.0,
       "type" : "button"

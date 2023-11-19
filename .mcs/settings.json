@@ -2,13 +2,13 @@
     "Arena.Component.Namespace": "lemon_platinum",
     "FirstTabSetting": 0,
     "ShortItemSettings": [
-        "resource_pack_VfGuyCTi\\ui",
-        "behavior_pack_D2igTXNm\\Presets",
-        "behavior_pack_D2igTXNm\\Parts",
-        "behavior_pack_D2igTXNm\\BoxData",
-        "resource_pack_VfGuyCTi\\effects",
-        "resource_pack_VfGuyCTi\\models",
-        "resource_pack_VfGuyCTi\\textures"
+        "resource_pack_Platinum\\ui",
+        "behavior_pack_Platinum\\Presets",
+        "behavior_pack_Platinum\\Parts",
+        "behavior_pack_Platinum\\BoxData",
+        "resource_pack_Platinum\\effects",
+        "resource_pack_Platinum\\models",
+        "resource_pack_Platinum\\textures"
     ],
     "Uluru.autoLayerDict": {
         "bauble_base_panel": false

@@ -10,7 +10,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         super(BroadcasterServer, self).__init__(namespace, name)
         # 监听饰品注册事件
         self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
-                            commonConfig.BAUBLE_REGISTER_EVENT, self, self.onBaubleRegister)
+                            commonConfig.BAUBLE_REGISTER_EVENT, self, self.BaubleRegister)
 
     def BaubleRegister(self, data):
         """
@@ -38,14 +38,13 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
             logging.error("铂: 饰品 {} 插槽 {} 不存在,请检查饰品槽位是否正确".format(baubleName, baubleSlot))
 
 
-server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
-
-
 @AllowCall
 def BaubleEquipped(data):
+    server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
     server.BroadcastEvent(commonConfig.BAUBLE_EQUIPPED_EVENT, data)
 
 
 @AllowCall
 def BaubleUnequipped(data):
+    server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
     server.BroadcastEvent(commonConfig.BAUBLE_UNEQUIPPED_EVENT, data)

@@ -29,7 +29,7 @@
                 "bauble_base_panel.bauble_stack_panel": [
                     "/netease_prefab_screen",
                     "/netease_prefab_screen/bauble_stack_panel",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_necklace_panel"
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_hand_panel_2"
                 ],
                 "bauble_base_panel.item_info": [
                     "/netease_prefab_screen",
@@ -38,12 +38,42 @@
                 "bauble_base_panel.item_renderer": [
                     "/netease_prefab_screen"
                 ],
-                "bauble_base_panel.slot_btn": [
+                "bauble_base_panel.mobile_bauble_panel": [
                     "/netease_prefab_screen",
-                    "/netease_prefab_screen/slot_btn"
+                    "/netease_prefab_screen/mobile_bauble_panel",
+                    "/netease_prefab_screen/mobile_bauble_panel/bauble_one_stack_panel",
+                    "/netease_prefab_screen/mobile_bauble_panel/bauble_two_stack_panel",
+                    "/netease_prefab_screen/mobile_bauble_panel/bauble_three_stack_panel"
+                ],
+                "bauble_base_panel.mobile_inventory_grid": [
+                    "/netease_prefab_screen"
+                ],
+                "bauble_base_panel.slot_btn": [
+                    "/netease_prefab_screen"
+                ],
+                "bauble_base_panel.slot_btn_big": [
+                    "/netease_prefab_screen"
                 ]
             },
             "screen": {
+                "D:\\MCNetease\\MinecraftProject\\Platinum\\resource_pack_Platinum\\ui\\bauble_base_panel.json": [
+                    "/main",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view",
+                    "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view/stack_panel",
+                    "/main/mobile_input_panel",
+                    "/main/mobile_input_panel/bg_img/base_stack_panel/inventory_scroll_view/scroll_mouse",
+                    "/main/mobile_input_panel/bg_img/base_stack_panel/inventory_scroll_view/scroll_mouse/scroll_view",
+                    "/main/mobile_input_panel/bg_img/base_stack_panel/inventory_scroll_view/scroll_mouse/scroll_view/stack_panel",
+                    "/main/mobile_input_panel/bg_img/base_stack_panel/inventory_scroll_view/scroll_mouse/scroll_view/stack_panel/background_and_viewport",
+                    "/main/mobile_input_panel/bg_img/base_stack_panel/inventory_scroll_view/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port",
+                    "/main/mobile_input_panel/bg_img/base_stack_panel/info_stack_panel/info_upper_panel",
+                    "/main/mobile_input_panel/bg_img/base_stack_panel/info_stack_panel/bauble_panel/bauble_stack_panel",
+                    "/main/mobile_input_panel/bg_img/base_stack_panel/info_stack_panel/bauble_panel/bauble_stack_panel/bauble_one_stack_panel",
+                    "/main/mobile_input_panel/bg_img/base_stack_panel/info_stack_panel/bauble_panel/bauble_stack_panel/bauble_two_stack_panel",
+                    "/main/mobile_input_panel/item_info_bg"
+                ],
                 "D:\\MCNetease\\MinecraftProject\\Platinum\\resource_pack_VfGuyCTi\\ui\\bauble_base_panel.json": [
                     "/main",
                     "/main/swallow_input_panel/bg_img",
