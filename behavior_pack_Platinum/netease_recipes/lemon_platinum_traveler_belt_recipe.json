@@ -1,0 +1,31 @@
+{
+    "format_version": "1.12",
+    "minecraft:recipe_shaped": {
+        "description": {
+            "identifier": "lemon_platinum:traveler_belt_recipe"
+        },
+        "key": {
+            "A": {
+                "data": 0,
+                "item": "minecraft:iron_ingot"
+            },
+            "O": {
+                "data": 0,
+                "item": "minecraft:emerald"
+            }
+        },
+        "pattern": [
+            " AO",
+            "A A",
+            " A "
+        ],
+        "result": {
+            "count": 1,
+            "data": 0,
+            "item": "lemon_platinum:traveler_belt"
+        },
+        "tags": [
+            "crafting_table"
+        ]
+    }
+}

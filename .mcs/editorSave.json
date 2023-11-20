@@ -7,6 +7,10 @@
             "2_lemon_platinum:traveler_belt": {
                 "createTime": 1699954050.8959255,
                 "modifyTime": 1699954096.9026508
+            },
+            "8_lemon_platinum:traveler_belt_recipe": {
+                "createTime": 1700403337.6307497,
+                "modifyTime": 1700403394.7125916
             }
         },
         "PlayerEffectSetting": {
