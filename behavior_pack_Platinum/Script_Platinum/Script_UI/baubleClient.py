@@ -5,6 +5,7 @@ from .. import loggingUtils as logging
 from ..commonConfig import BaubleDict
 from ..commonConfig import BaubleEnum
 import re
+import time
 
 import mod.client.ui.screenNode as ScreenNode
 
@@ -62,10 +63,7 @@ class BaubleConfig(object):
 
 # 全局变量
 class GlobalData(object):
-    try:
-        uiNode = ScreenNode.ScreenNode()
-    except:
-        uiNode = None
+    uiNode = None  # type: ScreenNode
 
     uiProfile = clientApi.GetEngineCompFactory().CreatePlayerView(levelId).GetUIProfile()
 
@@ -285,9 +283,9 @@ def CalculateDurabilityRatio(itemDict):
 
 # 延迟执行函数
 @EasyThread.IsThread
-def DelayRun(func, delayTime=0.1, *args):
-    comp = clientApi.GetEngineCompFactory().CreateGame(levelId)
-    comp.AddTimer(delayTime, func, *args)
+def DelayRun(func, delayTime=0.05, *args):
+    time.sleep(delayTime)
+    EasyThread.NextTick(func, args)
 
 
 # 玩家右键装备饰品
@@ -522,7 +520,8 @@ class BaubleUiNode(EasyScreenNodeCls):
                 itemBtn = self.GetBaseUIControl(bagGridChild).asButton()
                 itemBtn.AddTouchEventParams({"isSwallow": True})
                 itemBtn.SetButtonTouchUpCallback(self.ItemBtnCallback)
-                RenderBagUi(bagGridChild, itemDict)
+
+                DelayRun(RenderBagUi, 0.1, bagGridChild, itemDict)
 
     # 物品栏点击回调
     def ItemBtnCallback(self, data):
@@ -826,3 +825,30 @@ def CheckSlot(itemDict, slotPath):
             return True
 
     return False
+
+
+# 玩家死亡事件
+@AllowCall
+def OnPlayerDie(keepInv, pos, dimensionId):
+    try:
+        if GlobalData.uiProfile == 0:
+            GlobalData.uiNode.OnClassicCloseBtnClick()
+        else:
+            GlobalData.uiNode.OnPocketCloseBtnClick()
+    except:
+        logging.error("铂: 关闭饰品栏失败!!! 饰品栏尚未初始化")
+
+    if not keepInv:
+        # 广播卸下饰品
+        for slotName, bauble in GlobalData.baubleInfo.items():
+            if len(bauble) > 0:
+                BaubleUnequippedBroadcaster(BaubleConfig.SLOT_TO_DEF[slotName], bauble)
+                Call("SpawnItem", bauble, pos, dimensionId)
+        # 清空饰品栏
+        GlobalData.baubleInfo = {}
+        # 清空物品栏
+        GlobalData.bagInfo = {}
+        # 重置临时变量
+        GlobalData.slotSelect = -1
+        GlobalData.baubleSlotSelect = -1
+        GlobalData.itemInfoAlpha = 0.0

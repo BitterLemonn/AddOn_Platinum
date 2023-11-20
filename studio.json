@@ -1,53 +1,45 @@
 {
-    "Account": "yuchu_liu@126.com",
-    "AssertCacheDir": "D:\\MCStudioDownload\\EngineAssert",
-    "BlockNums": [
-        0,
-        0
-    ],
-    "BornPoint": [
-        0,
-        0,
-        0
-    ],
-    "CanPublishResourceComponent": true,
-    "CodeEnable": false,
-    "CreateNew": true,
-    "CreateVersion": "2.8.0.459165",
-    "DCWebUrl": "https://x19apigatewayexpr.nie.netease.com",
-    "EditAddOnPaths": [
-
-    ],
-    "EditLogFilePath": "D:\\MCStudioDownload\\work\\editor\\edit.log",
-    "EditMaterialPaths": [
-
-    ],
-    "EditName": "Platinum",
-    "EditType": 4,
-    "EditVersion": "2.9.0.514461",
-    "EditorResourcePackPath": "D:\\MCNetease\\MCStudio\\data\\inner_res",
-    "ElkUrl": "https://x19mclexpr.nie.netease.com/client-log",
-    "GameType": 1,
-    "Id": "f718abe5973a42659f33c2b88bd4aa30",
-    "IsMap": false,
-    "NewEditCount": 23,
-    "OldComponents": [
-
-    ],
-    "OldEditCount": 0,
-    "ResourceIds": [
-
-    ],
-    "SaveBackAddOnPath": "D:\\MCNetease\\MinecraftProject\\Platinum",
-    "SaveBackMapPath": null,
-    "Seed": "",
-    "ServerName": "EXPR",
-    "ShowGpuDriverTips": false,
-    "ShowGuide": false,
-    "Source": "import",
-    "StudioPort": 10608,
-    "StudioTempPath": "D:\\MCStudioDownload\\temp\\editorTemp",
-    "UserId": "45217",
-    "UserName": "Reinhart",
-    "WorldType": 1
+  "Source": "import",
+  "CreateVersion": "2.8.0.459165",
+  "EditVersion": "2.9.0.514461",
+  "OldEditCount": 0,
+  "NewEditCount": 24,
+  "OldComponents": [],
+  "Account": "",
+  "UserName": "",
+  "UserId": "",
+  "Id": "f718abe5973a42659f33c2b88bd4aa30",
+  "EditType": 2,
+  "IsMap": false,
+  "CreateNew": true,
+  "CodeEnable": false,
+  "CanPublishResourceComponent": true,
+  "EditName": "Platinum",
+  "GameType": 1,
+  "WorldType": 1,
+  "Seed": "",
+  "BlockNums": [
+    0,
+    0
+  ],
+  "BornPoint": [
+    0,
+    0,
+    0
+  ],
+  "SaveBackMapPath": "",
+  "SaveBackAddOnPath": "",
+  "ResourceIds": [],
+  "EditAddOnPaths": [],
+  "EditMaterialPaths": [],
+  "EditLogFilePath": "",
+  "ServerName": "",
+  "StudioPort": 10084,
+  "DCWebUrl": "https://x19apigatewayexpr.nie.netease.com",
+  "ShowGuide": false,
+  "AssertCacheDir": "",
+  "ElkUrl": "",
+  "ShowGpuDriverTips": false,
+  "StudioTempPath": "",
+  "EditorResourcePackPath": ""
 }

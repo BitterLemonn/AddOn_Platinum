@@ -53,3 +53,20 @@ def ItemName2BaubleSlot(itemDict):
     itemName = itemDict["newItemName"]
     if BaubleDict.get(itemName, None):
         return BaubleDict[itemName] if isinstance(BaubleDict[itemName], type("")) else BaubleDict[itemName][0]
+
+
+@Listen(Events.PlayerDieEvent)
+def OnPlayerDieEvent(data):
+    playerId = data["id"]
+    pos = Entity(playerId).FootPos
+    dimensionId = Entity(playerId).Dm
+    comp = serverApi.GetEngineCompFactory().CreateGame(levelId)
+    gameRule = comp.GetGameRulesInfoServer()
+    keepInv = gameRule["cheat_info"]["keep_inventory"]
+    Call(playerId, "OnPlayerDie", keepInv, pos, dimensionId)
+
+
+@AllowCall
+def SpawnItem(itemDict, pos, dimensionId):
+    comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
+    comp.SpawnItemToLevel(itemDict, dimensionId, pos)
