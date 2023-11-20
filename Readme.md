@@ -6,15 +6,28 @@
 
 
 
-### 二、基础配置文件介绍
+
+### 二、UI展示
+
+<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202311201724656.png" style="zoom:65%;"></center>
+
+<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202311201724476.png" style="zoom:65%;"></center>
+
+<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202311201724358.png" style="zoom:65%;"></center>
+
+<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202311201724955.png" style="zoom:65%;"></center>
+
+
+### 三、基础配置文件介绍
 
 　　[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)内存储了所有使用到的变量以及常量，理论上开发者只需要了解其中的变量的作用即可轻松使用本组件。
 
-　　其中定义了组件所使用到的事件名称以及所使用到的SystemName和NameSpace。BaubleEnum类中定义了饰品栏的槽位以及对应的信息。BaubleDict字典中定义了组件将会使用到的饰品信息，可供开发者直接将饰品信息注册到组件当中。
+　　其中定义了组件所使用到的事件名称以及所使用到的SystemName和NameSpace。BaubleEnum类中定义了饰品栏的槽位以及对应的信息。BaubleDict字典中定义了组件将会使用到的饰品信息。
 
 
 
-### 三、饰品定义的限制
+
+### 四、饰品定义的限制
 
 　　**由于组件实现方式的特殊，饰品有以下限制：**
 
@@ -26,15 +39,16 @@
 
 
 
-### 四、使用方法
+### 五、使用方法
 
 #### 1. 饰品注册
 
 ##### a. 作为内容库直接导入开发项目
 
-　　当作为内容库直接导入开发项目时，开发者可以直接将饰品信息填写至[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)中的**BaubleDict**字典当中。支持的格式如下：
+　　当作为内容库直接导入开发项目时，开发者仅需将[脚本文件](behavior_pack_Platinum/Script_Platinum)复制到自己的开发项目的behavior_pack当中即可, 注册饰品推荐使用服务端发送注册时间的方法注册(见五.1.b)。虽然可以通过直接更改[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)中的**BaubleDict**字典达到注册的目的，**但是不建议使用此方式注册饰品**，可能会造成无法预料的错误。
 
 ```py
+# BaubleDict注册格式如下
 "命名空间:物品名称" : 槽位(**BaubleEnum**中的常量)
 "命名空间:物品名称" : [槽位]
 "命名空间:物品名称" : [槽位, 自定义提示(customTips)]
@@ -60,7 +74,7 @@ class BaubleRegiste(serverApi.GetServerSystemCls()):
         super(BaubleRegiste, self).__init__(namespace, name)
         self.listenEvent()
     # 监听mod加载完成事件
-    def listenEvent():
+    def listenEvent(self):
         self.ListenForEvent(serverApi.GetEngineNamespace(), serverApi.GetEngineSystemName(),
             'ClientLoadAddonsFinishServerEvent', self, self.onClientLoadAddonsFinishServerEvent)
     # 对应的回调函数
@@ -102,12 +116,12 @@ self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROAD
 
 
 
-### 五、示例代码
+### 六、示例代码
 
 　　组件内还内置了一个腰带饰品【旅行者腰带】[服务端代码](behavior_pack_Platinum/Script_Platinum/buildInBaubleServer.py)、[客户端代码](behavior_pack_Platinum/Script_Platinum/buildInBaubleClient.py) 中详细的说明了如何进行饰品穿脱的监听以及对应功能的实现。实现了一个可以提升玩家跨越高度的饰品。
 
 
 
-### 六、后续开发
+### 七、后续开发
 
-　　因为本组件旨在完成一个便于联动的饰品栏模组，有任何的接口需求也可以联系我 QQ：873811906，尽量满足各位开发者大大的需求。但是本人也只是一个组件小白，所以需求不一定能够满足，感谢各位大佬的指点以及使用~
+　　因为本组件旨在完成一个便于联动的饰品栏模组，有任何的接口需求也可以联系我 QQ：873811906，或加入开发者交流群：575858232，尽量满足各位开发者大大的需求。但是本人也只是一个组件小白，所以需求不一定能够满足，感谢各位大佬的指点以及使用~

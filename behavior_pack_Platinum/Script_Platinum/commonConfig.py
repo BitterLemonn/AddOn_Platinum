@@ -3,21 +3,25 @@
 """
 在Script_Platinum外使用时
 可以将以下参数(除BaubleDict以外)复制到自己的Script目录下
-配置饰品仍需修改此处的BaubleDict
+配置饰品请通过服务端发送BaubleRegister事件注册饰品
 """
 
-# 装备饰品广播事件 (请勿更改)
+# 装备饰品广播事件 (请勿更改!!)
 BAUBLE_EQUIPPED_EVENT = "BaubleEquipped"
 BAUBLE_UNEQUIPPED_EVENT = "BaubleUnequipped"
 # 当不使用内容库内容时,也可通过服务端发送BaubleRegister事件注册饰品
 # 需要服务端namespace为platinum, systemName为broadcasterServer
 BAUBLE_REGISTER_EVENT = "BaubleRegister"
 PLATINUM_NAMESPACE = "platinum"
+PLATINUM_SERVER = "platinumServer"
+PLATINUM_CLIENT = "platinumClient"
+PLATINUM_BAUBLE_SERVER = "baubleServer"
+PLATINUM_BAUBLE_CLIENT = "baubleClient"
 PLATINUM_BROADCAST_SERVER = "broadcasterServer"
 PLATINUM_BROADCAST_CLIENT = "broadcasterClient"
 
 
-# 槽位名称 (请勿更改)
+# 槽位名称 (请勿更改!!)
 class BaubleEnum(object):
     HELMET = "§6栏位: §g头饰§r\n"
     NECKLACE = "§6栏位: §g项链§r\n"
@@ -35,7 +39,8 @@ class BaubleEnum(object):
 配置饰品仍需修改此处的BaubleDict
 """
 
-# 饰品字典(添加饰品时请在此处添加)
+# 饰品字典
+# 注册饰品时, 建议通过服务端发送BaubleRegister事件注册饰品, 直接修改此处BaubleDict可能会产生不可预料的错误
 """
 支持的格式如下:
 物品标识符 : [栏位, 其他物品描述(customTips)]
