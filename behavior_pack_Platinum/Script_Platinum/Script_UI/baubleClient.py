@@ -282,10 +282,9 @@ def CalculateDurabilityRatio(itemDict):
 
 
 # 延迟执行函数
-@EasyThread.IsThread
 def DelayRun(func, delayTime=0.05, *args):
-    time.sleep(delayTime)
-    EasyThread.NextTick(func, args)
+    comp = clientApi.GetEngineCompFactory().CreateGame(levelId)
+    comp.AddTimer(delayTime, func, *args)
 
 
 # 玩家右键装备饰品
@@ -366,17 +365,35 @@ class BaubleUiNode(EasyScreenNodeCls):
         def OpenLogic():
             if GlobalData.uiProfile == 0:
                 swallowInputPanel = self.GetBaseUIControl(BaublePath.swallowInputPanel).asInputPanel()
+                bgDark = self.GetBaseUIControl(BaublePath.swallowInputPanel + "/bg_dark").asImage()
+                bgImg = self.GetBaseUIControl(BaublePath.bgImgPath).asImage()
+
+                bgImg.RemoveAnimation("offset")
+                bgImg.RemoveAnimation("alpha")
+                bgImg.SetAnimation("offset", BaubleConfig.UI_DEF, "open_slide_1", True)
+                bgImg.SetAnimation("alpha", BaubleConfig.UI_DEF, "open_alpha_1", True)
+
                 swallowInputPanel.SetVisible(True)
                 swallowInputPanel.SetIsModal(True)
+                bgDark.SetAlpha(0.7)
             else:
                 pocketInputPanel = self.GetBaseUIControl(BaublePath.pocketInputPanel).asInputPanel()
+                bgDark = self.GetBaseUIControl(BaublePath.pocketInputPanel + "/bg_dark").asImage()
+                bgImg = self.GetBaseUIControl(BaublePath.pocketBgImgPath).asImage()
+
+                bgImg.RemoveAnimation("offset")
+                bgImg.RemoveAnimation("alpha")
+                bgImg.SetAnimation("offset", BaubleConfig.UI_DEF, "open_slide_1", True)
+                bgImg.SetAnimation("alpha", BaubleConfig.UI_DEF, "open_alpha_1", True)
+
                 pocketInputPanel.SetVisible(True)
                 pocketInputPanel.SetIsModal(True)
+                bgDark.SetAlpha(0.7)
 
             DelayRun(self.GetBagInfoAndRender)
             for slotName, itemDict in GlobalData.baubleInfo.items():
                 slotPath = BaubleConfig.NAME_TO_SLOT_PATH[slotName]
-                DelayRun(self.RenderBaubleUi, 0.1, slotPath, itemDict)
+                DelayRun(self.RenderBaubleUi, 0.01, slotPath, itemDict)
             # 渲染玩家纸娃娃
             DelayRun(self.RenderPlayerPaperDoll)
 
@@ -404,13 +421,37 @@ class BaubleUiNode(EasyScreenNodeCls):
         except:
             pass
 
+    def DeRenderPlayerPaperDoll(self):
+        try:
+            if GlobalData.uiProfile == 0:
+                playerPaperDoll = self.GetBaseUIControl(BaublePath.playerPaperDollPath).asNeteasePaperDoll()
+                playerPaperDoll.RenderEntity({"scale": 0.0})
+            else:
+                pocketPaperDoll = self.GetBaseUIControl(BaublePath.pocketPaperDollPath).asNeteasePaperDoll()
+                pocketPaperDoll.RenderEntity({"scale": 0.0})
+        except:
+            pass
+
     # 关闭按钮点击回调
     @EasyScreenNodeCls.OnClick(BaublePath.closeBtnPath)
     def OnClassicCloseBtnClick(self):
-        SetAllResponse(True)
         swallowInputPanel = self.GetBaseUIControl(BaublePath.swallowInputPanel).asInputPanel()
-        swallowInputPanel.SetVisible(False)
+
+        def CloseUi():
+            swallowInputPanel.SetVisible(False)
+
+        SetAllResponse(True)
+        bgImg = self.GetBaseUIControl(BaublePath.bgImgPath).asImage()
+        bgImg.RemoveAnimation("offset")
+        bgImg.RemoveAnimation("alpha")
+        bgImg.SetAnimation("offset", BaubleConfig.UI_DEF, "close_slide", True)
+        bgImg.SetAnimation("alpha", BaubleConfig.UI_DEF, "close_alpha", True)
+
+        bgDark = self.GetBaseUIControl(BaublePath.swallowInputPanel + "/bg_dark").asImage()
+        bgDark.SetAlpha(0.0)
         swallowInputPanel.SetIsModal(False)
+        self.DeRenderPlayerPaperDoll()
+        DelayRun(CloseUi, 0.5)
 
         # 重置临时变量
         GlobalData.slotSelect = -1
@@ -419,10 +460,23 @@ class BaubleUiNode(EasyScreenNodeCls):
 
     @EasyScreenNodeCls.OnClick(BaublePath.pocketCloseBtnPath)
     def OnPocketCloseBtnClick(self):
-        SetAllResponse(True)
         pocketInputPanel = self.GetBaseUIControl(BaublePath.pocketInputPanel).asInputPanel()
-        pocketInputPanel.SetVisible(False)
+
+        def CloseUi():
+            pocketInputPanel.SetVisible(False)
+
+        SetAllResponse(True)
         pocketInputPanel.SetIsModal(False)
+        bgImg = self.GetBaseUIControl(BaublePath.pocketBgImgPath).asImage()
+        bgImg.RemoveAnimation("offset")
+        bgImg.RemoveAnimation("alpha")
+        bgImg.SetAnimation("offset", BaubleConfig.UI_DEF, "close_slide", True)
+        bgImg.SetAnimation("alpha", BaubleConfig.UI_DEF, "close_alpha", True)
+
+        bgDark = self.GetBaseUIControl(BaublePath.pocketInputPanel + "/bg_dark").asImage()
+        bgDark.SetAlpha(0.0)
+        self.DeRenderPlayerPaperDoll()
+        DelayRun(CloseUi, 0.5)
 
         # 重置临时变量
         GlobalData.slotSelect = -1
@@ -431,50 +485,61 @@ class BaubleUiNode(EasyScreenNodeCls):
 
     # 获取背包信息并渲染物品栏
     def GetBagInfoAndRender(self):
-        def RenderBagUi(path, item):
-            try:
-                itemRenderer = self.GetBaseUIControl(path + BaublePath.itemRenderBasePath).asItemRenderer()
-                itemCount = self.GetBaseUIControl(path + BaublePath.itemCountBasePath).asLabel()
-                durability = self.GetBaseUIControl(path + BaublePath.durabilityBasePath).asImage()
-                durabilityBg = self.GetBaseUIControl(path + BaublePath.durabilityBgBasePath).asImage()
-            except Exception as e:
-                logging.error("铂: {}".format(e))
-                return
+        def RenderBagUiByDict(renderDict):
+            if len(renderDict) >= 9:
+                renderList = []
+                for x in range(0, 9):
+                    path, item = renderDict.popitem()
+                    renderList.append((path, item))
 
-            if item:
-                # 物品渲染
-                isEnchanted = item.get("enchantData") and len(item.get("enchantData")) > 0
-                itemRenderer.SetUiItem(item["newItemName"], item["newAuxValue"], isEnchanted,
-                                       item.get("userData"))
-                itemRenderer.SetVisible(True)
+                for path, item in renderList:
+                    try:
+                        itemRenderer = self.GetBaseUIControl(path + BaublePath.itemRenderBasePath).asItemRenderer()
+                        itemCount = self.GetBaseUIControl(path + BaublePath.itemCountBasePath).asLabel()
+                        durability = self.GetBaseUIControl(path + BaublePath.durabilityBasePath).asImage()
+                        durabilityBg = self.GetBaseUIControl(path + BaublePath.durabilityBgBasePath).asImage()
+                    except Exception as e:
+                        logging.error("铂: {}".format(e))
+                        return
 
-                # 数量渲染
-                if item["count"] > 1:
-                    itemCount.SetText(str(item["count"]))
-                    itemCount.SetVisible(True)
-                else:
-                    itemCount.SetVisible(False)
+                    if item:
+                        # 物品渲染
+                        isEnchanted = item.get("enchantData") and len(item.get("enchantData")) > 0
+                        itemRenderer.SetUiItem(item["newItemName"], item["newAuxValue"], isEnchanted,
+                                               item.get("userData"))
+                        itemRenderer.SetVisible(True)
 
-                # 耐久渲染
-                if item["durability"] > 0:
-                    durabilityRatio = CalculateDurabilityRatio(item)
-                    durability.SetSpriteClipRatio(1)  # 重置耐久度偏移
-                    if durabilityRatio != 1:
-                        durabilityBg.SetVisible(True)
-                        durability.SetVisible(True)
-                        durability.SetSpriteColor((1 - durabilityRatio, durabilityRatio, 0))
-                        durability.SetSpriteClipRatio(1 - durabilityRatio)
-                else:
-                    durabilityBg.SetVisible(False)
-                    durability.SetVisible(False)
-            else:
-                itemRenderer.SetVisible(False)
-                itemCount.SetVisible(False)
-                durabilityBg.SetVisible(False)
-                durability.SetVisible(False)
+                        # 数量渲染
+                        if item["count"] > 1:
+                            itemCount.SetText(str(item["count"]))
+                            itemCount.SetVisible(True)
+                        else:
+                            itemCount.SetVisible(False)
+
+                        # 耐久渲染
+                        if item["durability"] > 0:
+                            durabilityRatio = CalculateDurabilityRatio(item)
+                            durability.SetSpriteClipRatio(1)  # 重置耐久度偏移
+                            if durabilityRatio != 1:
+                                durabilityBg.SetVisible(True)
+                                durability.SetVisible(True)
+                                durability.SetSpriteColor((1 - durabilityRatio, durabilityRatio, 0))
+                                durability.SetSpriteClipRatio(1 - durabilityRatio)
+                        else:
+                            durabilityBg.SetVisible(False)
+                            durability.SetVisible(False)
+                    else:
+                        itemRenderer.SetVisible(False)
+                        itemCount.SetVisible(False)
+                        durabilityBg.SetVisible(False)
+                        durability.SetVisible(False)
+
+                RenderBagUiByDict(renderDict)
 
         bagComp = clientApi.GetEngineCompFactory().CreateItem(clientApi.GetLocalPlayerId())
         itemList = bagComp.GetPlayerAllItems(clientApi.GetMinecraftEnum().ItemPosType.INVENTORY, True)
+
+        bagRenderDict = {}
         if GlobalData.uiProfile == 0:
             for slotIndex in range(0, 9):
                 bagGridChild = BaublePath.hotbarGridPath + BaublePath.slotBtnBasePath + str(slotIndex + 1)
@@ -488,7 +553,7 @@ class BaubleUiNode(EasyScreenNodeCls):
                 itemBtn = self.GetBaseUIControl(bagGridChild).asButton()
                 itemBtn.AddTouchEventParams({"isSwallow": True})
                 itemBtn.SetButtonTouchUpCallback(self.ItemBtnCallback)
-                RenderBagUi(bagGridChild, itemDict)
+                bagRenderDict[bagGridChild] = itemDict
 
             for slotIndex in range(9, 36):
                 bagGridChild = BaublePath.inventoryGridPath + BaublePath.slotBtnBasePath + str(slotIndex + 1 - 9)
@@ -502,7 +567,10 @@ class BaubleUiNode(EasyScreenNodeCls):
                 itemBtn = self.GetBaseUIControl(bagGridChild).asButton()
                 itemBtn.AddTouchEventParams({"isSwallow": True})
                 itemBtn.SetButtonTouchUpCallback(self.ItemBtnCallback)
-                RenderBagUi(bagGridChild, itemDict)
+                bagRenderDict[bagGridChild] = itemDict
+
+            RenderBagUiByDict(bagRenderDict)
+
         else:
             invContent = GlobalData.uiNode.GetBaseUIControl(BaublePath.pocketInvMobileContentPath)
             invContentPath = BaublePath.pocketInvMobileContentPath if invContent is not None \
@@ -521,7 +589,9 @@ class BaubleUiNode(EasyScreenNodeCls):
                 itemBtn.AddTouchEventParams({"isSwallow": True})
                 itemBtn.SetButtonTouchUpCallback(self.ItemBtnCallback)
 
-                DelayRun(RenderBagUi, 0.1, bagGridChild, itemDict)
+                bagRenderDict[bagGridChild] = itemDict
+
+            RenderBagUiByDict(bagRenderDict)
 
     # 物品栏点击回调
     def ItemBtnCallback(self, data):
@@ -852,3 +922,18 @@ def OnPlayerDie(keepInv, pos, dimensionId):
         GlobalData.slotSelect = -1
         GlobalData.baubleSlotSelect = -1
         GlobalData.itemInfoAlpha = 0.0
+
+
+# 玩家按下键盘事件
+@Listen(Events.OnKeyPressInGame)
+def OnKeyPressInGame(data):
+    minecraftEnum = clientApi.GetMinecraftEnum()
+    if int(data["key"]) == minecraftEnum.KeyBoardType.KEY_ESCAPE:
+        if GlobalData.uiProfile == 0:
+            if GlobalData.uiNode.GetBaseUIControl(BaublePath.swallowInputPanel).GetVisible():
+                GlobalData.uiNode.OnClassicCloseBtnClick()
+                DelayRun(clientApi.PopTopUI, 0.05)
+        else:
+            if GlobalData.uiNode.GetBaseUIControl(BaublePath.pocketInputPanel).GetVisible():
+                GlobalData.uiNode.OnPocketCloseBtnClick()
+                DelayRun(clientApi.PopTopUI, 0.05)

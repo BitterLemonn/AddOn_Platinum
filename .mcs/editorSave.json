@@ -31,9 +31,7 @@
                     "/netease_prefab_screen"
                 ],
                 "bauble_base_panel.bauble_stack_panel": [
-                    "/netease_prefab_screen",
-                    "/netease_prefab_screen/bauble_stack_panel",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_hand_panel_2"
+                    "/netease_prefab_screen"
                 ],
                 "bauble_base_panel.item_info": [
                     "/netease_prefab_screen",
@@ -62,6 +60,7 @@
             "screen": {
                 "D:\\MCNetease\\MinecraftProject\\Platinum\\resource_pack_Platinum\\ui\\bauble_base_panel.json": [
                     "/main",
+                    "/main/swallow_input_panel",
                     "/main/swallow_input_panel/bg_img/base_stack_panel",
                     "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse",
                     "/main/swallow_input_panel/bg_img/base_stack_panel/bauble_panel/bauble_scroll/scroll_mouse/scroll_view",
