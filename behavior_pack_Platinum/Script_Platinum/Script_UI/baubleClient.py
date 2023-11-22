@@ -534,7 +534,7 @@ class BaubleUiNode(EasyScreenNodeCls):
                         durabilityBg.SetVisible(False)
                         durability.SetVisible(False)
 
-                RenderBagUiByDict(renderDict)
+                DelayRun(RenderBagUiByDict, 0.05, renderDict)
 
         bagComp = clientApi.GetEngineCompFactory().CreateItem(clientApi.GetLocalPlayerId())
         itemList = bagComp.GetPlayerAllItems(clientApi.GetMinecraftEnum().ItemPosType.INVENTORY, True)
