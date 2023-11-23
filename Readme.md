@@ -125,3 +125,7 @@ self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROAD
 ### 七、后续开发
 
 　　因为本组件旨在完成一个便于联动的饰品栏模组，有任何的接口需求也可以联系我 QQ：873811906，或加入开发者交流群：575858232，尽量满足各位开发者大大的需求。但是本人也只是一个组件小白，所以需求不一定能够满足，感谢各位大佬的指点以及使用~
+
+### 许可证
+
+　　本组件遵循[MIT](behavior_pack_Platinum/Script_Platinum/LICENSE)开源协议，请开发者们随意使用。

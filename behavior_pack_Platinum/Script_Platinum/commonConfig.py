@@ -1,8 +1,11 @@
 # coding=utf-8
 
 """
+MIT License
+Copyright (c) 2023 Bitterlemon
+
 在Script_Platinum外使用时
-可以将以下参数(除BaubleDict以外)复制到自己的Script目录下
+将以下参数(除BaubleDict以外)复制到自己的Script目录下
 配置饰品请通过服务端发送BaubleRegister事件注册饰品
 """
 
