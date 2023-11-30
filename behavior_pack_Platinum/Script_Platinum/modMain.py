@@ -34,8 +34,8 @@ def CLIENT():
     if not GetSystem(commonConfig.PLATINUM_CLIENT):
         import Script_Main.platinumClient as platinumClient
         setSystem(platinumClient, commonConfig.PLATINUM_CLIENT)
-        import Script_UI.baubleClient as baubleClient
-        setSystem(baubleClient, commonConfig.PLATINUM_BAUBLE_CLIENT)
+        import Script_UI.baubleNewClient as baubleNewClient
+        setSystem(baubleNewClient, commonConfig.PLATINUM_BAUBLE_CLIENT)
         import Script_Main.broadcasterClient as broadcasterClient
         setSystem(broadcasterClient, "QU_BROADCAST_CLIENT")
 

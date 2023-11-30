@@ -1,6 +1,7 @@
 {
     "ui_defs": [
         "ui/bauble_base_panel.json",
+        "ui/bauble_new.json",
         "ui/netease_editor_template_namespace.json"
     ]
 }
