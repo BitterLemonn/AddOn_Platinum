@@ -23,6 +23,7 @@
     },
     "UI": {
         "customPrefabGroupExpand": [
+            "bauble_new",
             "bauble_base_panel"
         ],
         "expandData": {
@@ -31,7 +32,8 @@
                     "/netease_prefab_screen"
                 ],
                 "bauble_base_panel.bauble_stack_panel": [
-                    "/netease_prefab_screen"
+                    "/netease_prefab_screen",
+                    "/netease_prefab_screen/bauble_stack_panel"
                 ],
                 "bauble_base_panel.item_info": [
                     "/netease_prefab_screen",
@@ -55,6 +57,25 @@
                 ],
                 "bauble_base_panel.slot_btn_big": [
                     "/netease_prefab_screen"
+                ],
+                "bauble_new.bauble_classic_new": [
+                    "/netease_prefab_screen",
+                    "/netease_prefab_screen/bauble_classic_new",
+                    "/netease_prefab_screen/bauble_classic_new/bg_img",
+                    "/netease_prefab_screen/bauble_classic_new/bg_img/bauble_scroll_view",
+                    "/netease_prefab_screen/bauble_classic_new/bg_img/bauble_scroll_view/scroll_mouse/scroll_view",
+                    "/netease_prefab_screen/bauble_classic_new/bg_img/bauble_scroll_view/scroll_mouse/scroll_view/stack_panel",
+                    "/netease_prefab_screen/bauble_classic_new/bg_img/bauble_scroll_view/scroll_mouse/scroll_view/stack_panel/background_and_viewport",
+                    "/netease_prefab_screen/bauble_classic_new/bg_img/bauble_scroll_view/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content"
+                ],
+                "bauble_new.bauble_pocket": [
+                    "/netease_prefab_screen",
+                    "/netease_prefab_screen/bauble_pocket",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_upper",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_lower"
+                ],
+                "bauble_new.baule_classic_new": [
+                    "/netease_prefab_screen"
                 ]
             },
             "screen": {
@@ -76,6 +97,9 @@
                     "/main/mobile_input_panel/bg_img/base_stack_panel/info_stack_panel/bauble_panel/bauble_stack_panel/bauble_one_stack_panel",
                     "/main/mobile_input_panel/bg_img/base_stack_panel/info_stack_panel/bauble_panel/bauble_stack_panel/bauble_two_stack_panel",
                     "/main/mobile_input_panel/item_info_bg"
+                ],
+                "D:\\MCNetease\\MinecraftProject\\Platinum\\resource_pack_Platinum\\ui\\bauble_new.json": [
+                    "/main"
                 ],
                 "D:\\MCNetease\\MinecraftProject\\Platinum\\resource_pack_VfGuyCTi\\ui\\bauble_base_panel.json": [
                     "/main",
