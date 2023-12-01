@@ -626,6 +626,24 @@ def OnPlayerDie(keepInv, pos, dimensionId):
                 GlobalData.baubleDict[slotName] = {}
 
 
+# 右键装备饰品
+@AllowCall
+def EquipBauble(itemDict, slotType):
+    for slotName, sType in BaubleConfig.SlotName2TypeDict.items():
+        if sType == slotType:
+            originBauble = GlobalData.baubleDict[slotName]
+            # 饰品栏位为空
+            if len(originBauble) == 0:
+                GlobalData.baubleDict[slotName] = itemDict
+                BaubleEquippedBroadcaster(slotType, itemDict)
+                # 移除玩家物品栏中的饰品
+                Call("RemoveItem", {"playerId": playerId})
+                # 播放装备音效
+                comp = clientApi.GetEngineCompFactory().CreateCustomAudio(levelId)
+                comp.PlayCustomMusic("armor.equip_iron", (0, 0, 0), 0.8, 0.8, False, playerId)
+                break
+
+
 # 工具函数
 def GetSlotNameByPath(path):
     return path.split("/")[-2].replace("bauble_", "").replace("_panel", "")
@@ -644,7 +662,7 @@ def CheckBauble(itemDict, baublePath):
         elif isinstance(baubleValue, type([])):
             targetSlot = baubleValue[0]
         else:
-            logging.error("铂: 饰品 {} 配置错误, 请检查Script_Platinum/commonConfig.py".format(itemDict["newItemName"]))
+            logging.error("铂: 饰品 {} 配置错误, 请检查饰品注册信息".format(itemDict["newItemName"]))
             return False
 
         if targetSlot == BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(baublePath)]:
