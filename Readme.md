@@ -13,9 +13,9 @@
 
 <center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202311201724476.png" style="zoom:65%;"></center>
 
-<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202311201724358.png" style="zoom:65%;"></center>
+<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202312011152292.png" style="zoom:65%"></center>
 
-<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202311201724955.png" style="zoom:65%;"></center>
+<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202312011154787.png" style="zoom:65%"></center>
 
 
 ### 三、基础配置文件介绍
@@ -45,7 +45,7 @@
 
 ##### a. 作为内容库直接导入开发项目
 
-　　当作为内容库直接导入开发项目时，开发者仅需将[脚本文件](behavior_pack_Platinum/Script_Platinum)复制到自己的开发项目的behavior_pack当中即可, 注册饰品推荐使用服务端发送注册时间的方法注册(见五.1.b)。虽然可以通过直接更改[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)中的**BaubleDict**字典达到注册的目的，**但是不建议使用此方式注册饰品**，可能会造成无法预料的错误。
+　　当作为内容库直接导入开发项目时，开发者需将[脚本文件](behavior_pack_Platinum/Script_Platinum)复制到自己的开发项目的behavior_pack当中，以及将resource_pack中的[textures文件夹](/resource_pack_Platinum/textures)和[ui文件夹](/resource_pack_Platinum/ui)复制到开发项目中，**不推荐直接将此开发包作为项目文件直接开发，可能会产生模组冲突。**注册饰品推荐使用服务端发送注册时间的方法注册(见五.1.b)。虽然可以通过直接更改[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)中的**BaubleDict**字典达到注册的目的，**但是不建议使用此方式注册饰品**，可能会造成无法预料的错误。
 
 ```py
 # BaubleDict注册格式如下
