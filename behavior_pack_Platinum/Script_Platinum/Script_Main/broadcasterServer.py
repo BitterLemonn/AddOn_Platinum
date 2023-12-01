@@ -27,11 +27,22 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
 
         if baubleSlot in commonConfig.BaubleEnum.__dict__.values():
             if exist:
+                comp = clientApi.GetEngineCompFactory().CreateItem(levelId)
+                baseInfo = comp.GetItemBasicInfo(baubleName, 0)
+                if baseInfo["maxStackSize"] > 1:
+                    logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(baubleName))
+                    return
+
+                if baubleName in commonConfig.BaubleDict:
+                    logging.error("铂: 饰品 {} 已存在,请勿重复注册".format(baubleName))
+                    return
+
                 if len(customTips) > 0:
                     commonConfig.BaubleDict[baubleName] = [baubleSlot, customTips]
                 else:
                     commonConfig.BaubleDict[baubleName] = baubleSlot
-                logging.info("铂: 饰品 {} 已注册".format(baubleName))
+                logging.info("铂: 饰品 {} 注册成功".format(baubleName))
+
             else:
                 logging.error("铂: 物品 {} 不存在,请检查标识符是否正确".format(baubleName))
         else:
