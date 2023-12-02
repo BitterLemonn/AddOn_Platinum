@@ -363,6 +363,24 @@
       "size" : [ "80.0%+0.0px", "100.0%c+0.0px" ],
       "type" : "stack_panel"
    },
+   "flying_item" : {
+      "layer" : 1,
+      "property_bag" : {
+         "#item_id_aux" : 131072
+      },
+      "renderer" : "inventory_item_renderer",
+      "size" : [ 18.0, 18.0 ],
+      "type" : "custom"
+   },
+   "flying_item_big" : {
+      "layer" : 1,
+      "property_bag" : {
+         "#item_id_aux" : 131072
+      },
+      "renderer" : "inventory_item_renderer",
+      "size" : [ 25.0, 25.0 ],
+      "type" : "custom"
+   },
    "main" : {
       "controls" : [],
       "type" : "screen"

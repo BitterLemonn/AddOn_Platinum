@@ -9,6 +9,112 @@ from ..commonConfig import BaubleDict
 CustomUIScreenProxy = clientApi.GetUIScreenProxyCls()
 
 
+class FlyingItemRenderer:
+
+    def __init__(self, screen, basePath):
+        self.flyingTime = 5  # 帧
+
+        self.screen = screen
+        self.basePath = basePath
+
+        self.flyingItemPanel = self.screen.GetBaseUIControl(self.basePath)
+
+        self.flyingPool = []
+        self.flyingUsing = []
+
+        self.flyingBigPool = []
+        self.flyingBigUsing = []
+
+    def OnDestroy(self):
+        for flyingRender in self.flyingPool:
+            self.screen.RemoveChildControl(flyingRender)
+        for flyingRender in self.flyingBigPool:
+            self.screen.RemoveChildControl(flyingRender)
+
+    def __CreateFlying(self):
+        count = len(self.flyingPool)
+        flyingItem = self.screen.CreateChildControl(BaubleConfig.UI_DEF_NEW_FLYING, "flying_item{}".format(count),
+                                                    self.flyingItemPanel).asItemRenderer()
+        flyingItem.SetVisible(False)
+        flyingItem.SetAnchorFrom("top_left")
+        self.flyingPool.append(flyingItem)
+        return flyingItem
+
+    def __CreateFlyingBig(self):
+        count = len(self.flyingBigPool)
+        flyingItem = self.screen.CreateChildControl(BaubleConfig.UI_DEF_NEW_FLYING_BIG,
+                                                    "flying_item_big{}".format(count),
+                                                    self.flyingItemPanel).asItemRenderer()
+        flyingItem.SetVisible(False)
+        flyingItem.SetAnchorFrom("top_left")
+        self.flyingBigPool.append(flyingItem)
+        return flyingItem
+
+    def FlyingItem(self, itemDict, fromPos, toPos):
+        itemRender = None
+        isNew = False
+        for flyingRender in self.flyingPool:
+            if flyingRender not in self.flyingUsing:
+                itemRender = flyingRender
+                break
+
+        if not itemRender:
+            itemRender = self.__CreateFlying()
+            isNew = True
+
+        self.flyingUsing.append(itemRender)
+        itemRender.SetUiItem(itemDict["newItemName"], itemDict["newAuxValue"], False, itemDict.get("userData"))
+        self.__StartFlying(itemRender, fromPos, toPos, "normal", isNew)
+
+    def FlyingItemBig(self, itemDict, fromPos, toPos):
+        itemRender = None
+        isNew = False
+        for flyingRender in self.flyingBigPool:
+            if flyingRender not in self.flyingBigUsing:
+                itemRender = flyingRender
+                break
+
+        if not itemRender:
+            itemRender = self.__CreateFlyingBig()
+            isNew = True
+
+        self.flyingBigUsing.append(itemRender)
+        itemRender.SetUiItem(itemDict["newItemName"], itemDict["newAuxValue"], False, itemDict.get("userData"))
+        self.__StartFlying(itemRender, fromPos, toPos, "big", isNew)
+
+    def __StartFlying(self, itemRender, fromPos, toPos, size, isNew):
+        fromPos = [fromPos[0] + 9, fromPos[1] + 9]
+        toPos = [toPos[0] + 9, toPos[1] + 9]
+
+        offsetAnimateData = {
+            "namespace": "PlatinumFlyingItem",
+            "flying_animation": {
+                "anim_type": "offset",
+                "duration": self.flyingTime / 30.0,
+                "from": fromPos,
+                "to": toPos
+            }
+        }
+        clientApi.RegisterUIAnimations(offsetAnimateData, True)
+        if not isNew:
+            itemRender.RemoveAnimation("offset")
+        itemRender.SetVisible(True)
+        itemRender.SetAnimation("offset", "PlatinumFlyingItem", "flying_animation", True)
+
+        comp = clientApi.GetEngineCompFactory().CreateGame(levelId)
+        comp.AddTimer(self.flyingTime / 30.0, self.__EndFlying, itemRender, size)
+
+    def __EndFlying(self, itemRender, size):
+        itemRender.SetVisible(False)
+        try:
+            if size == "normal":
+                self.flyingUsing.remove(itemRender)
+            else:
+                self.flyingBigUsing.remove(itemRender)
+        except:
+            pass
+
+
 class BaubleConfig(object):
     PLATINUM_LOCAL_DATA = "platinum_local_data"
     BAUBLE_SLOT_INFO = "bauble_slot_info"
@@ -16,12 +122,16 @@ class BaubleConfig(object):
     UI_DEF = "bauble_base_panel"
     UI_DEF_MAIN = "bauble_base_panel.main"
     UI_DEF_BAUBLE_BTN = "bauble_base_panel.bauble_button"
+    UI_DEF_BAUBLE_BTN_BIG = "bauble_base_panel.bauble_btn_big"
 
     UI_DEF_NEW = "bauble_new"
     UI_DEF_NEW_MAIN = "bauble_new.main"
     UI_DEF_NEW_BAUBLE_CLASSIC = "bauble_new.bauble_classic_new"
     UI_DEF_NEW_BAUBLE_POCKET = "bauble_new.bauble_pocket"
     UI_DEF_NEW_BAUBLE_TRANS_BTN = "bauble_new.transparent_btn"
+
+    UI_DEF_NEW_FLYING = "bauble_new.flying_item"
+    UI_DEF_NEW_FLYING_BIG = "bauble_new.flying_item_big"
 
     # 饰品路径对应饰品表
     SlotName2TypeDict = {
@@ -73,6 +183,13 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         # 饰品栏打开状态
         self.openState = False
 
+        # 原版路径
+        self.survivalPaddingPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/survival_padding"
+        self.playerRenderBgPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/player_inventory/inventory_panel_top_half/player_armor_panel/player_bg"
+        self.flyingPanel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/flying_item_renderer"
+        self.invGridPathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/player_inventory/inventory_panel_bottom_half/inventory_panel/inventory_grid/grid_item_for_inventory{}"
+        self.hotBarGridPathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/player_inventory/hotbar_grid/grid_item_for_hotbar{}"
+
         # 基础路径
         self.baublePath = ""
         self.baubleScrollerPath = self.baublePath + "/bg_img/bauble_scroll_view"
@@ -116,6 +233,8 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             self.otherBtnBasePath4
         ]
 
+        self.flyingUtils = FlyingItemRenderer(self.GetScreenNode(), self.flyingPanel)
+
     def OnCreate(self):
         self.CreateBaubleBtn()
 
@@ -124,14 +243,13 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         if self.openState:
             self.CloseBaublePanel()
 
-        panelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/survival_padding"
+        panelPath = self.survivalPaddingPath
         baublePanel = screen.GetBaseUIControl(panelPath + "/bauble_classic_new")
         screen.RemoveChildControl(baublePanel)
-        panelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/player_inventory/inventory_panel_top_half/player_armor_panel/player_bg"
+        panelPath = self.playerRenderBgPath
         baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button").asButton()
         screen.RemoveChildControl(baubleBtn)
-
-        UnListenForEvent("OnItemSlotButtonClickedEvent", self, self.OnItemSlotButtonClickedEvent)
+        self.flyingUtils.OnDestroy()
 
     def OnTick(self):
         # 切换界面隐藏饰品栏
@@ -167,13 +285,14 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     # 创建饰品栏开关按钮
     def CreateBaubleBtn(self):
         screen = self.GetScreenNode()
-        panelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/player_inventory/inventory_panel_top_half/player_armor_panel/player_bg"
+        panelPath = self.playerRenderBgPath
         panel = screen.GetBaseUIControl(panelPath)
         if not panel:
             logging.error("铂: 无法找到特定界面")
             return
         try:
             baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button").asButton()
+            baubleBtn.SetVisible(True)
         except:
             baubleBtn = screen.CreateChildControl(BaubleConfig.UI_DEF_BAUBLE_BTN, "bauble_button", panel).asButton()
         baubleBtn.AddTouchEventParams({"isSwallow": True})
@@ -189,7 +308,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     # 打开饰品栏
     def OpenBaublePanel(self):
         screen = self.GetScreenNode()
-        panelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/survival_padding"
+        panelPath = self.survivalPaddingPath
         panel = screen.GetBaseUIControl(panelPath)
 
         if panel:
@@ -242,14 +361,9 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     # 饰品栏位按钮回调
     def OnBaubleClicked(self, args):
         btnPath = args["ButtonPath"]
-
-        if self.invSelect != -1:
-            self.SelectBauble()
-            return
-        elif len(self.baubleSelect) == 0:
+        if len(self.baubleSelect) == 0:
             # 选中饰品
-            if self.invSelect == -1:
-                self.SelectBauble(btnPath)
+            self.SelectBauble(btnPath)
         elif self.baubleSelect == btnPath:
             self.SelectBauble()
         else:
@@ -292,33 +406,21 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     # 物品栏位按钮回调
     def OnItemSlotButtonClickedEvent(self, data):
         slotId = data["slotIndex"]
-        # 未选中物品时
-        if self.invSelect == -1:
-            if len(self.baubleSelect) != 0:
-                self.invSelect = slotId
-                comp = clientApi.GetEngineCompFactory().CreateItem(playerId)
-                itemDict = comp.GetPlayerItem(clientApi.GetMinecraftEnum().ItemPosType.INVENTORY, slotId, True)
-                self.invInfo = itemDict
-                # 穿戴饰品
-                if itemDict:
-                    if CheckBauble(self.invInfo, self.baubleSelect):
-                        self.SwapBauble()
-                    else:
-                        self.SelectBauble()
-                # 脱下饰品
-                elif len(GlobalData.baubleDict[GetSlotNameByPath(self.baubleSelect)]) > 0:
+        # 选中饰品栏
+        if len(self.baubleSelect) != 0:
+            self.invSelect = slotId
+            comp = clientApi.GetEngineCompFactory().CreateItem(playerId)
+            itemDict = comp.GetPlayerItem(clientApi.GetMinecraftEnum().ItemPosType.INVENTORY, slotId, True)
+            self.invInfo = itemDict
+            # 穿戴饰品
+            if itemDict:
+                if CheckBauble(self.invInfo, self.baubleSelect):
                     self.SwapBauble()
-
-            # 不能通过先点击物品栏再点击饰品栏的方式直接穿上饰品
-            else:
-                comp = clientApi.GetEngineCompFactory().CreateItem(playerId)
-                itemDict = comp.GetPlayerItem(clientApi.GetMinecraftEnum().ItemPosType.INVENTORY, slotId)
-                if itemDict:
-                    self.invSelect = slotId
-        # 选中物品时
-        else:
-            self.invSelect = -1
-            self.invInfo = {}
+                else:
+                    self.SelectBauble()
+            # 脱下饰品
+            elif len(GlobalData.baubleDict[GetSlotNameByPath(self.baubleSelect)]) > 0:
+                self.SwapBauble()
 
     # 渲染选中状态
     def SelectBauble(self, baublePath=""):
@@ -346,16 +448,14 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         if itemDict and len(itemDict) > 0:
             slotType = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(baublePath)]
             originBauble = GlobalData.baubleDict[GetSlotNameByPath(baublePath)]
-
+            # 飞行动画
+            self.FlyingItem(itemDict, self.GetInvPathBySlotId(self.invSelect), baublePath)
             # 发送脱下饰品事件
             if len(originBauble) != 0:
                 BaubleUnequippedBroadcaster(slotType, originBauble)
-                # 鼠标不延迟
-                if not self.isTouch:
-                    Call("AddItem", {"playerId": playerId, "itemDict": originBauble, "slot": self.invSelect})
-                else:
-                    DelayRun(Call, 0.1, "AddItem",
-                             {"playerId": playerId, "itemDict": originBauble, "slot": self.invSelect})
+                Call("AddItem", {"playerId": playerId, "itemDict": originBauble, "slot": self.invSelect})
+                # 飞行动画
+                self.FlyingItem(originBauble, baublePath, self.GetInvPathBySlotId(self.invSelect))
             else:
                 Call("RemoveItem", {"playerId": playerId, "slot": self.invSelect})
 
@@ -369,16 +469,12 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             if len(originBauble) != 0:
                 GlobalData.baubleDict[GetSlotNameByPath(baublePath)] = {}
                 BaubleUnequippedBroadcaster(slotType, originBauble)
-                # 鼠标不延迟
-                if not self.isTouch:
-                    Call("AddItem", {"playerId": playerId, "itemDict": originBauble, "slot": self.invSelect})
-                else:
-                    DelayRun(Call, 0.1, "AddItem",
-                             {"playerId": playerId, "itemDict": originBauble, "slot": self.invSelect})
+                Call("AddItem", {"playerId": playerId, "itemDict": originBauble, "slot": self.invSelect})
+            # 飞行动画
+            self.FlyingItem(originBauble, baublePath, self.GetInvPathBySlotId(self.invSelect))
 
         self.RenderBauble(self.baubleSelect)
         self.SelectBauble()
-        self.invSelect = -1
 
     # 渲染饰品栏
     def RenderBauble(self, baublePath):
@@ -408,6 +504,23 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             logging.error("铂: 饰品栏位渲染器获取失败 {}, 错误: {}".format(baublePath.split("/")[-2], e))
             return
 
+    # 飞行动画
+    def FlyingItem(self, itemDict, fromPath, toPath):
+        try:
+            fromControl = self.GetScreenNode().GetBaseUIControl(fromPath)
+            toControl = self.GetScreenNode().GetBaseUIControl(toPath)
+            fromPos = fromControl.GetGlobalPosition()
+            toPos = toControl.GetGlobalPosition()
+            self.flyingUtils.FlyingItem(itemDict, fromPos, toPos)
+        except Exception as e:
+            logging.error("铂: 飞行动画获取位置失败 {}".format(e))
+
+    def GetInvPathBySlotId(self, slotId):
+        slotId += 1
+        if slotId < 9:
+            return self.hotBarGridPathModel.format(slotId)
+        return self.invGridPathModel.format(slotId - 9)
+
 
 # 背包口袋界面代理类
 class InventoryPocketProxy(InventoryClassicProxy):
@@ -415,6 +528,12 @@ class InventoryPocketProxy(InventoryClassicProxy):
         InventoryClassicProxy.__init__(self, screenName, screenNode)
         self.openState = False
 
+        # 原版路径
+        self.playerRenderBgPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg"
+        self.armorSetPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/label_and_renderer"
+        self.invGridMousePathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{}"
+        self.invGridTouchPathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane/scroll_touch/scroll_view/panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{}"
+        self.hotBarGridPathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/hotbar_section_panel/hotbar/hotbar_grid/hotbar_grid_item{}"
         # 饰品栏路径
         self.helmetBtnBasePath = "/bauble_helmet_panel/bauble_helmet_btn"
         self.necklaceBtnBasePath = "/bauble_necklace_panel/bauble_necklace_btn"
@@ -462,34 +581,37 @@ class InventoryPocketProxy(InventoryClassicProxy):
         if self.openState:
             self.CloseBaublePanel()
 
-        UnListenForEvent("OnItemSlotButtonClickedEvent", self, self.OnItemSlotButtonClickedEvent)
         try:
-            panelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg"
+            panelPath = self.playerRenderBgPath
             baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button")
             self.GetScreenNode().RemoveChildControl(baubleBtn)
-            panelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/label_and_renderer"
+            panelPath = self.armorSetPath
             baublePanel = screen.GetBaseUIControl(panelPath + "/bauble_pocket_new")
             self.GetScreenNode().RemoveChildControl(baublePanel)
         except:
             pass
 
+        self.flyingUtils.OnDestroy()
+
     def CreateBaubleBtn(self):
         screen = self.GetScreenNode()
-        panelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg"
+        panelPath = self.playerRenderBgPath
         panel = screen.GetBaseUIControl(panelPath)
         if not panel:
             logging.error("铂: 无法找到特定界面")
             return
         try:
             baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button").asButton()
+            baubleBtn.SetVisible(True)
         except:
-            baubleBtn = screen.CreateChildControl(BaubleConfig.UI_DEF_BAUBLE_BTN, "bauble_button", panel).asButton()
+            baubleBtn = screen.CreateChildControl(BaubleConfig.UI_DEF_BAUBLE_BTN_BIG, "bauble_button", panel).asButton()
+
         baubleBtn.AddTouchEventParams({"isSwallow": True})
         baubleBtn.SetButtonTouchUpCallback(self.OnBaubleButtonClicked)
 
     def OpenBaublePanel(self):
         screen = self.GetScreenNode()
-        panelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/label_and_renderer"
+        panelPath = self.armorSetPath
         panel = screen.GetBaseUIControl(panelPath)
         armorTextPath = panelPath + "/label_panel"
         rendererPath = panelPath + "/renderer_panel"
@@ -510,7 +632,7 @@ class InventoryPocketProxy(InventoryClassicProxy):
 
     def CloseBaublePanel(self):
         screen = self.GetScreenNode()
-        panelPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/label_and_renderer"
+        panelPath = self.armorSetPath
         panel = screen.GetBaseUIControl(panelPath)
         armorTextPath = panelPath + "/label_panel"
         rendererPath = panelPath + "/renderer_panel"
@@ -549,17 +671,52 @@ class InventoryPocketProxy(InventoryClassicProxy):
                 except Exception as e:
                     logging.error("铂: 饰品栏位按钮回调注册失败: {}".format(e))
 
+    def FlyingItem(self, itemDict, fromPath, toPath):
+        try:
+            fromControl = self.GetScreenNode().GetBaseUIControl(fromPath)
+            toControl = self.GetScreenNode().GetBaseUIControl(toPath)
+            fromPos = fromControl.GetGlobalPosition()
+            toPos = toControl.GetGlobalPosition()
+            self.flyingUtils.FlyingItemBig(itemDict, fromPos, toPos)
+        except Exception as e:
+            logging.error("铂: 飞行动画获取位置失败 {}".format(e))
+
+    def GetInvPathBySlotId(self, slotId):
+        slotId += 1
+        if slotId < 9:
+            return self.hotBarGridPathModel.format(slotId)
+
+        invGridPath = self.invGridMousePathModel.format(slotId - 9)
+        if not self.GetScreenNode().GetBaseUIControl(invGridPath):
+            invGridPath = self.invGridTouchPathModel.format(slotId - 9)
+        return invGridPath
+
 
 # 监听客户端mod加载完成读取饰品文件
 @Listen(Events.OnLocalPlayerStopLoading)
 def OnLoadClientAddonScriptsAfter(data):
     comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
     configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA)
-    GlobalData.baubleDict = configData.get(BaubleConfig.BAUBLE_SLOT_INFO, {})
-    if len(GlobalData.baubleDict) == 0:
-        logging.error("铂: 读取饰品数据失败!!!")
+    loadData = configData.get(BaubleConfig.BAUBLE_SLOT_INFO, {})
+    if len(loadData) == 0:
+        logging.error("铂: 读取饰品数据失败!!! 已重置饰品数据")
+        GlobalData.baubleDict = {
+            "helmet": {},
+            "necklace": {},
+            "armor": {},
+            "back": {},
+            "hand_1": {},
+            "hand_2": {},
+            "belt": {},
+            "shoes": {},
+            "other_1": {},
+            "other_2": {},
+            "other_3": {},
+            "other_4": {}
+        }
     else:
         logging.info("铂: 读取饰品数据成功")
+        GlobalData.baubleDict = loadData
         DisplayPlayerBaubleInfo()
         for slotName, bauble in GlobalData.baubleDict.items():
             if len(bauble) > 0:

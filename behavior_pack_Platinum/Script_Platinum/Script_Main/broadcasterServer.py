@@ -27,7 +27,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
 
         if baubleSlot in commonConfig.BaubleEnum.__dict__.values():
             if exist:
-                comp = clientApi.GetEngineCompFactory().CreateItem(levelId)
+                comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
                 baseInfo = comp.GetItemBasicInfo(baubleName, 0)
                 if baseInfo["maxStackSize"] > 1:
                     logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(baubleName))
