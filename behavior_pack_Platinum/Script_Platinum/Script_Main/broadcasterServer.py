@@ -8,9 +8,6 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
 
     def __init__(self, namespace, name):
         super(BroadcasterServer, self).__init__(namespace, name)
-        # 监听饰品注册事件
-        self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
-                            commonConfig.BAUBLE_REGISTER_EVENT, self, self.BaubleRegister)
 
     def BaubleRegister(self, data):
         """
@@ -27,7 +24,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
 
         if baubleSlot in commonConfig.BaubleEnum.__dict__.values():
             if exist:
-                comp = clientApi.GetEngineCompFactory().CreateItem(levelId)
+                comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
                 baseInfo = comp.GetItemBasicInfo(baubleName, 0)
                 if baseInfo["maxStackSize"] > 1:
                     logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(baubleName))

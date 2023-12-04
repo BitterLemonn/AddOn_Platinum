@@ -14,12 +14,12 @@ def info(infoMsg):
     if len(infoMsg) <= 20:
         formattedList.append(infoMsg)
     else:
-        formattedList = cut_text(infoMsg, 60)
+        formattedList = cut_text(infoMsg, 300)
 
-    logging.info("====================")
+    print "===================="
     for i in formattedList:
-        logging.info(i)
-    logging.info("====================")
+        print i
+    print "===================="
 
 
 def infoLines(infoList):
@@ -34,7 +34,7 @@ def warn(warnMsg):
     if len(warnMsg) <= 20:
         formattedList.append(warnMsg)
     else:
-        formattedList = cut_text(warnMsg, 60)
+        formattedList = cut_text(warnMsg, 300)
     logging.warn("====================")
     for i in formattedList:
         logging.warn(i)
@@ -46,7 +46,7 @@ def error(errMsg):
     if len(errMsg) <= 20:
         formattedList.append(errMsg)
     else:
-        formattedList = cut_text(errMsg, 60)
+        formattedList = cut_text(errMsg, 300)
     logging.error("====================")
     for i in formattedList:
         logging.error(i)

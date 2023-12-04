@@ -2,10 +2,7 @@
 
 ### 一、简介
 
-　　本组件旨在编写一个利于联动的饰品栏模组。方便上手，开箱即用是本组件的创作宗旨。开发者无需关注组件内部的工作逻辑，只需要向指定服务端发送事件即可注册饰品，监听指定事件便可获取玩家穿脱饰品情况。
-
-
-
+本组件旨在编写一个利于联动的饰品栏模组。方便上手，开箱即用是本组件的创作宗旨。开发者无需关注组件内部的工作逻辑，只需要向指定服务端发送事件即可注册饰品，监听指定事件便可获取玩家穿脱饰品情况。
 
 ### 二、UI展示
 
@@ -17,27 +14,22 @@
 
 <center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202312011154787.png" style="zoom:65%"></center>
 
-
 ### 三、基础配置文件介绍
 
-　　[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)内存储了所有使用到的变量以及常量，理论上开发者只需要了解其中的变量的作用即可轻松使用本组件。
+[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)内存储了所有使用到的变量以及常量，理论上开发者只需要了解其中的变量的作用即可轻松使用本组件。
 
-　　其中定义了组件所使用到的事件名称以及所使用到的SystemName和NameSpace。BaubleEnum类中定义了饰品栏的槽位以及对应的信息。BaubleDict字典中定义了组件将会使用到的饰品信息。
-
-
-
+其中定义了组件所使用到的事件名称以及所使用到的SystemName和NameSpace。BaubleEnum类中定义了饰品栏的槽位以及对应的信息。BaubleDict字典中定义了组件将会使用到的饰品信息。
 
 ### 四、饰品定义的限制
 
-　　**由于组件实现方式的特殊，饰品有以下限制：**
+**由于组件实现方式的特殊，饰品有以下限制：**
 
-如果饰品需要使用自定义提示，需要在[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)中的**BaubleDict**字典中定义。如果不在此处定义，**写在物品Json定义文件中的```netease:customtips```中的自定义提示将会被覆盖。**
+如果饰品需要使用自定义提示，需要在[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)中的**BaubleDict**
+字典中定义。如果不在此处定义，**写在物品Json定义文件中的```netease:customtips```中的自定义提示将会被覆盖。**
 
 饰品的**最大堆叠数量**只能为1，否则会导致饰品注册失败
 
 当饰品物品被定义为盔甲时不能通过直接交互（右键，长按屏幕）直接穿戴饰品，请开发者避免出现此类情况
-
-
 
 ### 五、使用方法
 
@@ -45,40 +37,48 @@
 
 ##### a. 作为内容库直接导入开发项目
 
-　　当作为内容库直接导入开发项目时，开发者需将[脚本文件](behavior_pack_Platinum/Script_Platinum)复制到自己的开发项目的behavior_pack当中，以及将resource_pack中的[textures文件夹](/resource_pack_Platinum/textures)和[ui文件夹](/resource_pack_Platinum/ui)复制到开发项目中，**不推荐直接将此开发包作为项目文件直接开发，可能会产生模组冲突。**注册饰品推荐使用服务端发送注册时间的方法注册(见五.1.b)。虽然可以通过直接更改[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)中的**BaubleDict**字典达到注册的目的，**但是不建议使用此方式注册饰品**，可能会造成无法预料的错误。
+当作为内容库直接导入开发项目时，开发者需将[脚本文件](behavior_pack_Platinum/Script_Platinum)
+复制到自己的开发项目的behavior_pack当中，以及将resource_pack中的[textures文件夹](/resource_pack_Platinum/textures)
+和[ui文件夹](/resource_pack_Platinum/ui)复制到开发项目中，*
+*不推荐直接将此开发包作为项目文件直接开发，可能会产生模组冲突。**注册饰品推荐使用服务端发送注册时间的方法注册(见五.1.b)
+。虽然可以通过直接更改[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)中的**BaubleDict**字典达到注册的目的，
+**但是不建议使用此方式注册饰品**，可能会造成无法预料的错误。
 
 ```py
 # BaubleDict注册格式如下
-"命名空间:物品名称" : 槽位(**BaubleEnum**中的常量)
-"命名空间:物品名称" : [槽位]
-"命名空间:物品名称" : [槽位, 自定义提示(customTips)]
+"命名空间:物品名称": 槽位(**BaubleEnum ** 中的常量)
+"命名空间:物品名称": [槽位]
+"命名空间:物品名称": [槽位, 自定义提示(customTips)]
 ```
 
 ##### b.不使用直接导入
 
-　　当开发者熟练掌握使用方法后可以不将本组件作为内容库导入，本组件会同时发布在网易资源市场当中，只需要玩家同时装载即可正常使用组件。
+当开发者熟练掌握使用方法后可以不将本组件作为内容库导入，本组件会同时发布在网易资源市场当中，只需要玩家同时装载即可正常使用组件。
 
-　　此时完成饰品注册需要通过以下代码发送事件来完成：
+此时完成饰品注册需要通过以下代码发送事件来完成：
 
 ```py
-# modMain.py 文件中注册一个与组件通信的服务端
+# coding=utf-8
 # 推荐将commonConfig.py中的常量复制到开发项目当中,方便使用
 import mod.server.extraServerApi as serverApi
-# 如导入了commonConfig.py中的常量可将nameSpace和systemName分别改为commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
-serverApi.RegisterSystem("platinum", "broadcasterServer","组件路径")
 
-# -------------------------------------
+
 # 对应的服务端中监听mod加载完成事件
-class BaubleRegiste(serverApi.GetServerSystemCls()):
+class BaubleRegister(serverApi.GetServerSystemCls()):
     def __init__(self, namespace, name):
-        super(BaubleRegiste, self).__init__(namespace, name)
+        super(BaubleRegister, self).__init__(namespace, name)
         self.listenEvent()
+
     # 监听mod加载完成事件
     def listenEvent(self):
         self.ListenForEvent(serverApi.GetEngineNamespace(), serverApi.GetEngineSystemName(),
-            'ClientLoadAddonsFinishServerEvent', self, self.onClientLoadAddonsFinishServerEvent)
+                            'ClientLoadAddonsFinishServerEvent', self, self.onClientLoadAddonsFinishServerEvent)
+
     # 对应的回调函数
     def onClientLoadAddonsFinishServerEvent(self, data):
+        # 项目文件中获取一个与组件通信的服务端
+        # 如导入了commonConfig.py中的常量可将nameSpace和systemName分别改为commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
+        registerSys = serverApi.GetSystem("platinum", "broadcasterServer")
         # 需要注册的饰品信息Dict
         baubleInfoDict = {
             "baubleName": "命名空间:物品名称",
@@ -87,13 +87,13 @@ class BaubleRegiste(serverApi.GetServerSystemCls()):
             # 可选 自定义信息提示
             "customTips": "自定义信息提示"
         }
-        # 发送注册事件 导入commonConfig.py后可将事件名改为commonConfig.BAUBLE_REGISTER_EVENT
-        self.BroadcastEvent("BaubleRegister",baubleInfoDict)
+        # 调用注册函数
+        registerSys.BaubleRegister(baubleInfoDict)
 ```
 
 #### 2.监听玩家饰品穿脱事件
 
-　　通过注册监听事件，开发者可以监听到玩家穿脱饰品，可以在对应的回调函数中做出相应的逻辑处理。注册监听代码如下：
+通过注册监听事件，开发者可以监听到玩家穿脱饰品，可以在对应的回调函数中做出相应的逻辑处理。注册监听代码如下：
 
 ```py
 # commonConfig为组件配置文件
@@ -114,18 +114,16 @@ self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROAD
                     commonConfig.BAUBLE_UNEQUIPPED_EVENT, self, self.onBaubleUnequipped)
 ```
 
-
-
 ### 六、示例代码
 
-　　组件内还内置了一个腰带饰品【旅行者腰带】[服务端代码](behavior_pack_Platinum/Script_Platinum/buildInBaubleServer.py)、[客户端代码](behavior_pack_Platinum/Script_Platinum/buildInBaubleClient.py) 中详细的说明了如何进行饰品穿脱的监听以及对应功能的实现。实现了一个可以提升玩家跨越高度的饰品。
-
-
+组件内还内置了一个腰带饰品【旅行者腰带】[服务端代码](behavior_pack_Platinum/Script_Platinum/buildInBaubleServer.py)、[客户端代码](behavior_pack_Platinum/Script_Platinum/buildInBaubleClient.py)
+中详细的说明了如何进行饰品穿脱的监听以及对应功能的实现。实现了一个可以提升玩家跨越高度的饰品。
 
 ### 七、后续开发
 
-　　因为本组件旨在完成一个便于联动的饰品栏模组，有任何的接口需求也可以联系我 QQ：873811906，或加入开发者交流群：575858232，尽量满足各位开发者大大的需求。但是本人也只是一个组件小白，所以需求不一定能够满足，感谢各位大佬的指点以及使用~
+因为本组件旨在完成一个便于联动的饰品栏模组，有任何的接口需求也可以联系我
+QQ：873811906，或加入开发者交流群：575858232，尽量满足各位开发者大大的需求。但是本人也只是一个组件小白，所以需求不一定能够满足，感谢各位大佬的指点以及使用~
 
 ### 许可证
 
-　　本组件遵循[MIT](behavior_pack_Platinum/Script_Platinum/LICENSE)开源协议，请开发者们随意使用。
+在遵循最终用户许可协议([EULA](behavior_pack_Platinum/Script_Platinum/EULA.txt))的前提下，本组件遵循[MIT](behavior_pack_Platinum/Script_Platinum/LICENSE)开源协议，请开发者们随意使用。
