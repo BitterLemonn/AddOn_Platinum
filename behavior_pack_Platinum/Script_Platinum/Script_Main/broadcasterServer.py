@@ -8,9 +8,6 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
 
     def __init__(self, namespace, name):
         super(BroadcasterServer, self).__init__(namespace, name)
-        # 监听饰品注册事件
-        self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
-                            commonConfig.BAUBLE_REGISTER_EVENT, self, self.BaubleRegister)
 
     def BaubleRegister(self, data):
         """
