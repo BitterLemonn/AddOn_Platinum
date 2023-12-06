@@ -720,7 +720,7 @@ def OnLoadClientAddonScriptsAfter(data):
         DisplayPlayerBaubleInfo()
         for slotName, bauble in GlobalData.baubleDict.items():
             if len(bauble) > 0:
-                BaubleEquippedBroadcaster(BaubleConfig.SlotName2TypeDict[slotName], bauble)
+                BaubleEquippedBroadcaster(BaubleConfig.SlotName2TypeDict[slotName], bauble, True)
 
 
 # 监听客户端关闭保存饰品文件
@@ -852,9 +852,11 @@ def DisplayPlayerBaubleInfo():
 
 
 # 饰品装备广播
-def BaubleEquippedBroadcaster(baubleSlot, itemDict):
-    Call("BaubleEquipped", {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict})
-    CallOTClient(playerId, "BaubleEquipped", {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict})
+def BaubleEquippedBroadcaster(baubleSlot, itemDict, isFirstLoad=False):
+    Call("BaubleEquipped",
+         {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict, "isFirstLoad": isFirstLoad})
+    CallOTClient(playerId, "BaubleEquipped",
+                 {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict, "isFirstLoad": isFirstLoad})
 
 
 # 饰品卸下广播
