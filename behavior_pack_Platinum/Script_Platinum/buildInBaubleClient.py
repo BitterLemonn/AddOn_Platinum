@@ -22,18 +22,20 @@ class BuildInBaubleClient(clientApi.GetClientSystemCls()):
     def onBaubleEquipped(self, data):
         """
         饰品装备事件
-        :param data: {playerId: str, itemDict: dict, baubleSlot: str}
+        :param data: {playerId: str, itemDict: dict, baubleSlot: str, slotIndex: int}
         """
         playerId = data["playerId"]
         bauble = data["itemDict"]
         slot = data["baubleSlot"]
+        slotIndex = data["slotIndex"]
 
     def onBaubleUnequipped(self, data):
         """
         饰品卸下事件
-        :param data: {playerId: str, itemDict: dict, baubleSlot: str}
+        :param data: {playerId: str, itemDict: dict, baubleSlot: str, slotIndex: int}
         :return:
         """
         playerId = data["playerId"]
         bauble = data["itemDict"]
         slot = data["baubleSlot"]
+        slotIndex = data["slotIndex"]

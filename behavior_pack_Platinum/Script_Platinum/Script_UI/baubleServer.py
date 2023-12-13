@@ -55,6 +55,29 @@ def ItemName2BaubleSlot(itemDict):
         return BaubleDict[itemName] if isinstance(BaubleDict[itemName], type("")) else BaubleDict[itemName][0]
 
 
+@AllowCall
+def CheckBauble(itemDict, baubleSlot):
+    comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
+    baseInfo = comp.GetItemBasicInfo(itemDict["newItemName"], itemDict["newAuxValue"])
+    if baseInfo["maxStackSize"] > 1:
+        logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(itemDict["newItemName"]))
+        return False
+    if itemDict["newItemName"] in BaubleDict.keys():
+        baubleValue = BaubleDict[itemDict["newItemName"]]
+        if isinstance(baubleValue, type("")):
+            targetSlot = baubleValue
+        elif isinstance(baubleValue, type([])):
+            targetSlot = baubleValue[0]
+        else:
+            logging.error("铂: 饰品 {} 配置错误, 请检查饰品注册信息".format(itemDict["newItemName"]))
+            return False
+
+        if targetSlot == baubleSlot:
+            return True
+
+    return False
+
+
 @Listen(Events.PlayerDieEvent)
 def OnPlayerDieEvent(data):
     playerId = data["id"]

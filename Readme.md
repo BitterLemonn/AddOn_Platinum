@@ -114,6 +114,20 @@ self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROAD
                     commonConfig.BAUBLE_UNEQUIPPED_EVENT, self, self.onBaubleUnequipped)
 ```
 
+接收到的data信息如下：
+
+```py
+# coding=utf-8
+# 饰品装备事件
+data = {
+    "playerId": "",  # 玩家ID type: str
+    "itemDict": {},  # 饰品信息Dict type: dict
+    "baubleSlot": "",  # 饰品槽位 type: str
+    "slotIndex": 0  # 饰品槽位索引 type: int
+    # 饰品槽位索引只有当饰品槽位为HAND或OTHER时会有对应的值，否则为0
+}
+```
+
 ### 六、示例代码
 
 组件内还内置了一个腰带饰品【旅行者腰带】[服务端代码](behavior_pack_Platinum/Script_Platinum/buildInBaubleServer.py)、[客户端代码](behavior_pack_Platinum/Script_Platinum/buildInBaubleClient.py)
@@ -124,6 +138,6 @@ self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROAD
 因为本组件旨在完成一个便于联动的饰品栏模组，有任何的接口需求也可以联系我
 QQ：873811906，或加入开发者交流群：575858232，尽量满足各位开发者大大的需求。但是本人也只是一个组件小白，所以需求不一定能够满足，感谢各位大佬的指点以及使用~
 
-### 许可证
+### 八、许可证
 
 在遵循最终用户许可协议([EULA](behavior_pack_Platinum/Script_Platinum/EULA.txt))的前提下，本组件遵循[MIT](behavior_pack_Platinum/Script_Platinum/LICENSE)开源协议，请开发者们随意使用。

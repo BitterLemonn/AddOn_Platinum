@@ -6,6 +6,8 @@ from .. import loggingUtils as logging
 from ..commonConfig import BaubleEnum
 from ..commonConfig import BaubleDict
 
+import re
+
 CustomUIScreenProxy = clientApi.GetUIScreenProxyCls()
 
 
@@ -370,37 +372,60 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             # 交换饰品
             baubleFrom = GlobalData.baubleDict[GetSlotNameByPath(self.baubleSelect)]
             baubleTo = GlobalData.baubleDict[GetSlotNameByPath(btnPath)]
+
+            try:
+                baubleIndexFrom = int(re.findall(r"\d+", self.baubleSelect)[-1])
+                baubleIndexTo = int(re.findall(r"\d+", btnPath)[-1])
+            except:
+                baubleIndexTo = 0
+                baubleIndexFrom = 0
+
             if len(baubleFrom) != 0 or len(baubleTo) != 0:
                 def changePos():
                     GlobalData.baubleDict[GetSlotNameByPath(self.baubleSelect)] = baubleTo
                     GlobalData.baubleDict[GetSlotNameByPath(btnPath)] = baubleFrom
                     self.RenderBauble(self.baubleSelect)
                     self.RenderBauble(btnPath)
+                    baubleTypeFrom = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
+                    baubleTypeTo = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(btnPath)]
                     # 发送脱下饰品事件
                     if len(baubleFrom) != 0:
-                        BaubleUnequippedBroadcaster(
-                            BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)],
-                            baubleFrom)
+                        if baubleTypeFrom == BaubleEnum.HAND or baubleTypeFrom == BaubleEnum.OTHER:
+                            BaubleUnequippedBroadcaster(baubleTypeFrom, baubleFrom, baubleIndexFrom)
+                        else:
+                            BaubleUnequippedBroadcaster(baubleTypeFrom, baubleFrom)
                     if len(baubleTo) != 0:
-                        BaubleUnequippedBroadcaster(BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(btnPath)],
-                                                    baubleTo)
+                        if baubleTypeTo == BaubleEnum.HAND or baubleTypeTo == BaubleEnum.OTHER:
+                            BaubleUnequippedBroadcaster(baubleTypeTo, baubleTo, baubleIndexTo)
+                        else:
+                            BaubleUnequippedBroadcaster(baubleTypeTo, baubleTo)
                     # 发送穿戴饰品事件
                     if len(baubleTo) != 0:
-                        BaubleEquippedBroadcaster(BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(btnPath)], baubleTo)
+                        if baubleTypeFrom == BaubleEnum.HAND or baubleTypeFrom == BaubleEnum.OTHER:
+                            BaubleEquippedBroadcaster(baubleTypeFrom, baubleTo, baubleIndexFrom)
+                        else:
+                            BaubleEquippedBroadcaster(baubleTypeFrom, baubleTo)
                     if len(baubleFrom) != 0:
-                        BaubleEquippedBroadcaster(BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)],
-                                                  baubleFrom)
+                        if baubleTypeTo == BaubleEnum.HAND or baubleTypeTo == BaubleEnum.OTHER:
+                            BaubleEquippedBroadcaster(baubleTypeTo, baubleFrom, baubleIndexTo)
+                        else:
+                            BaubleEquippedBroadcaster(baubleTypeTo, baubleFrom)
 
                 if len(baubleFrom) != 0 and len(baubleTo) != 0:
-                    if CheckBauble(baubleFrom, self.baubleSelect) and CheckBauble(baubleTo, btnPath):
-                        changePos()
-                elif len(baubleFrom) != 0:
-                    if CheckBauble(baubleFrom, btnPath):
-                        changePos()
-                else:
-                    if CheckBauble(baubleTo, self.baubleSelect):
-                        changePos()
+                    baubleSlotFrom = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
+                    baubleSlotTo = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(btnPath)]
 
+                    def OnCheck(isSuccess):
+                        if isSuccess:
+                            Request("CheckBauble", (baubleTo, baubleSlotTo), OnResponse=changePos)
+
+                    Request("CheckBauble", (baubleFrom, baubleSlotFrom), OnResponse=OnCheck)
+                elif len(baubleFrom) != 0:
+                    baubleSlot = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(btnPath)]
+                    Request("CheckBauble", (baubleFrom, baubleSlot), OnResponse=changePos)
+                else:
+                    baubleSlot = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
+                    Request("CheckBauble", (baubleTo, baubleSlot), OnResponse=changePos)
             self.SelectBauble()
 
     # 物品栏位按钮回调
@@ -414,10 +439,14 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             self.invInfo = itemDict
             # 穿戴饰品
             if itemDict:
-                if CheckBauble(self.invInfo, self.baubleSelect):
-                    self.SwapBauble()
-                else:
-                    self.SelectBauble()
+                def OnCheck(isSuccess):
+                    if isSuccess:
+                        self.SwapBauble()
+                    else:
+                        self.SelectBauble()
+
+                baubleSlot = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
+                Request("CheckBauble", (self.invInfo, baubleSlot), OnResponse=OnCheck)
             # 脱下饰品
             elif len(GlobalData.baubleDict[GetSlotNameByPath(self.baubleSelect)]) > 0:
                 self.SwapBauble()
@@ -444,6 +473,10 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     def SwapBauble(self):
         baublePath = self.baubleSelect
         itemDict = self.invInfo
+        try:
+            baubleIndex = int(re.findall(r"\d+", baublePath)[-1])
+        except:
+            baubleIndex = 0
         # 穿戴或交换
         if itemDict and len(itemDict) > 0:
             slotType = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(baublePath)]
@@ -452,7 +485,10 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             self.FlyingItem(itemDict, self.GetInvPathBySlotId(self.invSelect), baublePath)
             # 发送脱下饰品事件
             if len(originBauble) != 0:
-                BaubleUnequippedBroadcaster(slotType, originBauble)
+                if slotType == BaubleEnum.HAND or slotType == BaubleEnum.OTHER:
+                    BaubleUnequippedBroadcaster(slotType, originBauble, baubleIndex)
+                else:
+                    BaubleUnequippedBroadcaster(slotType, originBauble)
                 Call("AddItem", {"playerId": playerId, "itemDict": originBauble, "slot": self.invSelect})
                 # 飞行动画
                 self.FlyingItem(originBauble, baublePath, self.GetInvPathBySlotId(self.invSelect))
@@ -461,14 +497,20 @@ class InventoryClassicProxy(CustomUIScreenProxy):
 
             GlobalData.baubleDict[GetSlotNameByPath(baublePath)] = itemDict
             # 发送穿戴饰品事件
-            BaubleEquippedBroadcaster(slotType, itemDict)
+            if slotType == BaubleEnum.HAND or slotType == BaubleEnum.OTHER:
+                BaubleEquippedBroadcaster(slotType, itemDict, baubleIndex)
+            else:
+                BaubleEquippedBroadcaster(slotType, itemDict)
         else:
             originBauble = GlobalData.baubleDict[GetSlotNameByPath(baublePath)]
             slotType = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(baublePath)]
             # 发送脱下饰品事件
             if len(originBauble) != 0:
                 GlobalData.baubleDict[GetSlotNameByPath(baublePath)] = {}
-                BaubleUnequippedBroadcaster(slotType, originBauble)
+                if slotType == BaubleEnum.HAND or slotType == BaubleEnum.OTHER:
+                    BaubleUnequippedBroadcaster(slotType, originBauble, baubleIndex)
+                else:
+                    BaubleUnequippedBroadcaster(slotType, originBauble)
                 Call("AddItem", {"playerId": playerId, "itemDict": originBauble, "slot": self.invSelect})
             # 飞行动画
             self.FlyingItem(originBauble, baublePath, self.GetInvPathBySlotId(self.invSelect))
@@ -696,7 +738,7 @@ class InventoryPocketProxy(InventoryClassicProxy):
 @Listen(Events.OnLocalPlayerStopLoading)
 def OnLoadClientAddonScriptsAfter(data):
     comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA)
+    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId))
     loadData = configData.get(BaubleConfig.BAUBLE_SLOT_INFO, {})
     if len(loadData) == 0:
         logging.error("铂: 读取饰品数据失败!!! 已重置饰品数据")
@@ -720,15 +762,27 @@ def OnLoadClientAddonScriptsAfter(data):
         DisplayPlayerBaubleInfo()
         for slotName, bauble in GlobalData.baubleDict.items():
             if len(bauble) > 0:
-                BaubleEquippedBroadcaster(BaubleConfig.SlotName2TypeDict[slotName], bauble)
+                try:
+                    slotIndex = int(re.findall(r"\d+", slotName)[-1])
+                except:
+                    slotIndex = 0
+                slotType = BaubleConfig.SlotName2TypeDict[slotName]
+                if slotType == BaubleEnum.HAND or slotType == BaubleEnum.OTHER:
+                    BaubleEquippedBroadcaster(slotType, bauble, slotIndex, True)
+                else:
+                    BaubleEquippedBroadcaster(slotType, bauble, isFirstLoad=True)
 
 
 # 监听客户端关闭保存饰品文件
 def QuDestroy():
+    SaveData()
+
+
+def SaveData():
     comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA)
+    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId))
     configData[BaubleConfig.BAUBLE_SLOT_INFO] = GlobalData.baubleDict
-    isSave = comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA, configData)
+    isSave = comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId), configData)
     if isSave:
         logging.info("铂: 保存饰品数据成功")
     else:
@@ -792,7 +846,11 @@ def EquipBauble(itemDict, slotType):
             # 饰品栏位为空
             if len(originBauble) == 0:
                 GlobalData.baubleDict[slotName] = itemDict
-                BaubleEquippedBroadcaster(slotType, itemDict)
+                try:
+                    slotIndex = int(re.findall(r"\d+", slotName)[-1])
+                except:
+                    slotIndex = 0
+                BaubleEquippedBroadcaster(slotType, itemDict, slotIndex)
                 # 移除玩家物品栏中的饰品
                 Call("RemoveItem", {"playerId": playerId})
                 # 播放装备音效
@@ -804,28 +862,6 @@ def EquipBauble(itemDict, slotType):
 # 工具函数
 def GetSlotNameByPath(path):
     return path.split("/")[-2].replace("bauble_", "").replace("_panel", "")
-
-
-def CheckBauble(itemDict, baublePath):
-    comp = clientApi.GetEngineCompFactory().CreateItem(levelId)
-    baseInfo = comp.GetItemBasicInfo(itemDict["newItemName"], itemDict["newAuxValue"])
-    if baseInfo["maxStackSize"] > 1:
-        logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(itemDict["newItemName"]))
-        return False
-    if itemDict["newItemName"] in BaubleDict.keys():
-        baubleValue = BaubleDict[itemDict["newItemName"]]
-        if isinstance(baubleValue, type("")):
-            targetSlot = baubleValue
-        elif isinstance(baubleValue, type([])):
-            targetSlot = baubleValue[0]
-        else:
-            logging.error("铂: 饰品 {} 配置错误, 请检查饰品注册信息".format(itemDict["newItemName"]))
-            return False
-
-        if targetSlot == BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(baublePath)]:
-            return True
-
-    return False
 
 
 def DelayRun(func, delayTime=0.05, *args, **kwargs):
@@ -852,12 +888,20 @@ def DisplayPlayerBaubleInfo():
 
 
 # 饰品装备广播
-def BaubleEquippedBroadcaster(baubleSlot, itemDict):
-    Call("BaubleEquipped", {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict})
-    CallOTClient(playerId, "BaubleEquipped", {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict})
+def BaubleEquippedBroadcaster(baubleSlot, itemDict, slotIndex=0, isFirstLoad=False):
+    Call("BaubleEquipped",
+         {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict, "isFirstLoad": isFirstLoad,
+          "slotIndex": slotIndex})
+    CallOTClient(playerId, "BaubleEquipped",
+                 {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict, "isFirstLoad": isFirstLoad,
+                  "slotIndex": slotIndex})
+    SaveData()
 
 
 # 饰品卸下广播
-def BaubleUnequippedBroadcaster(baubleSlot, itemDict):
-    Call("BaubleUnequipped", {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict})
-    CallOTClient(playerId, "BaubleUnequipped", {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict})
+def BaubleUnequippedBroadcaster(baubleSlot, itemDict, slotIndex=0):
+    Call("BaubleUnequipped",
+         {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict, "slotIndex": slotIndex})
+    CallOTClient(playerId, "BaubleUnequipped",
+                 {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict, "slotIndex": slotIndex})
+    SaveData()
