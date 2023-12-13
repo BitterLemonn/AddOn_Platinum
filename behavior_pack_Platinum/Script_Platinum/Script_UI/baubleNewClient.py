@@ -412,15 +412,20 @@ class InventoryClassicProxy(CustomUIScreenProxy):
                             BaubleEquippedBroadcaster(baubleTypeTo, baubleFrom)
 
                 if len(baubleFrom) != 0 and len(baubleTo) != 0:
-                    if CheckBauble(baubleFrom, self.baubleSelect) and CheckBauble(baubleTo, btnPath):
-                        changePos()
-                elif len(baubleFrom) != 0:
-                    if CheckBauble(baubleFrom, btnPath):
-                        changePos()
-                else:
-                    if CheckBauble(baubleTo, self.baubleSelect):
-                        changePos()
+                    baubleSlotFrom = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
+                    baubleSlotTo = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(btnPath)]
 
+                    def OnCheck(isSuccess):
+                        if isSuccess:
+                            Request("CheckBauble", (baubleTo, baubleSlotTo), OnResponse=changePos)
+
+                    Request("CheckBauble", (baubleFrom, baubleSlotFrom), OnResponse=OnCheck)
+                elif len(baubleFrom) != 0:
+                    baubleSlot = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(btnPath)]
+                    Request("CheckBauble", (baubleFrom, baubleSlot), OnResponse=changePos)
+                else:
+                    baubleSlot = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
+                    Request("CheckBauble", (baubleTo, baubleSlot), OnResponse=changePos)
             self.SelectBauble()
 
     # 物品栏位按钮回调
@@ -434,10 +439,14 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             self.invInfo = itemDict
             # 穿戴饰品
             if itemDict:
-                if CheckBauble(self.invInfo, self.baubleSelect):
-                    self.SwapBauble()
-                else:
-                    self.SelectBauble()
+                def OnCheck(isSuccess):
+                    if isSuccess:
+                        self.SwapBauble()
+                    else:
+                        self.SelectBauble()
+
+                baubleSlot = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
+                Request("CheckBauble", (self.invInfo, baubleSlot), OnResponse=OnCheck)
             # 脱下饰品
             elif len(GlobalData.baubleDict[GetSlotNameByPath(self.baubleSelect)]) > 0:
                 self.SwapBauble()
@@ -853,28 +862,6 @@ def EquipBauble(itemDict, slotType):
 # 工具函数
 def GetSlotNameByPath(path):
     return path.split("/")[-2].replace("bauble_", "").replace("_panel", "")
-
-
-def CheckBauble(itemDict, baublePath):
-    comp = clientApi.GetEngineCompFactory().CreateItem(levelId)
-    baseInfo = comp.GetItemBasicInfo(itemDict["newItemName"], itemDict["newAuxValue"])
-    if baseInfo["maxStackSize"] > 1:
-        logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(itemDict["newItemName"]))
-        return False
-    if itemDict["newItemName"] in BaubleDict.keys():
-        baubleValue = BaubleDict[itemDict["newItemName"]]
-        if isinstance(baubleValue, type("")):
-            targetSlot = baubleValue
-        elif isinstance(baubleValue, type([])):
-            targetSlot = baubleValue[0]
-        else:
-            logging.error("铂: 饰品 {} 配置错误, 请检查饰品注册信息".format(itemDict["newItemName"]))
-            return False
-
-        if targetSlot == BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(baublePath)]:
-            return True
-
-    return False
 
 
 def DelayRun(func, delayTime=0.05, *args, **kwargs):
