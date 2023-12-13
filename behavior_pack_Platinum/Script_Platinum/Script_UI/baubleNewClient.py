@@ -738,7 +738,7 @@ class InventoryPocketProxy(InventoryClassicProxy):
 @Listen(Events.OnLocalPlayerStopLoading)
 def OnLoadClientAddonScriptsAfter(data):
     comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA)
+    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId))
     loadData = configData.get(BaubleConfig.BAUBLE_SLOT_INFO, {})
     if len(loadData) == 0:
         logging.error("铂: 读取饰品数据失败!!! 已重置饰品数据")
@@ -780,9 +780,9 @@ def QuDestroy():
 
 def SaveData():
     comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA)
+    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId))
     configData[BaubleConfig.BAUBLE_SLOT_INFO] = GlobalData.baubleDict
-    isSave = comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA, configData)
+    isSave = comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId), configData)
     if isSave:
         logging.info("铂: 保存饰品数据成功")
     else:
