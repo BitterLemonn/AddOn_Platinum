@@ -830,9 +830,11 @@ def OnPlayerDie(keepInv, pos, dimensionId):
         for slotName, itemDict in GlobalData.baubleDict.items():
             if len(itemDict) > 0:
                 slotType = BaubleConfig.SlotName2TypeDict[slotName]
-                Call("BaubleUnequipped", {"playerId": playerId, "itemDict": itemDict, "baubleSlot": slotType})
-                CallOTClient(playerId, "BaubleUnequipped",
-                             {"playerId": playerId, "itemDict": itemDict, "baubleSlot": slotType})
+                if slotType == BaubleEnum.HAND or slotType == BaubleEnum.OTHER:
+                    slotIndex = int(re.findall(r"\d+", slotName)[-1])
+                    BaubleUnequippedBroadcaster(slotType, itemDict, slotIndex)
+                else:
+                    BaubleUnequippedBroadcaster(slotType, itemDict)
                 Call("SpawnItem", itemDict, pos, dimensionId)
                 GlobalData.baubleDict[slotName] = {}
 
