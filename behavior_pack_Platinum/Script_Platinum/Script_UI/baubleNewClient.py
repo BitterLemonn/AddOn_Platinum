@@ -4,7 +4,6 @@ from ..QuModLibs.UI import *
 
 from .. import loggingUtils as logging
 from ..commonConfig import BaubleEnum
-from ..commonConfig import BaubleDict
 
 import re
 
@@ -511,7 +510,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
                     BaubleUnequippedBroadcaster(slotType, originBauble, baubleIndex)
                 else:
                     BaubleUnequippedBroadcaster(slotType, originBauble)
-                Call("AddItem", {"playerId": playerId, "itemDict": originBauble, "slot": self.invSelect})
+                DelayRun(Call, 0.1, "AddItem", {"playerId": playerId, "itemDict": originBauble, "slot": self.invSelect})
             # 飞行动画
             self.FlyingItem(originBauble, baublePath, self.GetInvPathBySlotId(self.invSelect))
 
@@ -830,9 +829,11 @@ def OnPlayerDie(keepInv, pos, dimensionId):
         for slotName, itemDict in GlobalData.baubleDict.items():
             if len(itemDict) > 0:
                 slotType = BaubleConfig.SlotName2TypeDict[slotName]
-                Call("BaubleUnequipped", {"playerId": playerId, "itemDict": itemDict, "baubleSlot": slotType})
-                CallOTClient(playerId, "BaubleUnequipped",
-                             {"playerId": playerId, "itemDict": itemDict, "baubleSlot": slotType})
+                if slotType == BaubleEnum.HAND or slotType == BaubleEnum.OTHER:
+                    slotIndex = int(re.findall(r"\d+", slotName)[-1])
+                    BaubleUnequippedBroadcaster(slotType, itemDict, slotIndex)
+                else:
+                    BaubleUnequippedBroadcaster(slotType, itemDict)
                 Call("SpawnItem", itemDict, pos, dimensionId)
                 GlobalData.baubleDict[slotName] = {}
 
