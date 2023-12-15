@@ -4,7 +4,6 @@ from ..QuModLibs.UI import *
 
 from .. import loggingUtils as logging
 from ..commonConfig import BaubleEnum
-from ..commonConfig import BaubleDict
 
 import re
 
@@ -511,7 +510,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
                     BaubleUnequippedBroadcaster(slotType, originBauble, baubleIndex)
                 else:
                     BaubleUnequippedBroadcaster(slotType, originBauble)
-                Call("AddItem", {"playerId": playerId, "itemDict": originBauble, "slot": self.invSelect})
+                DelayRun(Call, 0.1, "AddItem", {"playerId": playerId, "itemDict": originBauble, "slot": self.invSelect})
             # 飞行动画
             self.FlyingItem(originBauble, baublePath, self.GetInvPathBySlotId(self.invSelect))
 
