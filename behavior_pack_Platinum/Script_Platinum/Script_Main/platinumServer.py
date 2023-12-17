@@ -24,7 +24,6 @@ def AddItem(data):
 
 @AllowCall
 def OnItemChanged(playerId, itemDict, slot):
-    logging.error(itemDict)
     if BaubleDict.get(itemDict["newItemName"], None) is not None:
         baubleValue = BaubleDict[itemDict["newItemName"]]
         try:
