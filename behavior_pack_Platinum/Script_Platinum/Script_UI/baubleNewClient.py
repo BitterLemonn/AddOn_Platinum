@@ -119,6 +119,7 @@ class FlyingItemRenderer:
 class BaubleConfig(object):
     PLATINUM_LOCAL_DATA = "platinum_local_data"
     BAUBLE_SLOT_INFO = "bauble_slot_info"
+    BAUBLE_BTN_POSITION = "bauble_btn_position"
 
     UI_DEF = "bauble_base_panel"
     UI_DEF_MAIN = "bauble_base_panel.main"
@@ -154,6 +155,8 @@ class BaubleConfig(object):
 class GlobalData(object):
     uiProfile = clientApi.GetEngineCompFactory().CreatePlayerView(levelId).GetUIProfile()
 
+    uiPosition = "left_top"
+
     # 玩家饰品字典
     baubleDict = {
         "helmet": {},
@@ -169,6 +172,20 @@ class GlobalData(object):
         "other_3": {},
         "other_4": {}
     }
+
+
+@AllowCall
+def ChangeUiPosition(uiPosition):
+    GlobalData.uiPosition = uiPosition
+    OnUiInitFinished(None)
+    SavePosition()
+
+
+def SavePosition():
+    comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
+    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId))
+    configData[BaubleConfig.BAUBLE_BTN_POSITION] = GlobalData.uiPosition
+    comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId), configData)
 
 
 # 背包经典界面代理类
@@ -244,12 +261,6 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         if self.openState:
             self.CloseBaublePanel()
 
-        panelPath = self.survivalPaddingPath
-        baublePanel = screen.GetBaseUIControl(panelPath + "/bauble_classic_new")
-        screen.RemoveChildControl(baublePanel)
-        panelPath = self.playerRenderBgPath
-        baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button").asButton()
-        screen.RemoveChildControl(baubleBtn)
         self.flyingUtils.OnDestroy()
 
     def OnTick(self):
@@ -296,8 +307,25 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             baubleBtn.SetVisible(True)
         except:
             baubleBtn = screen.CreateChildControl(BaubleConfig.UI_DEF_BAUBLE_BTN, "bauble_button", panel).asButton()
+
+        self.SetBtnPosition(baubleBtn)
         baubleBtn.AddTouchEventParams({"isSwallow": True})
         baubleBtn.SetButtonTouchUpCallback(self.OnBaubleButtonClicked)
+
+    def SetBtnPosition(self, btn):
+        position = GlobalData.uiPosition
+        if position == "left_top":
+            btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": -0.35})
+            btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": -0.4})
+        elif position == "right_top":
+            btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": 0.35})
+            btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": -0.4})
+        elif position == "left_bottom":
+            btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": -0.35})
+            btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": 0.4})
+        elif position == "right_bottom":
+            btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": 0.35})
+            btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": 0.4})
 
     # 饰品栏开关按钮回调
     def OnBaubleButtonClicked(self, args):
@@ -622,16 +650,6 @@ class InventoryPocketProxy(InventoryClassicProxy):
         if self.openState:
             self.CloseBaublePanel()
 
-        try:
-            panelPath = self.playerRenderBgPath
-            baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button")
-            self.GetScreenNode().RemoveChildControl(baubleBtn)
-            panelPath = self.armorSetPath
-            baublePanel = screen.GetBaseUIControl(panelPath + "/bauble_pocket_new")
-            self.GetScreenNode().RemoveChildControl(baublePanel)
-        except:
-            pass
-
         self.flyingUtils.OnDestroy()
 
     def CreateBaubleBtn(self):
@@ -647,8 +665,24 @@ class InventoryPocketProxy(InventoryClassicProxy):
         except:
             baubleBtn = screen.CreateChildControl(BaubleConfig.UI_DEF_BAUBLE_BTN_BIG, "bauble_button", panel).asButton()
 
+        self.SetBtnPosition(baubleBtn)
         baubleBtn.AddTouchEventParams({"isSwallow": True})
         baubleBtn.SetButtonTouchUpCallback(self.OnBaubleButtonClicked)
+
+    def SetBtnPosition(self, btn):
+        position = GlobalData.uiPosition
+        if position == "left_top":
+            btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": -0.40})
+            btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": -0.38})
+        elif position == "right_top":
+            btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": 0.40})
+            btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": -0.38})
+        elif position == "left_bottom":
+            btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": -0.40})
+            btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": 0.38})
+        elif position == "right_bottom":
+            btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": 0.40})
+            btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": 0.38})
 
     def OpenBaublePanel(self):
         screen = self.GetScreenNode()
@@ -771,6 +805,9 @@ def OnLoadClientAddonScriptsAfter(data):
                 else:
                     BaubleEquippedBroadcaster(slotType, bauble, isFirstLoad=True)
 
+    uiPosition = configData.get(BaubleConfig.BAUBLE_BTN_POSITION, "left_top")
+    GlobalData.uiPosition = uiPosition
+
 
 # 监听客户端关闭保存饰品文件
 def QuDestroy():
@@ -858,6 +895,16 @@ def EquipBauble(itemDict, slotType):
                 comp = clientApi.GetEngineCompFactory().CreateCustomAudio(levelId)
                 comp.PlayCustomMusic("armor.equip_iron", (0, 0, 0), 0.8, 0.8, False, playerId)
                 break
+
+
+# 检测玩家UIProfile
+@Listen(Events.OnScriptTickClient)
+def OnScriptTickClient():
+    comp = clientApi.GetEngineCompFactory().CreatePlayerView(levelId)
+    uiProfile = comp.GetUIProfile()
+    if uiProfile != GlobalData.uiProfile:
+        GlobalData.uiProfile = uiProfile
+        OnUiInitFinished(None)
 
 
 # 工具函数

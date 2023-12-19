@@ -94,3 +94,20 @@ def OnPlayerDieEvent(data):
 def SpawnItem(itemDict, pos, dimensionId):
     comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
     comp.SpawnItemToLevel(itemDict, dimensionId, pos)
+
+
+@Listen(Events.ServerChatEvent)
+def OnServerChatEvent(data):
+    playerId = data["playerId"]
+    msg = data["message"]
+    if msg.startswith("#platinum_"):
+        msg = msg.replace("#platinum_", "")
+        if msg in ["left_top", "right_top", "left_bottom", "right_bottom"]:
+            Call(playerId, "ChangeUiPosition", msg)
+            data["cancel"] = True
+            comp = serverApi.GetEngineCompFactory().CreateMsg(playerId)
+
+            position = "左上角" if msg == "left_top" else "右上角" \
+                if msg == "right_top" else "左下角" if msg == "left_bottom" else "右下角"
+
+            comp.NotifyOneMessage(playerId, "铂: 饰品栏按钮已切换至{}".format(position))
