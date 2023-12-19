@@ -263,6 +263,12 @@ class InventoryClassicProxy(CustomUIScreenProxy):
 
         self.flyingUtils.OnDestroy()
 
+        try:
+            bauble = screen.GetBaseUIControl(self.baublePath)
+            screen.RemoveChildControl(bauble)
+        except:
+            pass
+
     def OnTick(self):
         # 切换界面隐藏饰品栏
         screen = self.GetScreenNode()
@@ -651,6 +657,12 @@ class InventoryPocketProxy(InventoryClassicProxy):
             self.CloseBaublePanel()
 
         self.flyingUtils.OnDestroy()
+
+        try:
+            bauble = screen.GetBaseUIControl(self.baublePath)
+            screen.RemoveChildControl(bauble)
+        except:
+            pass
 
     def CreateBaubleBtn(self):
         screen = self.GetScreenNode()

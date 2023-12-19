@@ -33,7 +33,7 @@
   "EditAddOnPaths": [],
   "EditMaterialPaths": [],
   "EditLogFilePath": "",
-  "ServerName": "",
+  "ServerName": "EXPR",
   "StudioPort": 11124,
   "DCWebUrl": "https://x19apigatewayexpr.nie.netease.com",
   "ShowGuide": false,
