@@ -67,14 +67,7 @@
                     "/netease_prefab_screen"
                 ],
                 "bauble_new.bauble_classic_new": [
-                    "/netease_prefab_screen",
-                    "/netease_prefab_screen/bauble_classic_new",
-                    "/netease_prefab_screen/bauble_classic_new/bg_img",
-                    "/netease_prefab_screen/bauble_classic_new/bg_img/bauble_scroll_view",
-                    "/netease_prefab_screen/bauble_classic_new/bg_img/bauble_scroll_view/scroll_mouse/scroll_view",
-                    "/netease_prefab_screen/bauble_classic_new/bg_img/bauble_scroll_view/scroll_mouse/scroll_view/stack_panel",
-                    "/netease_prefab_screen/bauble_classic_new/bg_img/bauble_scroll_view/scroll_mouse/scroll_view/stack_panel/background_and_viewport",
-                    "/netease_prefab_screen/bauble_classic_new/bg_img/bauble_scroll_view/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content"
+                    "/netease_prefab_screen"
                 ],
                 "bauble_new.bauble_pocket": [
                     "/netease_prefab_screen",
@@ -95,7 +88,8 @@
             },
             "screen": {
                 "D:\\MCNetease\\MinecraftProject\\Platinum\\resource_pack_Platinum\\ui\\bauble_base_panel.json": [
-                    "/main"
+                    "/main",
+                    "/main/tip_message"
                 ],
                 "D:\\MCNetease\\MinecraftProject\\Platinum\\resource_pack_Platinum\\ui\\bauble_new.json": [
                     "/main"

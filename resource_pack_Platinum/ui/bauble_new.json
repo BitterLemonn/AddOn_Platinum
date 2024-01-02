@@ -1,6 +1,7 @@
 {
    "bauble_classic_new" : {
       "anchor_from" : "right_middle",
+      "anchor_to" : "right_middle",
       "clips_children" : true,
       "controls" : [
          {
@@ -50,7 +51,6 @@
          }
       ],
       "layer" : 1,
-      "offset" : [ -13.0, 0.0 ],
       "size" : [ 25.0, 166.0 ],
       "type" : "panel"
    },
@@ -364,6 +364,8 @@
       "type" : "stack_panel"
    },
    "flying_item" : {
+      "anchor_from" : "top_left",
+      "anchor_to" : "top_left",
       "layer" : 1,
       "property_bag" : {
          "#item_id_aux" : 131072
@@ -373,6 +375,8 @@
       "type" : "custom"
    },
    "flying_item_big" : {
+      "anchor_from" : "top_left",
+      "anchor_to" : "top_left",
       "layer" : 1,
       "property_bag" : {
          "#item_id_aux" : 131072

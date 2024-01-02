@@ -17,11 +17,13 @@ def SwapItem(data):
 @AllowCall
 def AddItem(data):
     playerId = data["playerId"]
-    slot = data["slot"]
     itemDict = data["itemDict"]
-
+    slot = data.get("slot", -1)
     comp = serverApi.GetEngineCompFactory().CreateItem(playerId)
-    comp.SpawnItemToPlayerInv(itemDict, playerId, slot)
+    if slot != -1:
+        comp.SpawnItemToPlayerInv(itemDict, playerId, slot)
+    else:
+        comp.SpawnItemToPlayerCarried(itemDict, playerId)
 
 
 @AllowCall
@@ -111,3 +113,9 @@ def OnServerChatEvent(data):
                 if msg == "right_top" else "左下角" if msg == "left_bottom" else "右下角"
 
             comp.NotifyOneMessage(playerId, "铂: 饰品栏按钮已切换至{}".format(position))
+
+
+@AllowCall
+def SendMsg(playerId, msg):
+    comp = serverApi.GetEngineCompFactory().CreateGame(playerId)
+    # comp.SetTipMessage(msg, serverApi.GenerateColor('RED'))

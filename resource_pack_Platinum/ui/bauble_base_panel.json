@@ -327,8 +327,54 @@
       "size" : [ "100.0%cm+0.0px", "default" ],
       "type" : "stack_panel"
    },
+   "fade_alpha" : {
+      "anim_type" : "alpha",
+      "duration" : 1.0,
+      "from" : 0.0,
+      "next" : "",
+      "to" : 1.0
+   },
+   "fade_alpha_end" : {
+      "anim_type" : "alpha",
+      "duration" : 1.0,
+      "from" : 1.0,
+      "next" : "",
+      "to" : 0.0
+   },
+   "fade_alpha_start" : {
+      "anim_type" : "alpha",
+      "duration" : 2.0,
+      "from" : 1.0,
+      "next" : "@bauble_base_panel.fade_alpha_end",
+      "to" : 1.0
+   },
    "main" : {
-      "controls" : [],
+      "controls" : [
+         {
+            "tip_message" : {
+               "alpha" : "@bauble_base_panel.fade_alpha_start",
+               "anchor_from" : "bottom_middle",
+               "anchor_to" : "bottom_middle",
+               "clip_direction" : "left",
+               "clip_ratio" : 0.0,
+               "controls" : [
+                  {
+                     "label" : {
+                        "font_type" : "default",
+                        "text_alignment" : "center",
+                        "type" : "label"
+                     }
+                  }
+               ],
+               "layer" : 1,
+               "offset" : [ 0.0, "-10.0%+0.0px" ],
+               "propagate_alpha" : true,
+               "size" : [ "100.0%c+10.0px", "100.0%c+5.0px" ],
+               "texture" : "textures/ui/purpleBorder",
+               "type" : "image"
+            }
+         }
+      ],
       "type" : "screen"
    },
    "namespace" : "bauble_base_panel",
