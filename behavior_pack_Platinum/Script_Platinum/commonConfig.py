@@ -12,6 +12,7 @@ Copyright (c) 2023 Bitterlemon
 # 装备饰品广播事件 (请勿更改!!)
 BAUBLE_EQUIPPED_EVENT = "BaubleEquipped"
 BAUBLE_UNEQUIPPED_EVENT = "BaubleUnequipped"
+BAUBLE_GET_INFO_EVENT = "BaubleGetInfo"
 # 当不使用内容库内容时,也可通过服务端发送BaubleRegister事件注册饰品
 # 需要服务端namespace为platinum, systemName为broadcasterServer
 BAUBLE_REGISTER_EVENT = "BaubleRegister"
