@@ -39,14 +39,13 @@
 
 当作为内容库直接导入开发项目时，开发者需将[脚本文件](behavior_pack_Platinum/Script_Platinum)
 复制到自己的开发项目的behavior_pack当中，以及将resource_pack中的[textures文件夹](/resource_pack_Platinum/textures)
-和[ui文件夹](/resource_pack_Platinum/ui)复制到开发项目中，*
-*不推荐直接将此开发包作为项目文件直接开发，可能会产生模组冲突。**注册饰品推荐使用服务端发送注册时间的方法注册(见五.1.b)
-。虽然可以通过直接更改[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)中的**BaubleDict**字典达到注册的目的，
-**但是不建议使用此方式注册饰品**，可能会造成无法预料的错误。
+和[ui文件夹](/resource_pack_Platinum/ui)复制到开发项目中，
+不推荐直接将此开发包作为项目文件直接开发，可能会产生模组冲突。**注册饰品推荐使用服务端发送注册时间的方法注册(见五.1.b)。**虽然可以通过直接更改[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)中的BaubleDict字典达到注册的目的，**但是不建议使用此方式注册饰品，可能会造成无法预料的错误。**
 
 ```py
+# coding=utf-8
 # BaubleDict注册格式如下
-"命名空间:物品名称": 槽位(**BaubleEnum ** 中的常量)
+"命名空间:物品名称": 槽位(**BaubleEnum** 中的常量)
 "命名空间:物品名称": [槽位]
 "命名空间:物品名称": [槽位, 自定义提示(customTips)]
 ```
@@ -96,6 +95,7 @@ class BaubleRegister(serverApi.GetServerSystemCls()):
 通过注册监听事件，开发者可以监听到玩家穿脱饰品，可以在对应的回调函数中做出相应的逻辑处理。注册监听代码如下：
 
 ```py
+# coding=utf-8
 # commonConfig为组件配置文件
 # 服务端监听事件
 # 监听饰品装备事件
@@ -127,6 +127,86 @@ data = {
     # 饰品槽位索引只有当饰品槽位为HAND或OTHER时会有对应的值，否则为0
 }
 ```
+
+#### 3.获取玩家饰品数据
+
+通过获取服务端组件可以发送获取特定玩家饰品数据的事件。代码如下：
+
+```python
+# coding=utf-8
+# 获取饰品数据
+# 项目文件中获取一个与组件通信的服务端
+# 如导入了commonConfig.py中的常量可将nameSpace和systemName分别改为commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
+registerSys = serverApi.GetSystem("platinum", "broadcasterServer")
+registerSys.GetPlayerBaubleInfo("playerId") # 传入参数为playerId
+
+# -------------------------------
+# 在服务端中可以监听到玩家的饰品信息
+# 监听饰品信息返回事件
+self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
+                    commonConfig.BAUBLE_GET_INFO, self, self.onBabubleGetInfo)
+
+# 事件回调
+def onBabubleGetInfo(data):
+    playerId = data["playerId"]
+    baubleDict = data["baubleDict"]
+```
+
+获取到的baubleDict结构如下:
+
+```py
+# coding=utf-8
+# 结构为 "slotname": itemDict 的字典
+baubleDict = {
+    "helmet": {},
+    "necklace": {},
+    "armor": {},
+    "back": {},
+    "hand_1": {},
+    "hand_2": {},
+    "belt": {},
+    "shoes": {},
+    "other_1": {},
+    "other_2": {},
+    "other_3": {},
+    "other_4": {}
+}
+'''
+其中slotname为铂饰品栏槽位名称:
+helmet: 头盔
+necklace: 项链
+armor: 胸饰
+back: 背饰
+hand_1: 左手饰
+hand_2: 右手饰
+belt: 腰带
+shoes: 鞋子
+other_1: 护符1
+other_2: 护符2
+other_3: 护符3
+other_4: 护符4
+'''
+```
+
+**值得注意的是，获取玩家饰品信息需在客户端事件OnLoadClientAddonScriptsAfter发生之后进行请求，否则会导致获取信息不正确**
+
+#### 4. 设置玩家饰品信息
+
+通过获取服务端组件调用指定的接口可以对特定玩家的全部饰品信息或特定槽位的饰品信息进行更改，示例代码如下:
+
+``` python
+# coding=utf-8
+# 设置饰品数据
+# 项目文件中获取一个与组件通信的服务端
+# 如导入了commonConfig.py中的常量可将nameSpace和systemName分别改为commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
+registerSys = serverApi.GetSystem("platinum", "broadcasterServer")
+# 修改全部饰品数据
+registerSys.SetPlayerBaubleInfo("playerId", {}) # 这里填入playerId以及baubleDict
+# 修改特定槽位饰品数据
+registerSys.SetPlayerBaubleInfoWithSlot("playerId", {}, "slotname") # 这里填入playerId以及itemDict以及slotname(slotname可接受的值请查看 5.4 获取玩家饰品信息)
+```
+
+**需要注意的是，设置玩家饰品操作需在客户端事件OnLoadClientAddonScriptsAfter之后进行设置，否则会被客户端本地数据覆盖**
 
 ### 六、示例代码
 

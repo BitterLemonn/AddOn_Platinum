@@ -26,8 +26,6 @@ class FlyingItemRenderer:
         self.flyingBigPool = []
         self.flyingBigUsing = []
 
-        self.flyingPanelOffset = self.flyingItemPanel.GetGlobalPosition()
-
     def OnDestroy(self):
         for flyingRender in self.flyingPool:
             self.screen.RemoveChildControl(flyingRender)
@@ -88,9 +86,9 @@ class FlyingItemRenderer:
         self.__StartFlying(itemRender, fromPos, toPos, "big", isNew)
 
     def __StartFlying(self, itemRender, fromPos, toPos, size, isNew):
-        logging.error("offset: {}". format(self.flyingPanelOffset))
-        fromPos = [fromPos[0] - self.flyingPanelOffset[0], fromPos[1] - self.flyingPanelOffset[1]]
-        toPos = [toPos[0] - self.flyingPanelOffset[0], toPos[1] - self.flyingPanelOffset[1]]
+        flyingPanelOffset = self.flyingItemPanel.GetGlobalPosition()
+        fromPos = [fromPos[0] - flyingPanelOffset[0], fromPos[1] - flyingPanelOffset[1]]
+        toPos = [toPos[0] - flyingPanelOffset[0], toPos[1] - flyingPanelOffset[1]]
 
         offsetAnimateData = {
             "namespace": "PlatinumFlyingItem",
@@ -863,28 +861,6 @@ def OnUiInitFinished(args):
                          "bauble_base_panel.main")
 
 
-@Listen(Events.PushScreenEvent)
-def OnPushScreenEvent(data):
-    NativeScreenManager = clientApi.GetNativeScreenManagerCls()
-    try:
-        if "inventory_screen" not in data["screenName"]:
-            if GlobalData.uiProfile == 0:
-                NativeScreenManager.instance().UnRegisterScreenProxy("crafting.inventory_screen",
-                                                                     "Script_Platinum.Script_UI.baubleNewClient.InventoryClassicProxy")
-            else:
-                NativeScreenManager.instance().UnRegisterScreenProxy("crafting_pocket.inventory_screen_pocket",
-                                                                     "Script_Platinum.Script_UI.baubleNewClient.InventoryPocketProxy")
-        else:
-            if GlobalData.uiProfile == 0:
-                NativeScreenManager.instance().RegisterScreenProxy("crafting.inventory_screen",
-                                                                   "Script_Platinum.Script_UI.baubleNewClient.InventoryClassicProxy")
-            else:
-                NativeScreenManager.instance().RegisterScreenProxy("crafting_pocket.inventory_screen_pocket",
-                                                                   "Script_Platinum.Script_UI.baubleNewClient.InventoryPocketProxy")
-    except:
-        pass
-
-
 class TipNodeUi(EasyScreenNodeCls):
 
     def __init__(self):
@@ -1038,3 +1014,53 @@ def BaubleUnequippedBroadcaster(baubleSlot, itemDict, slotIndex=0):
     CallOTClient(playerId, "BaubleUnequipped",
                  {"playerId": playerId, "baubleSlot": baubleSlot, "itemDict": itemDict, "slotIndex": slotIndex})
     SaveData()
+
+
+class ChangeBaubleUtil(object):
+
+    @staticmethod
+    @AllowCall
+    def GetPlayerBaubleInfo():
+        Call("OnGetPlayerBaubleInfo", {"playerId": playerId, "baubleInfo": GlobalData.baubleDict})
+
+    @staticmethod
+    @AllowCall
+    def SetPlayerBaubleInfo(baubleDict):
+        # 取下所有饰品
+        for slotName, oldInfo in GlobalData.baubleDict.items():
+            slotType = BaubleConfig.SlotName2TypeDict[slotName]
+            if len(oldInfo) > 0:
+                if slotType == BaubleEnum.HAND or slotType == BaubleEnum.OTHER:
+                    slotIndex = int(re.findall(r"\d+", slotName)[-1])
+                    BaubleUnequippedBroadcaster(slotType, oldInfo, slotIndex)
+                else:
+                    BaubleUnequippedBroadcaster(slotType, oldInfo)
+        GlobalData.baubleDict = baubleDict
+        # 穿上所有饰品
+        for slotName, newInfo in GlobalData.baubleDict.items():
+            slotType = BaubleConfig.SlotName2TypeDict[slotName]
+            if len(newInfo) > 0:
+                if slotType == BaubleEnum.HAND or slotType == BaubleEnum.OTHER:
+                    slotIndex = int(re.findall(r"\d+", slotName)[-1])
+                    BaubleEquippedBroadcaster(slotType, newInfo, slotIndex)
+                else:
+                    BaubleEquippedBroadcaster(slotType, newInfo)
+
+    @staticmethod
+    @AllowCall
+    def SetPlayerBaubleInfoWithSlot(baubleInfo, slotName):
+        oldInfo = GlobalData.baubleDict[slotName]
+        GlobalData.baubleDict[slotName] = baubleInfo
+        slotType = BaubleConfig.SlotName2TypeDict[slotName]
+        if len(oldInfo) > 0:
+            if slotType == BaubleEnum.HAND or slotType == BaubleEnum.OTHER:
+                slotIndex = int(re.findall(r"\d+", slotName)[-1])
+                BaubleUnequippedBroadcaster(slotType, oldInfo, slotIndex)
+            else:
+                BaubleUnequippedBroadcaster(slotType, oldInfo)
+        if len(baubleInfo) > 0:
+            if slotType == BaubleEnum.HAND or slotType == BaubleEnum.OTHER:
+                slotIndex = int(re.findall(r"\d+", slotName)[-1])
+                BaubleEquippedBroadcaster(slotType, baubleInfo, slotIndex)
+            else:
+                BaubleEquippedBroadcaster(slotType, baubleInfo)

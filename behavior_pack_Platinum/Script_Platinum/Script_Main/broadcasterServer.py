@@ -45,6 +45,38 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         else:
             logging.error("铂: 饰品 {} 插槽 {} 不存在,请检查饰品槽位是否正确".format(baubleName, baubleSlot))
 
+    def GetPlayerBaubleInfo(self, playerId):
+        """
+        获取玩家饰品信息
+        :param playerId: 玩家ID
+        :return:
+        """
+        GetPlayerBaubleInfo(playerId)
+
+    def SetPlayerBaubleInfo(self, playerId, baubleDict):
+        """
+        设置玩家饰品信息
+        :param playerId: 玩家ID
+        :param baubleDict: 饰品字典
+        :type baubleDict: dict
+        :type playerId: str
+        :return:
+        """
+        SetPlayerBaubleInfo(playerId, baubleDict)
+
+    def SetPlayerBaubleInfoWithSlot(self, playerId, baubleInfo, slotName):
+        """
+        设置玩家饰品信息
+        :param playerId: 玩家ID
+        :param baubleInfo: 饰品信息
+        :param slotName: 饰品槽位
+        :type baubleInfo: dict
+        :type playerId: str
+        :type slotName: str
+        :return:
+        """
+        SetPlayerBaubleInfoWithSlot(playerId, baubleInfo, slotName)
+
 
 @AllowCall
 def BaubleEquipped(data):
@@ -56,3 +88,26 @@ def BaubleEquipped(data):
 def BaubleUnequipped(data):
     server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
     server.BroadcastEvent(commonConfig.BAUBLE_UNEQUIPPED_EVENT, data)
+
+
+# 获取玩家饰品信息
+def GetPlayerBaubleInfo(playerId):
+    Call(playerId, "GetPlayerBaubleInfo")
+
+
+# 设置玩家饰品信息
+def SetPlayerBaubleInfo(playerId, baubleDict):
+    Call(playerId, "SetPlayerBaubleInfo", baubleDict)
+
+
+def SetPlayerBaubleInfoWithSlot(playerId, baubleInfo, slotName):
+    Call(playerId, "SetPlayerBaubleInfoWithSlot", baubleInfo, slotName)
+
+
+# 接收玩家饰品信息回调
+@AllowCall
+def OnGetPlayerBaubleInfo(data):
+    playerId = data["playerId"]
+    baubleDict = data["baubleInfo"]
+    server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+    server.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, {"playerId": playerId, "baubleDict": baubleDict})
