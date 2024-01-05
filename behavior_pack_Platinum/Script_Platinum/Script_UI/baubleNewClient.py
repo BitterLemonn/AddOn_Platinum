@@ -423,35 +423,37 @@ class InventoryClassicProxy(CustomUIScreenProxy):
                 baubleIndexFrom = 0
 
             if len(baubleFrom) != 0 or len(baubleTo) != 0:
-                def changePos():
-                    GlobalData.baubleDict[GetSlotNameByPath(self.baubleSelect)] = baubleTo
-                    GlobalData.baubleDict[GetSlotNameByPath(btnPath)] = baubleFrom
-                    self.RenderBauble(self.baubleSelect)
-                    self.RenderBauble(btnPath)
-                    baubleTypeFrom = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
-                    baubleTypeTo = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(btnPath)]
-                    # 发送脱下饰品事件
-                    if len(baubleFrom) != 0:
-                        if baubleTypeFrom == BaubleEnum.HAND or baubleTypeFrom == BaubleEnum.OTHER:
-                            BaubleUnequippedBroadcaster(baubleTypeFrom, baubleFrom, baubleIndexFrom)
-                        else:
-                            BaubleUnequippedBroadcaster(baubleTypeFrom, baubleFrom)
-                    if len(baubleTo) != 0:
-                        if baubleTypeTo == BaubleEnum.HAND or baubleTypeTo == BaubleEnum.OTHER:
-                            BaubleUnequippedBroadcaster(baubleTypeTo, baubleTo, baubleIndexTo)
-                        else:
-                            BaubleUnequippedBroadcaster(baubleTypeTo, baubleTo)
-                    # 发送穿戴饰品事件
-                    if len(baubleTo) != 0:
-                        if baubleTypeFrom == BaubleEnum.HAND or baubleTypeFrom == BaubleEnum.OTHER:
-                            BaubleEquippedBroadcaster(baubleTypeFrom, baubleTo, baubleIndexFrom)
-                        else:
-                            BaubleEquippedBroadcaster(baubleTypeFrom, baubleTo)
-                    if len(baubleFrom) != 0:
-                        if baubleTypeTo == BaubleEnum.HAND or baubleTypeTo == BaubleEnum.OTHER:
-                            BaubleEquippedBroadcaster(baubleTypeTo, baubleFrom, baubleIndexTo)
-                        else:
-                            BaubleEquippedBroadcaster(baubleTypeTo, baubleFrom)
+                def changePos(isSuccess):
+                    if isSuccess:
+                        GlobalData.baubleDict[GetSlotNameByPath(self.baubleSelect)] = baubleTo
+                        GlobalData.baubleDict[GetSlotNameByPath(btnPath)] = baubleFrom
+                        self.RenderBauble(self.baubleSelect)
+                        self.RenderBauble(btnPath)
+                        baubleTypeFrom = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
+                        baubleTypeTo = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(btnPath)]
+                        # 发送脱下饰品事件
+                        if len(baubleFrom) != 0:
+                            if baubleTypeFrom == BaubleEnum.HAND or baubleTypeFrom == BaubleEnum.OTHER:
+                                BaubleUnequippedBroadcaster(baubleTypeFrom, baubleFrom, baubleIndexFrom)
+                            else:
+                                BaubleUnequippedBroadcaster(baubleTypeFrom, baubleFrom)
+                        if len(baubleTo) != 0:
+                            if baubleTypeTo == BaubleEnum.HAND or baubleTypeTo == BaubleEnum.OTHER:
+                                BaubleUnequippedBroadcaster(baubleTypeTo, baubleTo, baubleIndexTo)
+                            else:
+                                BaubleUnequippedBroadcaster(baubleTypeTo, baubleTo)
+                        # 发送穿戴饰品事件
+                        if len(baubleTo) != 0:
+                            if baubleTypeFrom == BaubleEnum.HAND or baubleTypeFrom == BaubleEnum.OTHER:
+                                BaubleEquippedBroadcaster(baubleTypeFrom, baubleTo, baubleIndexFrom)
+                            else:
+                                BaubleEquippedBroadcaster(baubleTypeFrom, baubleTo)
+                        if len(baubleFrom) != 0:
+                            if baubleTypeTo == BaubleEnum.HAND or baubleTypeTo == BaubleEnum.OTHER:
+                                BaubleEquippedBroadcaster(baubleTypeTo, baubleFrom, baubleIndexTo)
+                            else:
+                                BaubleEquippedBroadcaster(baubleTypeTo, baubleFrom)
+                    self.SelectBauble()
 
                 if len(baubleFrom) != 0 and len(baubleTo) != 0:
                     baubleSlotFrom = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
@@ -468,7 +470,6 @@ class InventoryClassicProxy(CustomUIScreenProxy):
                 else:
                     baubleSlot = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
                     Request("CheckBauble", (baubleTo, baubleSlot), OnResponse=changePos)
-            self.SelectBauble()
 
     # 物品栏位按钮回调
     def OnItemSlotButtonClickedEvent(self, data):
