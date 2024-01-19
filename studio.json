@@ -1,45 +1,53 @@
 {
-  "Source": "import",
-  "CreateVersion": "2.8.0.459165",
-  "EditVersion": "2.9.0.514461",
-  "OldEditCount": 0,
-  "NewEditCount": 41,
-  "OldComponents": [],
-  "Account": "",
-  "UserName": "",
-  "UserId": "",
-  "Id": "cf6a4e8f70804b0bbe63527ba53e8638",
-  "EditType": 4,
-  "IsMap": false,
-  "CreateNew": true,
-  "CodeEnable": false,
-  "CanPublishResourceComponent": true,
-  "EditName": "Platinum",
-  "GameType": 1,
-  "WorldType": 1,
-  "Seed": "",
-  "BlockNums": [
-    0,
-    0
-  ],
-  "BornPoint": [
-    0,
-    0,
-    0
-  ],
-  "SaveBackMapPath": "",
-  "SaveBackAddOnPath": "",
-  "ResourceIds": [],
-  "EditAddOnPaths": [],
-  "EditMaterialPaths": [],
-  "EditLogFilePath": "",
-  "ServerName": "",
-  "StudioPort": 11873,
-  "DCWebUrl": "https://x19apigatewayexpr.nie.netease.com",
-  "ShowGuide": false,
-  "AssertCacheDir": "",
-  "ElkUrl": "",
-  "ShowGpuDriverTips": false,
-  "StudioTempPath": "",
-  "EditorResourcePackPath": ""
+    "Account": "yuchu_liu@126.com",
+    "AssertCacheDir": "D:\\MCStudioDownload\\EngineAssert",
+    "BlockNums": [
+        0,
+        0
+    ],
+    "BornPoint": [
+        0,
+        0,
+        0
+    ],
+    "CanPublishResourceComponent": true,
+    "CodeEnable": false,
+    "CreateNew": true,
+    "CreateVersion": "2.8.0.459165",
+    "DCWebUrl": "https://x19apigatewayexpr.nie.netease.com",
+    "EditAddOnPaths": [
+
+    ],
+    "EditLogFilePath": "D:\\MCStudioDownload\\work\\editor\\edit.log",
+    "EditMaterialPaths": [
+
+    ],
+    "EditName": "Platinum",
+    "EditType": 4,
+    "EditVersion": "2.10.0.561375",
+    "EditorResourcePackPath": "D:\\MCNetease\\MCStudio\\data\\inner_res",
+    "ElkUrl": "https://x19mclexpr.nie.netease.com/client-log",
+    "GameType": 1,
+    "Id": "cf6a4e8f70804b0bbe63527ba53e8638",
+    "IsMap": false,
+    "NewEditCount": 44,
+    "OldComponents": [
+
+    ],
+    "OldEditCount": 0,
+    "ResourceIds": [
+
+    ],
+    "SaveBackAddOnPath": "D:\\MCNetease\\MinecraftProject\\Platinum",
+    "SaveBackMapPath": "",
+    "Seed": "",
+    "ServerName": "EXPR",
+    "ShowGpuDriverTips": false,
+    "ShowGuide": false,
+    "Source": "import",
+    "StudioPort": 11302,
+    "StudioTempPath": "D:\\MCStudioDownload\\temp\\editorTemp",
+    "UserId": "45217",
+    "UserName": "Reinhart",
+    "WorldType": 1
 }

@@ -580,10 +580,24 @@ class InventoryClassicProxy(CustomUIScreenProxy):
                 isEnchanted = itemDict.get("enchantData") and len(itemDict.get("enchantData")) > 0
                 itemRenderer.SetUiItem(itemDict["newItemName"], itemDict["newAuxValue"], isEnchanted,
                                        itemDict.get("userData"))
+                # 耐久显示
+                durabilityRatio = self.CalculateDurabilityRatio(itemDict)
+                durabilityBg = screen.GetBaseUIControl(baublePath + self.durabilityBgBasePath).asImage()
+                durabilityBg.SetVisible(durabilityRatio < 1)
+
+                if durabilityRatio < 1:
+                    durationMusk = screen.GetBaseUIControl(baublePath + self.durabilityBasePath).asImage()
+                    durationMusk.SetVisible(True)
+                    durationMusk.SetSpriteClipRatio(1 - durabilityRatio)
+                    durationMusk.SetSpriteColor((1 - durabilityRatio, durabilityRatio, 0))
             # 脱下
             else:
                 baubleImg.SetVisible(True)
                 itemRenderer.SetVisible(False)
+                durabilityBg = screen.GetBaseUIControl(baublePath + self.durabilityBgBasePath)
+                durabilityBg.SetVisible(False)
+                durationMusk = screen.GetBaseUIControl(baublePath + self.durabilityBasePath)
+                durationMusk.SetVisible(False)
 
         except Exception as e:
             logging.error("铂: 饰品栏位渲染器获取失败 {}, 错误: {}".format(baublePath.split("/")[-2], e))
@@ -605,6 +619,20 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         if slotId < 9:
             return self.hotBarGridPathModel.format(slotId)
         return self.invGridPathModel.format(slotId - 9)
+
+    @staticmethod
+    def CalculateDurabilityRatio(itemDict):
+        # 计算耐久度比例，用于显示耐久度槽
+        itemComp = clientApi.GetEngineCompFactory().CreateItem(levelId)
+        basicInfo = itemComp.GetItemBasicInfo(itemDict.get("itemName", ""), itemDict.get("auxValue", 0))
+        if basicInfo:
+            currentDurability = itemDict.get("durability")
+            if currentDurability is None:
+                return 1.0
+            maxDurability = basicInfo.get("maxDurability", 0)
+            if maxDurability != 0:
+                return currentDurability * 1.0 / maxDurability
+        return 1.0
 
 
 # 背包口袋界面代理类
@@ -1065,3 +1093,21 @@ class ChangeBaubleUtil(object):
                 BaubleEquippedBroadcaster(slotType, baubleInfo, slotIndex)
             else:
                 BaubleEquippedBroadcaster(slotType, baubleInfo)
+
+    @staticmethod
+    @AllowCall
+    def DecreaseBaubleDurability(num, slotName):
+        baubleInfo = GlobalData.baubleDict[slotName]
+        if len(baubleInfo) > 0:
+            comp = clientApi.GetEngineCompFactory().CreateItem(levelId)
+            itemInfo = comp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
+            if itemInfo["maxDurability"] > 0:
+                baubleInfo["durability"] -= int(num)
+                if baubleInfo["durability"] <= 0:
+                    baubleInfo = {}
+                    # 播放破碎音效
+                    comp = clientApi.GetEngineCompFactory().CreateCustomAudio(levelId)
+                    comp.PlayCustomMusic("random.break", (0, 0, 0), 0.8, 0.8, False, playerId)
+                GlobalData.baubleDict[slotName] = baubleInfo
+            else:
+                logging.error("铂: 饰品 {} 无耐久值".format(baubleInfo["newItemName"]))

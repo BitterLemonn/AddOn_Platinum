@@ -72,7 +72,7 @@
                                        "bauble_helmet_img" : {
                                           "clip_direction" : "left",
                                           "clip_ratio" : 0.0,
-                                          "layer" : 29,
+                                          "layer" : 5,
                                           "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                                           "texture" : "textures/ui/bauble_halmet_slot",
                                           "type" : "image"
@@ -94,14 +94,14 @@
                                        "bauble_necklace_img" : {
                                           "clip_direction" : "left",
                                           "clip_ratio" : 0.0,
-                                          "layer" : 29,
+                                          "layer" : 5,
                                           "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                                           "texture" : "textures/ui/bauble_necklace_slot",
                                           "type" : "image"
                                        }
                                     }
                                  ],
-                                 "layer" : 31,
+                                 "layer" : 1,
                                  "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                                  "type" : "panel"
                               }
@@ -116,14 +116,14 @@
                                        "bauble_armor_img" : {
                                           "clip_direction" : "left",
                                           "clip_ratio" : 0.0,
-                                          "layer" : 29,
+                                          "layer" : 5,
                                           "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                                           "texture" : "textures/ui/bauble_armor_slot",
                                           "type" : "image"
                                        }
                                     }
                                  ],
-                                 "layer" : 61,
+                                 "layer" : 1,
                                  "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                                  "type" : "panel"
                               }
@@ -138,14 +138,14 @@
                                        "bauble_back_img" : {
                                           "clip_direction" : "left",
                                           "clip_ratio" : 0.0,
-                                          "layer" : 29,
+                                          "layer" : 5,
                                           "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                                           "texture" : "textures/ui/bauble_back_slot",
                                           "type" : "image"
                                        }
                                     }
                                  ],
-                                 "layer" : 91,
+                                 "layer" : 1,
                                  "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                                  "type" : "panel"
                               }
@@ -160,14 +160,14 @@
                                        "bauble_hand_img" : {
                                           "clip_direction" : "left",
                                           "clip_ratio" : 0.0,
-                                          "layer" : 29,
+                                          "layer" : 5,
                                           "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                                           "texture" : "textures/ui/bauble_hand_slot",
                                           "type" : "image"
                                        }
                                     }
                                  ],
-                                 "layer" : 121,
+                                 "layer" : 1,
                                  "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                                  "type" : "panel"
                               }
@@ -182,14 +182,14 @@
                                        "bauble_hand_img" : {
                                           "clip_direction" : "left",
                                           "clip_ratio" : 0.0,
-                                          "layer" : 29,
+                                          "layer" : 5,
                                           "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                                           "texture" : "textures/ui/bauble_hand_slot",
                                           "type" : "image"
                                        }
                                     }
                                  ],
-                                 "layer" : 151,
+                                 "layer" : 1,
                                  "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                                  "type" : "panel"
                               }
@@ -223,7 +223,7 @@
                                        "bauble_belt_img" : {
                                           "clip_direction" : "left",
                                           "clip_ratio" : 0.0,
-                                          "layer" : 29,
+                                          "layer" : 5,
                                           "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                                           "texture" : "textures/ui/bauble_belt_slot",
                                           "type" : "image"
@@ -245,14 +245,14 @@
                                        "bauble_shoes_img" : {
                                           "clip_direction" : "left",
                                           "clip_ratio" : 0.0,
-                                          "layer" : 29,
+                                          "layer" : 5,
                                           "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                                           "texture" : "textures/ui/bauble_shoes_slot",
                                           "type" : "image"
                                        }
                                     }
                                  ],
-                                 "layer" : 31,
+                                 "layer" : 1,
                                  "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                                  "type" : "panel"
                               }
@@ -267,7 +267,7 @@
                                        "bauble_other_img" : {
                                           "clip_direction" : "left",
                                           "clip_ratio" : 0.0,
-                                          "layer" : 29,
+                                          "layer" : 5,
                                           "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                                           "texture" : "textures/ui/bauble_other_slot",
                                           "type" : "image"
@@ -289,14 +289,14 @@
                                        "bauble_other_img" : {
                                           "clip_direction" : "left",
                                           "clip_ratio" : 0.0,
-                                          "layer" : 29,
+                                          "layer" : 5,
                                           "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                                           "texture" : "textures/ui/bauble_other_slot",
                                           "type" : "image"
                                        }
                                     }
                                  ],
-                                 "layer" : 91,
+                                 "layer" : 1,
                                  "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                                  "type" : "panel"
                               }
@@ -311,7 +311,7 @@
                                        "bauble_other_img" : {
                                           "clip_direction" : "left",
                                           "clip_ratio" : 0.0,
-                                          "layer" : 29,
+                                          "layer" : 5,
                                           "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                                           "texture" : "textures/ui/bauble_other_slot",
                                           "type" : "image"
@@ -333,14 +333,14 @@
                                        "bauble_other_img" : {
                                           "clip_direction" : "left",
                                           "clip_ratio" : 0.0,
-                                          "layer" : 29,
+                                          "layer" : 5,
                                           "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                                           "texture" : "textures/ui/bauble_other_slot",
                                           "type" : "image"
                                        }
                                     }
                                  ],
-                                 "layer" : 151,
+                                 "layer" : 1,
                                  "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                                  "type" : "panel"
                               }
@@ -353,7 +353,7 @@
                      }
                   }
                ],
-               "layer" : 183,
+               "layer" : 1,
                "size" : [ "100.0%+0.0px", "100.0%c+0.0px" ],
                "type" : "panel"
             }
