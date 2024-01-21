@@ -48,6 +48,7 @@
 "命名空间:物品名称": 槽位(**BaubleEnum** 中的常量)
 "命名空间:物品名称": [槽位]
 "命名空间:物品名称": [槽位, 自定义提示(customTips)]
+"命名空间:物品名称": [(槽位1, 槽位2), 自定义提示(customTips)]
 ```
 
 ##### b.不使用直接导入
@@ -83,6 +84,8 @@ class BaubleRegister(serverApi.GetServerSystemCls()):
             "baubleName": "命名空间:物品名称",
             # 推荐将commonConfig.py中的常量复制到开发项目当中
             "baubleSlot": "commonConfig.py中BaubleEnum定义的常量",
+            # 此处可以填入一个列表，将饰品注册到多个槽位
+            # "baubleSlot": ["槽位1", "槽位2"],
             # 可选 自定义信息提示
             "customTips": "自定义信息提示"
         }

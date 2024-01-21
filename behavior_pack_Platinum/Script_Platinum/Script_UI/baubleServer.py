@@ -75,7 +75,7 @@ def CheckBauble(itemDict, baubleSlot):
             logging.error("铂: 饰品 {} 配置错误, 请检查饰品注册信息".format(itemDict["newItemName"]))
             return False
 
-        if targetSlot == baubleSlot:
+        if baubleSlot in targetSlot:
             return True
 
     return False

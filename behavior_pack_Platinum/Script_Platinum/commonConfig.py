@@ -52,5 +52,5 @@ class BaubleEnum(object):
 物品标识符 : 栏位
 """
 BaubleDict = {
-    "lemon_platinum:traveler_belt": [BaubleEnum.BELT, "§9装备时:\n+0.5 跨越高度§r"],
+    "lemon_platinum:traveler_belt": [BaubleEnum.BELT, "§9装备时:\n+0.5 跨越高度§r"]
 }
