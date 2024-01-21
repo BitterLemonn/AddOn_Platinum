@@ -208,6 +208,22 @@ registerSys.SetPlayerBaubleInfoWithSlot("playerId", {}, "slotname") # 这里填�
 
 **需要注意的是，设置玩家饰品操作需在客户端事件OnLoadClientAddonScriptsAfter之后进行设置，否则会被客户端本地数据覆盖**
 
+#### 5. 设置玩家饰品耐久度
+
+通过获取服务端组件调用指定的接口可以对特定玩家的特定槽位的饰品耐久度进行更改，示例代码如下:
+
+``` python
+# coding=utf-8
+# 设置饰品耐久度
+# 项目文件中获取一个与组件通信的服务端
+# 如导入了commonConfig.py中的常量可将nameSpace和systemName分别改为commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
+registerSys = serverApi.GetSystem("platinum", "broadcasterServer")
+# 修改特定槽位饰品耐久度
+registerSys.DecreaseBaubleDurability("playerId", "slotname", 1) # 这里填入playerId以及slotname以及需要减少的耐久度(默认为1)
+```
+
+**需要注意的是，设置玩家饰品操作需在客户端事件OnLoadClientAddonScriptsAfter之后进行设置，否则会被客户端本地数据覆盖**
+
 ### 六、示例代码
 
 组件内还内置了一个腰带饰品【旅行者腰带】[服务端代码](behavior_pack_Platinum/Script_Platinum/buildInBaubleServer.py)、[客户端代码](behavior_pack_Platinum/Script_Platinum/buildInBaubleClient.py)

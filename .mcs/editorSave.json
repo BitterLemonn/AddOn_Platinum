@@ -41,7 +41,19 @@
                 ],
                 "bauble_base_panel.bauble_stack_panel": [
                     "/netease_prefab_screen",
-                    "/netease_prefab_screen/bauble_stack_panel"
+                    "/netease_prefab_screen/bauble_stack_panel",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_helmet_panel",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_necklace_panel",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_back_panel",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_armor_panel",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_hand_panel_1",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_hand_panel_2",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_belt_panel",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_shoes_panel",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_other_panel_1",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_other_panel_2",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_other_panel_3",
+                    "/netease_prefab_screen/bauble_stack_panel/bauble_other_panel_4"
                 ],
                 "bauble_base_panel.item_info": [
                     "/netease_prefab_screen",
@@ -61,20 +73,38 @@
                     "/netease_prefab_screen"
                 ],
                 "bauble_base_panel.slot_btn": [
-                    "/netease_prefab_screen"
+                    "/netease_prefab_screen",
+                    "/netease_prefab_screen/slot_btn",
+                    "/netease_prefab_screen/slot_btn/item_renderer"
                 ],
                 "bauble_base_panel.slot_btn_big": [
-                    "/netease_prefab_screen"
+                    "/netease_prefab_screen",
+                    "/netease_prefab_screen/slot_btn_big"
                 ],
                 "bauble_new.bauble_classic_new": [
-                    "/netease_prefab_screen"
+                    "/netease_prefab_screen",
+                    "/netease_prefab_screen/bauble_classic_new",
+                    "/netease_prefab_screen/bauble_classic_new/bg_img"
                 ],
                 "bauble_new.bauble_pocket": [
                     "/netease_prefab_screen",
                     "/netease_prefab_screen/bauble_pocket",
                     "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_upper",
                     "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_upper/bauble_panel",
-                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_upper/bauble_panel/bauble_helmet_panel"
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_upper/bauble_panel/bauble_helmet_panel",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_upper/bauble_panel/bauble_necklace_panel",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_upper/bauble_panel/bauble_armor_panel",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_upper/bauble_panel/bauble_back_panel",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_upper/bauble_panel/bauble_hand_panel_1",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_upper/bauble_panel/bauble_hand_panel_2",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_lower",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_lower/bauble_panel",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_lower/bauble_panel/bauble_belt_panel",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_lower/bauble_panel/bauble_shoes_panel",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_lower/bauble_panel/bauble_other_panel_1",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_lower/bauble_panel/bauble_other_panel_2",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_lower/bauble_panel/bauble_other_panel_3",
+                    "/netease_prefab_screen/bauble_pocket/bauble_panel_pocket_lower/bauble_panel/bauble_other_panel_4"
                 ],
                 "bauble_new.baule_classic_new": [
                     "/netease_prefab_screen"

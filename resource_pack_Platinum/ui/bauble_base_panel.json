@@ -68,7 +68,7 @@
                      "bauble_helmet_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "layer" : 29,
+                        "layer" : 5,
                         "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                         "texture" : "textures/ui/bauble_halmet_slot",
                         "type" : "image"
@@ -90,14 +90,14 @@
                      "bauble_necklace_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "layer" : 29,
+                        "layer" : 5,
                         "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                         "texture" : "textures/ui/bauble_necklace_slot",
                         "type" : "image"
                      }
                   }
                ],
-               "layer" : 31,
+               "layer" : 1,
                "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                "type" : "panel"
             }
@@ -112,14 +112,14 @@
                      "bauble_back_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "layer" : 29,
+                        "layer" : 5,
                         "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                         "texture" : "textures/ui/bauble_back_slot",
                         "type" : "image"
                      }
                   }
                ],
-               "layer" : 61,
+               "layer" : 1,
                "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                "type" : "panel"
             }
@@ -134,14 +134,14 @@
                      "bauble_armor_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "layer" : 29,
+                        "layer" : 5,
                         "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                         "texture" : "textures/ui/bauble_armor_slot",
                         "type" : "image"
                      }
                   }
                ],
-               "layer" : 91,
+               "layer" : 1,
                "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                "type" : "panel"
             }
@@ -156,14 +156,14 @@
                      "bauble_hand_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "layer" : 29,
+                        "layer" : 5,
                         "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                         "texture" : "textures/ui/bauble_hand_slot",
                         "type" : "image"
                      }
                   }
                ],
-               "layer" : 121,
+               "layer" : 1,
                "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                "type" : "panel"
             }
@@ -178,14 +178,14 @@
                      "bauble_hand_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "layer" : 29,
+                        "layer" : 5,
                         "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                         "texture" : "textures/ui/bauble_hand_slot",
                         "type" : "image"
                      }
                   }
                ],
-               "layer" : 151,
+               "layer" : 1,
                "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                "type" : "panel"
             }
@@ -200,14 +200,14 @@
                      "bauble_belt_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "layer" : 29,
+                        "layer" : 5,
                         "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                         "texture" : "textures/ui/bauble_belt_slot",
                         "type" : "image"
                      }
                   }
                ],
-               "layer" : 181,
+               "layer" : 1,
                "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                "type" : "panel"
             }
@@ -222,14 +222,14 @@
                      "bauble_shoes_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "layer" : 29,
+                        "layer" : 5,
                         "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                         "texture" : "textures/ui/bauble_shoes_slot",
                         "type" : "image"
                      }
                   }
                ],
-               "layer" : 211,
+               "layer" : 1,
                "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                "type" : "panel"
             }
@@ -244,14 +244,14 @@
                      "bauble_other_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "layer" : 29,
+                        "layer" : 5,
                         "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                         "texture" : "textures/ui/bauble_other_slot",
                         "type" : "image"
                      }
                   }
                ],
-               "layer" : 241,
+               "layer" : 1,
                "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                "type" : "panel"
             }
@@ -266,14 +266,14 @@
                      "bauble_other_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "layer" : 29,
+                        "layer" : 5,
                         "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                         "texture" : "textures/ui/bauble_other_slot",
                         "type" : "image"
                      }
                   }
                ],
-               "layer" : 271,
+               "layer" : 1,
                "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                "type" : "panel"
             }
@@ -288,14 +288,14 @@
                      "bauble_other_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "layer" : 29,
+                        "layer" : 5,
                         "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                         "texture" : "textures/ui/bauble_other_slot",
                         "type" : "image"
                      }
                   }
                ],
-               "layer" : 301,
+               "layer" : 1,
                "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                "type" : "panel"
             }
@@ -310,14 +310,14 @@
                      "bauble_other_img" : {
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "layer" : 29,
+                        "layer" : 5,
                         "size" : [ "100.0%sm+-4.0px", "100.0%sm+-4.0px" ],
                         "texture" : "textures/ui/bauble_other_slot",
                         "type" : "image"
                      }
                   }
                ],
-               "layer" : 331,
+               "layer" : 1,
                "size" : [ "100.0%cm+0.0px", "100.0%cm+0.0px" ],
                "type" : "panel"
             }
@@ -426,13 +426,15 @@
                "controls" : [
                   {
                      "durability_base_img" : {
+                        "anchor_from" : "bottom_middle",
+                        "anchor_to" : "bottom_middle",
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "color" : [ 0.0, 0.06274509803921569, 0.0 ],
+                        "color" : [ 0.0, 0.1843137254901961, 0.0 ],
                         "keep_ratio" : false,
-                        "layer" : 1,
-                        "offset" : [ 0.0, "30.0%+0.0px" ],
-                        "size" : [ "80.0%+0.0px", 1.50 ],
+                        "layer" : 2,
+                        "offset" : [ 0.0, "-5.0%+0.0px" ],
+                        "size" : [ "80.0%+0.0px", 1.20 ],
                         "texture" : "textures/ui/white_duration",
                         "type" : "image",
                         "visible" : false
@@ -440,14 +442,16 @@
                   },
                   {
                      "durability_img" : {
+                        "anchor_from" : "bottom_middle",
+                        "anchor_to" : "bottom_middle",
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
                         "color" : [ 0.0, 1.0, 0.0 ],
                         "controls" : [],
                         "keep_ratio" : false,
-                        "layer" : 2,
-                        "offset" : [ 0.0, "30.0%+0.0px" ],
-                        "size" : [ "80.0%+0.0px", 1.50 ],
+                        "layer" : 3,
+                        "offset" : [ 0.0, "-5.0%+0.0px" ],
+                        "size" : [ "80.0%+0.0px", 1.20 ],
                         "texture" : "textures/ui/white_duration",
                         "type" : "image",
                         "visible" : false
@@ -457,7 +461,7 @@
                      "item_count" : {
                         "anchor_from" : "bottom_middle",
                         "font_type" : "unicode",
-                        "layer" : 3,
+                        "layer" : 1,
                         "offset" : [ 0.0, -3.0 ],
                         "size" : [ 18.0, 10.0 ],
                         "text" : "64",
@@ -523,7 +527,7 @@
             "item_selected_img" : {
                "clip_direction" : "left",
                "clip_ratio" : 0.0,
-               "layer" : 7,
+               "layer" : 8,
                "size" : [ "100.0%+0.0px", "100.0%+0.0px" ],
                "texture" : "textures/ui/pocket_ui_highlight_selected_slot",
                "type" : "image",
@@ -535,12 +539,14 @@
                "controls" : [
                   {
                      "durability_base_img" : {
+                        "anchor_from" : "bottom_middle",
+                        "anchor_to" : "bottom_middle",
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
-                        "color" : [ 0.0, 0.06274509803921569, 0.0 ],
+                        "color" : [ 0.0, 0.1019607843137255, 0.0 ],
                         "keep_ratio" : false,
                         "layer" : 1,
-                        "offset" : [ 0.0, "30.0%+0.0px" ],
+                        "offset" : [ 0.0, "-5.0%+0.0px" ],
                         "size" : [ "80.0%+0.0px", 1.50 ],
                         "texture" : "textures/ui/white_duration",
                         "type" : "image",
@@ -549,13 +555,15 @@
                   },
                   {
                      "durability_img" : {
+                        "anchor_from" : "bottom_middle",
+                        "anchor_to" : "bottom_middle",
                         "clip_direction" : "left",
                         "clip_ratio" : 0.0,
                         "color" : [ 0.0, 1.0, 0.0 ],
                         "controls" : [],
                         "keep_ratio" : false,
                         "layer" : 2,
-                        "offset" : [ 0.0, "30.0%+0.0px" ],
+                        "offset" : [ 0.0, "-5.0%+0.0px" ],
                         "size" : [ "80.0%+0.0px", 1.50 ],
                         "texture" : "textures/ui/white_duration",
                         "type" : "image",
@@ -576,7 +584,7 @@
                      }
                   }
                ],
-               "layer" : 8,
+               "layer" : 5,
                "property_bag" : {
                   "#item_id_aux" : 131072
                },

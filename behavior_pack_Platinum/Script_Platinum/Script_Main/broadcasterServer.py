@@ -1,4 +1,6 @@
 # coding=utf-8
+import re
+
 from ..QuModLibs.Server import *
 from .. import commonConfig
 from .. import loggingUtils as logging
@@ -77,6 +79,16 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         """
         SetPlayerBaubleInfoWithSlot(playerId, baubleInfo, slotName)
 
+    def DecreaseBaubleDurability(self, playerId, slotName, num=1):
+        """
+        减少饰品耐久度
+        :param playerId: 玩家ID
+        :param num: 减少的耐久度
+        :param slotName: 饰品槽位
+        :return:
+        """
+        DecreaseBaubleDurability(playerId, slotName, num)
+
 
 @AllowCall
 def BaubleEquipped(data):
@@ -104,6 +116,11 @@ def SetPlayerBaubleInfoWithSlot(playerId, baubleInfo, slotName):
     Call(playerId, "SetPlayerBaubleInfoWithSlot", baubleInfo, slotName)
 
 
+# 减少饰品耐久度
+def DecreaseBaubleDurability(playerId, slotName, num):
+    Call(playerId, "DecreaseBaubleDurability", num, slotName)
+
+
 # 接收玩家饰品信息回调
 @AllowCall
 def OnGetPlayerBaubleInfo(data):
@@ -111,3 +128,14 @@ def OnGetPlayerBaubleInfo(data):
     baubleDict = data["baubleInfo"]
     server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
     server.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, {"playerId": playerId, "baubleDict": baubleDict})
+
+
+# 开发者测试用
+@Listen(Events.ServerChatEvent)
+def OnServerChat(data):
+    # message = data["message"]  # type: str
+    # playerId = data["playerId"]
+    # if message.startswith("#platinum de "):
+    #     num = re.findall(r"\d+", message)[0]
+    #     DecreaseBaubleDurability(playerId, "helmet", num)
+    pass
