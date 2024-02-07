@@ -119,6 +119,50 @@ class FlyingItemRenderer:
             pass
 
 
+class InfoManager(object):
+
+    def __init__(self, screen, basePath):
+        self.screen = screen
+        self.basePath = basePath
+
+        self.flyingItemPanel = self.screen.GetBaseUIControl(self.basePath)
+        self.hasPanel = False
+
+        self.infoAlpha = 0.0
+
+    def ShowInfo(self, info):
+
+        def SetText():
+            try:
+                infoPanel = self.screen.GetBaseUIControl(self.basePath + "/info_bg").asImage()
+                infoPanel.SetAlpha(2.0)
+                self.infoAlpha = 2.0
+
+                infoLabel = self.screen.GetBaseUIControl(self.basePath + "/info_bg/info").asLabel()
+                infoLabel.SetText(info)
+            except:
+                logging.error("铂: 无法找到特定界面 信息界面")
+
+        if self.hasPanel:
+            SetText()
+        else:
+            self.screen.CreateChildControl(BaubleConfig.UI_DEF_NEW_INFO, "info_bg", self.flyingItemPanel)
+            self.hasPanel = True
+            ListenForEvent("OnScriptTickClient", self, self.OnTick)
+            SetText()
+
+    def OnTick(self):
+        if self.infoAlpha > 0:
+            self.infoAlpha -= 0.05
+            infoPanel = self.screen.GetBaseUIControl(self.basePath + "/info_bg").asImage()
+            infoPanel.SetAlpha(self.infoAlpha)
+
+    def OnDestroy(self):
+        if self.hasPanel:
+            self.screen.RemoveChildControl(self.screen.GetBaseUIControl(self.basePath + "/info_bg"))
+            UnListenForEvent("OnScriptTickClient", self, self.OnTick)
+
+
 class BaubleConfig(object):
     PLATINUM_LOCAL_DATA = "platinum_local_data"
     BAUBLE_SLOT_INFO = "bauble_slot_info"
@@ -137,6 +181,8 @@ class BaubleConfig(object):
 
     UI_DEF_NEW_FLYING = "bauble_new.flying_item"
     UI_DEF_NEW_FLYING_BIG = "bauble_new.flying_item_big"
+
+    UI_DEF_NEW_INFO = "bauble_new.info"
 
     # 饰品路径对应饰品表
     SlotName2TypeDict = {
@@ -201,6 +247,8 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.invInfo = {}
         self.isTouch = False
 
+        self.oldSelect = -1  # 记录操作 非实际选择
+
         # 饰品栏打开状态
         self.openState = False
         self.InvPage = 0
@@ -257,6 +305,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         ]
 
         self.flyingUtils = FlyingItemRenderer(self.GetScreenNode(), self.flyingPanel)
+        self.infoManager = InfoManager(self.GetScreenNode(), self.flyingPanel)
 
     def OnCreate(self):
         self.CreateBaubleBtn()
@@ -267,6 +316,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             self.CloseBaublePanel()
 
         self.flyingUtils.OnDestroy()
+        self.infoManager.OnDestroy()
 
         try:
             bauble = screen.GetBaseUIControl(self.baublePath)
@@ -294,6 +344,10 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             self.InvPage = 1
             if self.openState:
                 self.ResetBaublePanelPosition()
+
+    # 设置提示
+    def SetInfo(self, info):
+        self.infoManager.ShowInfo(info)
 
     def ResetBaublePanelPosition(self):
         screen = self.GetScreenNode()
@@ -405,6 +459,11 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     # 饰品栏位按钮回调
     def OnBaubleClicked(self, args):
         btnPath = args["ButtonPath"]
+
+        # if self.invSelect != -1:
+        #     self.SetInfo("请先选择饰品槽位来进行穿戴/脱下操作")
+        #     return
+
         if len(self.baubleSelect) == 0:
             # 选中饰品
             self.SelectBauble(btnPath)
@@ -474,6 +533,9 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     # 物品栏位按钮回调
     def OnItemSlotButtonClickedEvent(self, data):
         slotId = data["slotIndex"]
+        # 非背包返回
+        if slotId not in range(0, 36):
+            return
         # 选中饰品栏
         if len(self.baubleSelect) != 0:
             self.invSelect = slotId
@@ -492,7 +554,12 @@ class InventoryClassicProxy(CustomUIScreenProxy):
                 Request("CheckBauble", (self.invInfo, baubleSlot), OnResponse=OnCheck)
             # 脱下饰品
             elif len(GlobalData.baubleDict[GetSlotNameByPath(self.baubleSelect)]) > 0:
-                self.SwapBauble()
+                itemDict = comp.GetPlayerItem(clientApi.GetMinecraftEnum().ItemPosType.INVENTORY, self.oldSelect, True)
+                if not itemDict:
+                    self.SwapBauble()
+                else:
+                    self.SelectBauble()
+        self.oldSelect = slotId
 
     # 渲染选中状态
     def SelectBauble(self, baublePath=""):
