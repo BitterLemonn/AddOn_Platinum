@@ -520,9 +520,9 @@ class InventoryClassicProxy(CustomUIScreenProxy):
 
                     def OnCheck(isSuccess):
                         if isSuccess:
-                            Request("CheckBauble", (baubleTo, baubleSlotTo), OnResponse=changePos)
+                            Request("CheckBauble", (baubleTo, baubleSlotFrom), OnResponse=changePos)
 
-                    Request("CheckBauble", (baubleFrom, baubleSlotFrom), OnResponse=OnCheck)
+                    Request("CheckBauble", (baubleFrom, baubleSlotTo), OnResponse=OnCheck)
                 elif len(baubleFrom) != 0:
                     baubleSlot = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(btnPath)]
                     Request("CheckBauble", (baubleFrom, baubleSlot), OnResponse=changePos)
@@ -541,10 +541,11 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             self.invSelect = slotId
             comp = clientApi.GetEngineCompFactory().CreateItem(playerId)
             itemDict = comp.GetPlayerItem(clientApi.GetMinecraftEnum().ItemPosType.INVENTORY, slotId, True)
-            self.invInfo = itemDict
 
             # 先移除物品
             Call("RemoveItem", {"playerId": playerId, "slot": slotId})
+
+            self.invInfo = itemDict
             # 穿戴饰品
             if itemDict:
                 def OnCheck(isSuccess):
