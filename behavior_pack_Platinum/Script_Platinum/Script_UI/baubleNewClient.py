@@ -542,12 +542,17 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             comp = clientApi.GetEngineCompFactory().CreateItem(playerId)
             itemDict = comp.GetPlayerItem(clientApi.GetMinecraftEnum().ItemPosType.INVENTORY, slotId, True)
             self.invInfo = itemDict
+
+            # 先移除物品
+            Call("RemoveItem", {"playerId": playerId, "slot": slotId})
             # 穿戴饰品
             if itemDict:
                 def OnCheck(isSuccess):
                     if isSuccess:
                         self.SwapBauble()
                     else:
+                        # 如无法穿戴则返回物品
+                        Call("AddItem", {"playerId": playerId, "itemDict": itemDict, "slot": slotId})
                         self.SelectBauble()
 
                 baubleSlot = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
