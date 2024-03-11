@@ -260,6 +260,14 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.flyingPanel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/flying_item_renderer"
         self.invGridPathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/player_inventory/inventory_panel_bottom_half/inventory_panel/inventory_grid/grid_item_for_inventory{}"
         self.hotBarGridPathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/player_inventory/hotbar_grid/grid_item_for_hotbar{}"
+        self.recipePath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/recipe_book"
+        self.invPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/toolbar_anchor/toolbar_panel/toolbar_background/toolbar_stack_panel/survival_layout_toggle_panel/survival_layout_toggle/this_toggle/checked"
+        self.invCheck = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/toolbar_anchor/toolbar_panel/toolbar_background/toolbar_stack_panel/survival_layout_toggle_panel/survival_layout_toggle/this_toggle/checked_hover"
+
+        # 原版控件实例
+        self.recipePanel = None
+        self.invBtn = None
+        self.invBtnCheck = None
 
         # 基础路径
         self.baublePath = ""
@@ -304,6 +312,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             self.otherBtnBasePath4
         ]
 
+        # 管理类实例
         self.flyingUtils = FlyingItemRenderer(self.GetScreenNode(), self.flyingPanel)
         self.infoManager = InfoManager(self.GetScreenNode(), self.flyingPanel)
 
@@ -325,25 +334,18 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             pass
 
     def OnTick(self):
-        # 切换界面隐藏饰品栏
-        screen = self.GetScreenNode()
-        recipePath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/recipe_book"
-        recipePanel = screen.GetBaseUIControl(recipePath)
-
-        invPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/toolbar_anchor/toolbar_panel/toolbar_background/toolbar_stack_panel/survival_layout_toggle_panel/survival_layout_toggle/this_toggle/checked"
-        invBtn = screen.GetBaseUIControl(invPath)
-        invCheck = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/toolbar_anchor/toolbar_panel/toolbar_background/toolbar_stack_panel/survival_layout_toggle_panel/survival_layout_toggle/this_toggle/checked_hover"
-        invBtnCheck = screen.GetBaseUIControl(invCheck)
-
-        # 非纯背包界面
-        if recipePanel and recipePanel.GetVisible() and self.InvPage != 2:
-            self.InvPage = 2
-            if self.openState:
-                self.ResetBaublePanelPosition()
-        elif ((invBtn and invBtn.GetVisible()) or (invBtnCheck and invBtnCheck.GetVisible())) and self.InvPage != 1:
-            self.InvPage = 1
-            if self.openState:
-                self.ResetBaublePanelPosition()
+        # 切换界面改变饰品栏位置
+        if self.recipePanel is not None and self.invBtn is not None and self.invBtnCheck is not None:
+            # 非纯背包界面
+            if self.recipePanel.GetVisible() and self.InvPage != 2:
+                self.InvPage = 2
+                if self.openState:
+                    self.ResetBaublePanelPosition()
+            # 纯背包界面
+            elif (self.invBtn.GetVisible() or self.invBtnCheck.GetVisible()) and self.InvPage != 1:
+                self.InvPage = 1
+                if self.openState:
+                    self.ResetBaublePanelPosition()
 
     # 设置提示
     def SetInfo(self, info):
@@ -376,9 +378,15 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         except:
             baubleBtn = screen.CreateChildControl(BaubleConfig.UI_DEF_BAUBLE_BTN, "bauble_button", panel).asButton()
 
+        # 设置按钮回调
         self.SetBtnPosition(baubleBtn)
         baubleBtn.AddTouchEventParams({"isSwallow": True})
         baubleBtn.SetButtonTouchUpCallback(self.OnBaubleButtonClicked)
+
+        # 获取原版控件
+        self.recipePanel = screen.GetBaseUIControl(self.recipePath)
+        self.invBtn = screen.GetBaseUIControl(self.invPath)
+        self.invBtnCheck = screen.GetBaseUIControl(self.invCheck)
 
     def SetBtnPosition(self, btn):
         position = GlobalData.uiPosition
@@ -459,10 +467,6 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     # 饰品栏位按钮回调
     def OnBaubleClicked(self, args):
         btnPath = args["ButtonPath"]
-
-        # if self.invSelect != -1:
-        #     self.SetInfo("请先选择饰品槽位来进行穿戴/脱下操作")
-        #     return
 
         if len(self.baubleSelect) == 0:
             # 选中饰品
