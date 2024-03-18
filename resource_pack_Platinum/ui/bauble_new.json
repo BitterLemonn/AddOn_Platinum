@@ -385,6 +385,28 @@
       "size" : [ 25.0, 25.0 ],
       "type" : "custom"
    },
+   "info" : {
+      "alpha" : 0.0,
+      "anchor_from" : "bottom_middle",
+      "anchor_to" : "bottom_middle",
+      "clip_direction" : "left",
+      "clip_ratio" : 0.0,
+      "controls" : [
+         {
+            "info" : {
+               "font_type" : "default",
+               "text_alignment" : "center",
+               "type" : "label"
+            }
+         }
+      ],
+      "layer" : 999,
+      "offset" : [ 0.0, "-15.0%+0.0px" ],
+      "propagate_alpha" : true,
+      "size" : [ "100.0%cm+10.0px", "100.0%cm+6.0px" ],
+      "texture" : "textures/ui/purpleBorder",
+      "type" : "image"
+   },
    "main" : {
       "controls" : [],
       "type" : "screen"

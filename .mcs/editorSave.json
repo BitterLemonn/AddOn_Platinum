@@ -114,6 +114,9 @@
                 ],
                 "bauble_new.flying_item_big": [
                     "/netease_prefab_screen"
+                ],
+                "bauble_new.info": [
+                    "/netease_prefab_screen"
                 ]
             },
             "screen": {

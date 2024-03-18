@@ -14,7 +14,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
     def BaubleRegister(self, data):
         """
         饰品注册事件
-        :param data: {baubleName: str, baubleSlot: str, *customTips: str}
+        :param data: {baubleName: str, baubleSlot: str/list, *customTips: str}
         :return:
         """
 
@@ -24,28 +24,46 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         comp = serverApi.GetEngineCompFactory().CreateGame(serverApi.GetLevelId())
         exist = comp.LookupItemByName(baubleName)
 
-        if baubleSlot in commonConfig.BaubleEnum.__dict__.values():
-            if exist:
-                comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
-                baseInfo = comp.GetItemBasicInfo(baubleName, 0)
-                if baseInfo["maxStackSize"] > 1:
-                    logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(baubleName))
-                    return
+        if not exist:
+            logging.error("铂: 物品 {} 不存在,请检查标识符是否正确".format(baubleName))
+            return
 
-                if baubleName in commonConfig.BaubleDict:
-                    logging.error("铂: 饰品 {} 已存在,请勿重复注册".format(baubleName))
-                    return
-
-                if len(customTips) > 0:
-                    commonConfig.BaubleDict[baubleName] = [baubleSlot, customTips]
-                else:
-                    commonConfig.BaubleDict[baubleName] = baubleSlot
-                logging.info("铂: 饰品 {} 注册成功".format(baubleName))
-
-            else:
-                logging.error("铂: 物品 {} 不存在,请检查标识符是否正确".format(baubleName))
+        if isinstance(baubleSlot, list):
+            baubleSlot = tuple(baubleSlot)
+            logging.error(baubleSlot)
+            self.__BaubleRegister(baubleName, baubleSlot, customTips)
         else:
-            logging.error("铂: 饰品 {} 插槽 {} 不存在,请检查饰品槽位是否正确".format(baubleName, baubleSlot))
+            self.__BaubleRegister(baubleName, baubleSlot, customTips)
+
+    @staticmethod
+    def __BaubleRegister(baubleName, baubleSlot, customTips):
+
+        if isinstance(baubleSlot, tuple):
+            for slot in baubleSlot:
+                if slot not in commonConfig.BaubleEnum.__dict__.values():
+                    logging.error("铂: 饰品 {} 插槽 {} 不存在,请检查饰品槽位是否正确".format(baubleName, slot))
+                    return
+        else:
+            if baubleSlot not in commonConfig.BaubleEnum.__dict__.values():
+                logging.error("铂: 饰品 {} 插槽 {} 不存在,请检查饰品槽位是否正确".format(baubleName, baubleSlot))
+                return
+
+        comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
+        baseInfo = comp.GetItemBasicInfo(baubleName, 0)
+        if baseInfo["maxStackSize"] > 1:
+            logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(baubleName))
+            return
+
+        if baubleName in commonConfig.BaubleDict:
+            logging.error("铂: 饰品 {} 已存在,请勿重复注册".format(baubleName))
+            return
+
+        if len(customTips) > 0:
+            commonConfig.BaubleDict[baubleName] = [baubleSlot, customTips]
+        else:
+            commonConfig.BaubleDict[baubleName] = baubleSlot
+
+        logging.info("铂: 饰品 {} 注册成功".format(baubleName))
 
     def GetPlayerBaubleInfo(self, playerId):
         """

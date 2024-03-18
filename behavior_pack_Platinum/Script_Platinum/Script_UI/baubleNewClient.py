@@ -119,6 +119,50 @@ class FlyingItemRenderer:
             pass
 
 
+class InfoManager(object):
+
+    def __init__(self, screen, basePath):
+        self.screen = screen
+        self.basePath = basePath
+
+        self.flyingItemPanel = self.screen.GetBaseUIControl(self.basePath)
+        self.hasPanel = False
+
+        self.infoAlpha = 0.0
+
+    def ShowInfo(self, info):
+
+        def SetText():
+            try:
+                infoPanel = self.screen.GetBaseUIControl(self.basePath + "/info_bg").asImage()
+                infoPanel.SetAlpha(2.0)
+                self.infoAlpha = 2.0
+
+                infoLabel = self.screen.GetBaseUIControl(self.basePath + "/info_bg/info").asLabel()
+                infoLabel.SetText(info)
+            except:
+                logging.error("铂: 无法找到特定界面 信息界面")
+
+        if self.hasPanel:
+            SetText()
+        else:
+            self.screen.CreateChildControl(BaubleConfig.UI_DEF_NEW_INFO, "info_bg", self.flyingItemPanel)
+            self.hasPanel = True
+            ListenForEvent("OnScriptTickClient", self, self.OnTick)
+            SetText()
+
+    def OnTick(self):
+        if self.infoAlpha > 0:
+            self.infoAlpha -= 0.05
+            infoPanel = self.screen.GetBaseUIControl(self.basePath + "/info_bg").asImage()
+            infoPanel.SetAlpha(self.infoAlpha)
+
+    def OnDestroy(self):
+        if self.hasPanel:
+            self.screen.RemoveChildControl(self.screen.GetBaseUIControl(self.basePath + "/info_bg"))
+            UnListenForEvent("OnScriptTickClient", self, self.OnTick)
+
+
 class BaubleConfig(object):
     PLATINUM_LOCAL_DATA = "platinum_local_data"
     BAUBLE_SLOT_INFO = "bauble_slot_info"
@@ -137,6 +181,8 @@ class BaubleConfig(object):
 
     UI_DEF_NEW_FLYING = "bauble_new.flying_item"
     UI_DEF_NEW_FLYING_BIG = "bauble_new.flying_item_big"
+
+    UI_DEF_NEW_INFO = "bauble_new.info"
 
     # 饰品路径对应饰品表
     SlotName2TypeDict = {
@@ -201,6 +247,8 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.invInfo = {}
         self.isTouch = False
 
+        self.oldSelect = -1  # 记录操作 非实际选择
+
         # 饰品栏打开状态
         self.openState = False
         self.InvPage = 0
@@ -212,6 +260,14 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.flyingPanel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/flying_item_renderer"
         self.invGridPathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/player_inventory/inventory_panel_bottom_half/inventory_panel/inventory_grid/grid_item_for_inventory{}"
         self.hotBarGridPathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/player_inventory/hotbar_grid/grid_item_for_hotbar{}"
+        self.recipePath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/recipe_book"
+        self.invPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/toolbar_anchor/toolbar_panel/toolbar_background/toolbar_stack_panel/survival_layout_toggle_panel/survival_layout_toggle/this_toggle/checked"
+        self.invCheck = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/toolbar_anchor/toolbar_panel/toolbar_background/toolbar_stack_panel/survival_layout_toggle_panel/survival_layout_toggle/this_toggle/checked_hover"
+
+        # 原版控件实例
+        self.recipePanel = None
+        self.invBtn = None
+        self.invBtnCheck = None
 
         # 基础路径
         self.baublePath = ""
@@ -256,7 +312,9 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             self.otherBtnBasePath4
         ]
 
+        # 管理类实例
         self.flyingUtils = FlyingItemRenderer(self.GetScreenNode(), self.flyingPanel)
+        self.infoManager = InfoManager(self.GetScreenNode(), self.flyingPanel)
 
     def OnCreate(self):
         self.CreateBaubleBtn()
@@ -267,6 +325,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             self.CloseBaublePanel()
 
         self.flyingUtils.OnDestroy()
+        self.infoManager.OnDestroy()
 
         try:
             bauble = screen.GetBaseUIControl(self.baublePath)
@@ -275,25 +334,22 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             pass
 
     def OnTick(self):
-        # 切换界面隐藏饰品栏
-        screen = self.GetScreenNode()
-        recipePath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/recipe_book"
-        recipePanel = screen.GetBaseUIControl(recipePath)
+        # 切换界面改变饰品栏位置
+        if self.recipePanel is not None and self.invBtn is not None and self.invBtnCheck is not None:
+            # 非纯背包界面
+            if self.recipePanel.GetVisible() and self.InvPage != 2:
+                self.InvPage = 2
+                if self.openState:
+                    self.ResetBaublePanelPosition()
+            # 纯背包界面
+            elif (self.invBtn.GetVisible() or self.invBtnCheck.GetVisible()) and self.InvPage != 1:
+                self.InvPage = 1
+                if self.openState:
+                    self.ResetBaublePanelPosition()
 
-        invPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/toolbar_anchor/toolbar_panel/toolbar_background/toolbar_stack_panel/survival_layout_toggle_panel/survival_layout_toggle/this_toggle/checked"
-        invBtn = screen.GetBaseUIControl(invPath)
-        invCheck = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/content_stack_panel/toolbar_anchor/toolbar_panel/toolbar_background/toolbar_stack_panel/survival_layout_toggle_panel/survival_layout_toggle/this_toggle/checked_hover"
-        invBtnCheck = screen.GetBaseUIControl(invCheck)
-
-        # 非纯背包界面
-        if recipePanel and recipePanel.GetVisible() and self.InvPage != 2:
-            self.InvPage = 2
-            if self.openState:
-                self.ResetBaublePanelPosition()
-        elif ((invBtn and invBtn.GetVisible()) or (invBtnCheck and invBtnCheck.GetVisible())) and self.InvPage != 1:
-            self.InvPage = 1
-            if self.openState:
-                self.ResetBaublePanelPosition()
+    # 设置提示
+    def SetInfo(self, info):
+        self.infoManager.ShowInfo(info)
 
     def ResetBaublePanelPosition(self):
         screen = self.GetScreenNode()
@@ -322,9 +378,15 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         except:
             baubleBtn = screen.CreateChildControl(BaubleConfig.UI_DEF_BAUBLE_BTN, "bauble_button", panel).asButton()
 
+        # 设置按钮回调
         self.SetBtnPosition(baubleBtn)
         baubleBtn.AddTouchEventParams({"isSwallow": True})
         baubleBtn.SetButtonTouchUpCallback(self.OnBaubleButtonClicked)
+
+        # 获取原版控件
+        self.recipePanel = screen.GetBaseUIControl(self.recipePath)
+        self.invBtn = screen.GetBaseUIControl(self.invPath)
+        self.invBtnCheck = screen.GetBaseUIControl(self.invCheck)
 
     def SetBtnPosition(self, btn):
         position = GlobalData.uiPosition
@@ -405,6 +467,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     # 饰品栏位按钮回调
     def OnBaubleClicked(self, args):
         btnPath = args["ButtonPath"]
+
         if len(self.baubleSelect) == 0:
             # 选中饰品
             self.SelectBauble(btnPath)
@@ -461,9 +524,9 @@ class InventoryClassicProxy(CustomUIScreenProxy):
 
                     def OnCheck(isSuccess):
                         if isSuccess:
-                            Request("CheckBauble", (baubleTo, baubleSlotTo), OnResponse=changePos)
+                            Request("CheckBauble", (baubleTo, baubleSlotFrom), OnResponse=changePos)
 
-                    Request("CheckBauble", (baubleFrom, baubleSlotFrom), OnResponse=OnCheck)
+                    Request("CheckBauble", (baubleFrom, baubleSlotTo), OnResponse=OnCheck)
                 elif len(baubleFrom) != 0:
                     baubleSlot = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(btnPath)]
                     Request("CheckBauble", (baubleFrom, baubleSlot), OnResponse=changePos)
@@ -474,11 +537,18 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     # 物品栏位按钮回调
     def OnItemSlotButtonClickedEvent(self, data):
         slotId = data["slotIndex"]
+        # 非背包返回
+        if slotId not in range(0, 36):
+            return
         # 选中饰品栏
         if len(self.baubleSelect) != 0:
             self.invSelect = slotId
             comp = clientApi.GetEngineCompFactory().CreateItem(playerId)
             itemDict = comp.GetPlayerItem(clientApi.GetMinecraftEnum().ItemPosType.INVENTORY, slotId, True)
+
+            # 先移除物品
+            Call("RemoveItem", {"playerId": playerId, "slot": slotId})
+
             self.invInfo = itemDict
             # 穿戴饰品
             if itemDict:
@@ -486,13 +556,20 @@ class InventoryClassicProxy(CustomUIScreenProxy):
                     if isSuccess:
                         self.SwapBauble()
                     else:
+                        # 如无法穿戴则返回物品
+                        Call("AddItem", {"playerId": playerId, "itemDict": itemDict, "slot": slotId})
                         self.SelectBauble()
 
                 baubleSlot = BaubleConfig.SlotName2TypeDict[GetSlotNameByPath(self.baubleSelect)]
                 Request("CheckBauble", (self.invInfo, baubleSlot), OnResponse=OnCheck)
             # 脱下饰品
             elif len(GlobalData.baubleDict[GetSlotNameByPath(self.baubleSelect)]) > 0:
-                self.SwapBauble()
+                itemDict = comp.GetPlayerItem(clientApi.GetMinecraftEnum().ItemPosType.INVENTORY, self.oldSelect, True)
+                if not itemDict:
+                    self.SwapBauble()
+                else:
+                    self.SelectBauble()
+        self.oldSelect = slotId
 
     # 渲染选中状态
     def SelectBauble(self, baublePath=""):
