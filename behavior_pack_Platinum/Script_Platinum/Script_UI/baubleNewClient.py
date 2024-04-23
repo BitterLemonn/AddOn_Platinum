@@ -1,11 +1,10 @@
 # coding=utf-8
-from ..QuModLibs.Client import *
-from ..QuModLibs.UI import *
+import re
 
 from .. import loggingUtils as logging
+from ..QuModLibs.Client import *
+from ..QuModLibs.UI import *
 from ..commonConfig import BaubleEnum
-
-import re
 
 CustomUIScreenProxy = clientApi.GetUIScreenProxyCls()
 
@@ -897,8 +896,7 @@ class InventoryPocketProxy(InventoryClassicProxy):
 # 监听客户端mod加载完成读取饰品文件
 @Listen(Events.OnLocalPlayerStopLoading)
 def OnLoadClientAddonScriptsAfter(data):
-    comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId))
+    configData = GetBaubleData()
     loadData = configData.get(BaubleConfig.BAUBLE_SLOT_INFO, {})
     if len(loadData) == 0:
         logging.error("铂: 读取饰品数据失败!!! 已重置饰品数据")
@@ -941,11 +939,37 @@ def QuDestroy():
     SaveData()
 
 
-def SaveData():
+def GetBaubleData():
+    comp = clientApi.GetEngineCompFactory().CreatePlayer(playerId)
+    uid = comp.getUid()
+    comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
+    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(uid))
+    if configData is None or len(configData) == 0:
+        configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId))
+        DataBaseUpdate()
+    return configData
+
+
+def DataBaseUpdate():
+    comp = clientApi.GetEngineCompFactory().CreatePlayer(playerId)
+    uid = comp.getUid()
     comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
     configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId))
+    if not configData.get("isTrans", False):
+        # 旧数据转移
+        comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(uid), configData)
+        # 标志已转移
+        configData["isTrans"] = True
+        comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId), configData)
+
+
+def SaveData():
+    comp = clientApi.GetEngineCompFactory().CreatePlayer(playerId)
+    uid = comp.getUid()
+    comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
+    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(uid))
     configData[BaubleConfig.BAUBLE_SLOT_INFO] = GlobalData.baubleDict
-    isSave = comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId), configData)
+    isSave = comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(uid), configData)
     if isSave:
         logging.info("铂: 保存饰品数据成功")
     else:
