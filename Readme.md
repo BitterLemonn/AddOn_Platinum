@@ -147,7 +147,7 @@ registerSys.GetPlayerBaubleInfo("playerId") # 传入参数为playerId
 # 在服务端中可以监听到玩家的饰品信息
 # 监听饰品信息返回事件
 self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
-                    commonConfig.BAUBLE_GET_INFO, self, self.onBabubleGetInfo)
+                    commonConfig.BAUBLE_GET_INFO_EVENT, self, self.onBabubleGetInfo)
 
 # 事件回调
 def onBabubleGetInfo(data):
