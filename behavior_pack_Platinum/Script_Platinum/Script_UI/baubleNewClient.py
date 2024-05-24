@@ -1205,10 +1205,13 @@ class ChangeBaubleUtil(object):
             if itemInfo["maxDurability"] > 0:
                 baubleInfo["durability"] -= int(num)
                 if baubleInfo["durability"] <= 0:
-                    baubleInfo = {}
                     # 播放破碎音效
                     comp = clientApi.GetEngineCompFactory().CreateCustomAudio(levelId)
                     comp.PlayCustomMusic("random.break", (0, 0, 0), 0.8, 0.8, False, playerId)
+                    # 广播饰品脱下
+                    BaubleUnequippedBroadcaster(BaubleConfig.SlotName2TypeDict[slotName], baubleInfo)
+                    # 移除玩家饰品栏中的饰品
+                    baubleInfo = {}
                 GlobalData.baubleDict[slotName] = baubleInfo
             else:
                 logging.error("铂: 饰品 {} 无耐久值".format(baubleInfo["newItemName"]))
