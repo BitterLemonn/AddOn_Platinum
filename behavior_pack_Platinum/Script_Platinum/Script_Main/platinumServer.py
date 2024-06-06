@@ -59,3 +59,11 @@ def OnItemChanged(playerId, itemDict, slot):
         except:
             logging.error(
                 "铂: 饰品 {} 描述格式错误, 请检查Script_Platinum/commonConfig.py".format(itemDict["newItemName"]))
+
+
+@AllowCall
+def NeedSendInfo(playerId):
+    comp = serverApi.GetEngineCompFactory().CreateMsg(playerId)
+    comp.NotifyOneMessage(playerId,
+                          "铂: 如遇到饰品无法安装请先尝试铂自带的旅行者腰带, 如可以正常安装反馈问题请到无法安装的饰品模组处反馈, 请勿在铂模组处反馈, 谢谢!",
+                          "§6")

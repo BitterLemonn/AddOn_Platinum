@@ -3,6 +3,7 @@ from QuClientApi.ui.screenNode import ScreenNode as BaseScreenNode
 from mod.client.ui.screenNode import ScreenNode
 import mod.client.extraClientApi as clientApi
 from Util import ModDirName, RandomUid, ExceptionHandling
+from Client import ListenForEvent, UnListenForEvent
 from types import MethodType
 from functools import wraps
 
@@ -138,19 +139,19 @@ class QuScreenAnimation(object):
         )
 
 class EasyScreenNodeCls(BaseScreenNode):
-    ''' 简易界面类 可继承并开发 '''
-    UiName = "Ui_"+RandomUid() # Ui名字 默认随机
-    UiDef = None # 用来标识json ui的命名空间和界面名 如 zeroui.main
-    ParamDict = {"isHud" : 1} # 界面参数字典
-    CreateParams = None # 堆栈管理的界面参数
-    IsPushScreen = False # 是 PushScreen 界面?
+    """ 简易界面类 可继承并开发 """
+    UiName = "Ui_"+RandomUid()              # Ui名字 默认随机
+    UiDef = None                            # 用来标识json ui的命名空间和界面名 如 zeroui.main
+    ParamDict = {"isHud" : 1}               # 界面参数字典
+    CreateParams = None                     # 堆栈管理的界面参数
+    IsPushScreen = False                    # 是否为 PushScreen 界面
     RandomSc = "Sc"+RandomUid()
     UiInitListen = {}
-    DeBugMode = 0 # 调试模式
+    DeBugMode = 0                           # 调试模式
     @classmethod
     def GetUi(cls, Ui=None):
         # type: (object|EasyScreenNodeCls) -> EasyScreenNodeCls | None
-        ''' 获取Ui 参数为UiName或继承EasyScreenNodeCls的子类 '''
+        """ 获取Ui 参数为UiName或继承EasyScreenNodeCls的子类 """
         if isinstance(Ui,str):
             return clientApi.GetUI(ModDirName, Ui)
         elif Ui == None:
@@ -160,7 +161,7 @@ class EasyScreenNodeCls(BaseScreenNode):
 
     @classmethod
     def RemoveUi(cls):
-        ''' [静态] 删除Ui节点 '''
+        """ [静态] 删除Ui节点 """
         UiNode = cls.GetUi() # type: EasyScreenNodeCls
         if UiNode:
             UiNode.SetRemove()
@@ -178,10 +179,10 @@ class EasyScreenNodeCls(BaseScreenNode):
 
     @staticmethod
     def OnClick(ConPath,isSwallow=True):
-        ''' 
+        """ 
             [装饰器] 注册按钮点击回调 参数: Button控件路径, (选填) isSwallow=True # False为点击穿透
             回调参数: 无
-        '''
+        """
         def __OnClick(Met):
             OnClickKey = "__OnClick__"
             if not hasattr(Met,OnClickKey):setattr(Met,OnClickKey,[])
@@ -192,10 +193,10 @@ class EasyScreenNodeCls(BaseScreenNode):
 
     @staticmethod
     def OnTouch(ConPath,isSwallow=True):
-        ''' 
+        """ 
             [装饰器] 注册按钮Touch回调 参数: Button控件路径, (选填) isSwallow=True # False为点击穿透
             回调参数: Args:Dict 详细描述触碰信息
-        '''
+        """
         def __OnTouch(Met):
             OnTouchKey = "__OnTouch__"
             if not hasattr(Met,OnTouchKey):setattr(Met,OnTouchKey,[])
@@ -206,10 +207,10 @@ class EasyScreenNodeCls(BaseScreenNode):
 
     @staticmethod
     def Listen(__Event):
-        ''' 
+        """ 
             [装饰器] 注册UI界面的事件监听,并在UI销毁时自动结束监听
             参数: Event:str  回调参数:Args:dict|无
-        '''
+        """
         Event = __Event if isinstance(__Event, str) else __Event.__name__
         def __Listen(Met):
             ListenKey = "__ListenEvents__"
@@ -228,13 +229,13 @@ class EasyScreenNodeCls(BaseScreenNode):
             IsPushScreen=False
         ):
         UiName = UiName if UiName else RandomUid()
-        from Client import System,EnSp,EnSy,TemporaryContainer
-        ''' 
+        from Client import System,EnSp,EnSy,creatTemporaryContainer
+        """ 
             [装饰器] 用于绑定界面类与UI.json文件的操作
-            大多数情况下只要设置 UiDef="xxx.main"即可 由于UiDef是第一个参数，也可以不使用Key=Value
+            大多数情况下只要设置 UiDef="xxx.main"即可
             UiName不指定即为随机 ParamDict不指定则为 {"isHud" : 1}
             例: @EasyScreenNodeCls.Binding("test.main")
-        '''
+        """
         def NewCls(Cls):
             NowPath = Cls.__module__+"."+Cls.__name__
             Cls.UiName = UiName
@@ -243,18 +244,20 @@ class EasyScreenNodeCls(BaseScreenNode):
             Cls.CreateParams = CreateParams
             Cls.IsPushScreen = IsPushScreen   
             def Register(Args={}):
+                # 智能注册UI
                 ScreenNodeClsPath = ModDirName+".QuModLibs.UIExchange."+Cls.RandomSc
                 clientApi.RegisterUI(ModDirName, Cls.UiName, ScreenNodeClsPath, Cls.UiDef)
 
             if NowPath in EasyScreenNodeCls.UiInitListen:
-                Data=EasyScreenNodeCls.UiInitListen[NowPath]
-                System.UnListenForEvent(EnSp,EnSy,"UiInitFinished", Data[0], Data[1])
+                Data = EasyScreenNodeCls.UiInitListen[NowPath]
+                UnListenForEvent("UiInitFinished", Data[0], Data[1])
                 print("[%s] 重载注册: %s"%(Cls.__name__,NowPath))
                 Register()
 
-            TC = TemporaryContainer()
+            TC = creatTemporaryContainer()
             TC.Register = Register
-            System.ListenForEvent(EnSp,EnSy,"UiInitFinished",TC, Register)
+            # System.ListenForEvent(EnSp,EnSy,"UiInitFinished", TC, Register)
+            ListenForEvent("UiInitFinished", TC, Register)
             EasyScreenNodeCls.UiInitListen[NowPath] = (TC, Register)
             return Cls
         return NewCls
@@ -285,6 +288,74 @@ class EasyScreenNodeCls(BaseScreenNode):
             buttonUIControl = baseUIControl.asButton()
             buttonUIControl.AddTouchEventParams({"isSwallow":True})
             buttonUIControl.SetButtonTouchUpCallback(creatFun(callBack))
+
+        def QuSetControlABSPos(self, __conPath, __pos):
+            # type: (str, tuple[float, float]) -> None
+            x, y = __pos
+            parentPath = __conPath[:__conPath.rfind("/")]
+            px, py = self.QuGetControlABSPos(parentPath)
+            self.GetBaseUIControl(__conPath).SetPosition((x - px, y - py))
+            
+        def QuSetSuperButton(self, buttonPath, clickCall = lambda *_: None, longPressDragTime = None, deviceVibrate = 20):
+            # type: (str, object, float | int | None, int) -> None
+            def creatFun(func):
+                playerId = clientApi.GetLocalPlayerId()
+                levelId = clientApi.GetLevelId()
+                comp = clientApi.GetEngineCompFactory().CreateGame(levelId)
+                disClick = [False]                                        # 禁止点击 (拖动期间)
+                timer = [None]                                            # 系统定时器
+                def startMove():
+                    timer[0] = None
+                    disClick[0] = True
+                    # 震动触发
+                    if deviceVibrate > 0:
+                        comp = clientApi.GetEngineCompFactory().CreateDevice(playerId)
+                        comp.SetDeviceVibrate(deviceVibrate)
+                
+                def newFun(args):
+                    # type: (dict) -> None
+                    touchEvent = args["TouchEvent"]
+                    # 执行点击方法
+                    if touchEvent == 0 and not disClick[0]:
+                        if timer[0]:
+                            comp.CancelTimer(timer[0])
+                            timer[0] = None
+                        return func()
+                    if longPressDragTime == None:
+                        # 不启用长按触摸
+                        return
+
+                    # 触摸移动
+                    if touchEvent == 4 and disClick[0]:
+                        newX = args["TouchPosX"]
+                        newY = args["TouchPosY"]
+                        con = self.GetBaseUIControl(buttonPath)
+                        sx, sy = con.GetSize()
+                        self.QuSetControlABSPos(buttonPath, (newX - sx / 2, newY - sy / 2))
+                        
+                    # TOUCH START 按压按钮开始计算
+                    elif touchEvent == 1:
+                        timer[0] = comp.AddTimer(longPressDragTime, startMove)
+                        # 清空坐标记录
+                        # lastTouchPos = None
+
+                    # TOUCH END 释放时间计算
+                    elif touchEvent in (0, 3):
+                        if timer[0]:
+                            comp.CancelTimer(timer[0])
+                            timer[0] = None
+                        disClick[0] = False
+                return newFun
+            baseUIControl = self.GetBaseUIControl(buttonPath)
+            baseUIControl.SetTouchEnable(True)
+            buttonUIControl = baseUIControl.asButton()
+            buttonUIControl.AddTouchEventParams({"isSwallow":True})
+            funcObject = creatFun(clickCall)
+            buttonUIControl.SetButtonTouchDownCallback(funcObject)      # 按下按钮 (START)
+            buttonUIControl.SetButtonTouchUpCallback(funcObject)        # 释放按钮 (内 CLICK/END)
+            buttonUIControl.SetButtonTouchCancelCallback(funcObject)    # 释放按钮 (外 END)
+            buttonUIControl.SetButtonScreenExitCallback(funcObject)     # 释放按钮 (END)
+            buttonUIControl.SetButtonTouchMoveCallback(funcObject)      # MOVE
 
         def QuUpdateMeshRendering(self):
             RenderCall = self.QUGRIDRENDER
@@ -323,6 +394,30 @@ class EasyScreenNodeCls(BaseScreenNode):
             if not Obj: return 0
             return Obj.ViewRenderCount.get(GridViewPath, 0)
 
+        def QuGetControlABSPointPos(self, __Path):
+            # type: (str) -> tuple[float,float]
+            x, y = self.QuGetControlABSPos(__Path)
+            con = self.GetBaseUIControl(__Path)
+            sx, sy = con.GetSize()
+            return (x - sx / 2, y - sy / 2)
+        
+        def QuSetControlABSPointPos(self, __conPath, __pos):
+            # type: (str, tuple[float, float]) -> None
+            x, y = __pos
+            con = self.GetBaseUIControl(__conPath)
+            sx, sy = con.GetSize()
+            self.QuSetControlABSPos(__conPath, (x + sx / 2, y + sy / 2))
+    
+    def QuSetSuperButton(self, buttonPath, clickCall = lambda *_: None, longPressDragTime = None, deviceVibrate = 20):
+        # type: (str, object, float | int | None, int) -> None
+        """ 超级按键设置
+        @buttonPath - 按钮路径
+        @clickCall - 点击回调函数
+        @longPressDragTime - 长按拖拽时间 (设置非None数值可实现长按拖动, 单位:秒)
+        @deviceVibrate - 长按震动(毫秒)
+        """
+        pass
+
     def QuGetGridRenderObj(self, GridPath="/"):
         # type: (str) -> None | QuGridObject
         """ 获取网格渲染对象 """
@@ -332,7 +427,6 @@ class EasyScreenNodeCls(BaseScreenNode):
         # type: (str) -> QuScrollGrid
         """ 获取Qu网格管理对象 """
         pass
-
 
     def QuSetButtonCallback(self, buttonCont, callBack):
         # type: (str, object) -> bool
@@ -344,7 +438,6 @@ class EasyScreenNodeCls(BaseScreenNode):
         """ 获取网格视图渲染次数 可以用来判断是否为第一次渲染 """
         pass
 
-
     def QuUpdateMeshRendering(self):
         """ 更新当前界面的网格渲染 """
         pass
@@ -354,11 +447,26 @@ class EasyScreenNodeCls(BaseScreenNode):
         """ 获取控件绝对位置信息 """
         pass
 
+    def QuSetControlABSPos(self, __conPath, __pos):
+        # type: (str, tuple[float, float]) -> None
+        """ 设置控件绝对位置信息 """
+        pass
+
+    def QuGetControlABSPointPos(self, __Path):
+        # type: (str) -> tuple[float,float]
+        """ 获取控件绝对点坐标(中心位置) """
+        pass
+
+    def QuSetControlABSPointPos(self, __conPath, __pos):
+        # type: (str, tuple[float, float]) -> None
+        """ 设置控件绝对点坐标(中心位置) """
+        pass
+
     @staticmethod
     def __CREAT__(uiNode,Data):
         # type: (EasyScreenNodeCls, dict) -> None
         # ======= 界面创建完毕后自动执行 ========
-        from Client import System,EnSp,EnSy
+        from Client import System,EnSp,EnSy, EasyThread
         uiNode.QUGRIDRENDER = []
         OnClick = Data["OnClick"] # type: dict
         OnTouch = Data["OnTouch"] # type: dict
@@ -396,7 +504,8 @@ class EasyScreenNodeCls(BaseScreenNode):
         
         # ===== 监听事件处理 ======
         for EventName,FunName in ListenEvents:
-            System.ListenForEvent(EnSp,EnSy,EventName,uiNode,getattr(uiNode,FunName))
+            ListenForEvent(EventName,uiNode,getattr(uiNode,FunName))
+            # System.ListenForEvent(EnSp,EnSy,EventName,uiNode,getattr(uiNode,FunName))
         
         # ===== GridRender处理 =====
         if len(OnGridRender):
@@ -432,7 +541,11 @@ class EasyScreenNodeCls(BaseScreenNode):
                 return __OnGridRender(uiNode)
             EventName = "GridComponentSizeChangedClientEvent"
             setattr(uiNode, RanDomName, QuSystemGridComponentSizeChangedClientEvent)
-            System.ListenForEvent(EnSp, EnSy, EventName,uiNode, getattr(uiNode,RanDomName))
+            # System.ListenForEvent(EnSp, EnSy, EventName,uiNode, getattr(uiNode,RanDomName))
+            from Client import _loaderSystem
+            _loaderSystem.unsafeUpdate(
+                ListenForEvent(EventName,uiNode,getattr(uiNode,RanDomName))
+            )
             ListenEvents.append((EventName, RanDomName))
 
         # ==== 注册界面销毁监听 ====    
@@ -450,7 +563,8 @@ class EasyScreenNodeCls(BaseScreenNode):
         from Client import System,EnSp,EnSy
         ListenEvents = Data["ListenEvents"] # type: list
         for EventName,FunName in ListenEvents:
-            System.UnListenForEvent(EnSp,EnSy,EventName,uiNode,getattr(uiNode,FunName))
+            # System.UnListenForEvent(EnSp,EnSy,EventName,uiNode,getattr(uiNode,FunName))
+            UnListenForEvent(EventName,uiNode,getattr(uiNode,FunName))
 
     def __new__(cls, *Args, **Kwargs):
         if not cls.UiDef:
@@ -484,7 +598,7 @@ class EasyScreenNodeCls(BaseScreenNode):
             ListenEvents = PostProcessing["ListenEvents"] # type: list
             for FunName, Fun in (
                 (x,y) for x,y in cls.__dict__.items()
-                if not hasattr(EasyScreenNodeCls,x) or x in ['__init__','Create','OnActive','OnDeactive','Destroy']
+                if not hasattr(EasyScreenNodeCls, x) or x in ['__init__','Create','OnActive','OnDeactive','Destroy']
             ):
                 if not hasattr(Fun, "__call__"): continue
                 setattr(uiNode, FunName,
@@ -508,10 +622,10 @@ class EasyScreenNodeCls(BaseScreenNode):
                     Append = ListenEvents.append
                     for Event in getattr(Fun,'__ListenEvents__'):
                         Append((Event, __FunName))
-
-            EasyScreenNodeCls.__CREAT__(uiNode,PostProcessing)
+            EasyScreenNodeCls.__CREAT__(uiNode, PostProcessing)
+            # uiNode.__class__ = cls
             uiNode.__init__(*Args, **Kwargs)
-            if hasattr(cls,"Creat"):
+            if hasattr(uiNode,"Creat"):
                 uiNode.Creat()
             return uiNode
         return GetUi
@@ -526,7 +640,7 @@ class EasyScreenNodeCls(BaseScreenNode):
         pass
 
     def __AddTouchEventHandler(self, ConPath, Fun, Data):
-        ''' [已废弃] 设置按钮点击事件 Data一般写{"isSwallow":True} '''
+        """ [已废弃] 设置按钮点击事件 Data一般写{"isSwallow":True} """
         pass
 
 class QuScrollGrid(object):
@@ -539,6 +653,7 @@ class QuScrollGrid(object):
     def redrawLayoutSize(self, baseX=1, baseY=2, count=2):
         # type: (int, int, int) -> bool
         """ 重绘布局大小
+        
             baseX: 基准宽度大小 即宽度可填充数量
             baseY: 基准高度大小 以一整页高度为准的可填充数量
             count: 需要绘制的数量 (不代表真实绘制容量,基于网格特性一定会绘制: n*baseX*baseY 个, 多余内容需自行控制隐藏)
@@ -548,9 +663,8 @@ class QuScrollGrid(object):
         viewPath = scrollView.asScrollView().GetScrollViewContentPath()
         grid = self.uiNode.GetBaseUIControl(viewPath)
         yCount = count // baseX + (1 if count % baseX else 0)
-        itemH = size2/baseY     # 每行分配的高度
+        itemH = size2 / baseY     # 每行分配的高度
         grid.asGrid().SetGridDimension((baseX, yCount))
         grid.SetSize((size1, itemH*yCount), True)
-
 
 ESNC = EasyScreenNodeCls # EasyScreenNodeCls的缩写

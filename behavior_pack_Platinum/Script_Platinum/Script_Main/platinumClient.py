@@ -8,3 +8,13 @@ def OnInventoryItemChanged(data):
 
 
 ListenForEvent("InventoryItemChangedClientEvent", None, OnInventoryItemChanged)
+
+
+@Listen(Events.OnLocalPlayerStopLoading)
+def OnLocalPlayerStopLoading(data):
+    comp = clientApi.GetEngineCompFactory().CreateGame(playerId)
+
+    def NeedSendInfo():
+        Call("NeedSendInfo", playerId)
+
+    comp.AddTimer(3.0, NeedSendInfo)

@@ -9,5 +9,4 @@ class EntityEventComponentServer(BaseComponent):
         触发生物自定义事件
         """
         pass
-    
 
