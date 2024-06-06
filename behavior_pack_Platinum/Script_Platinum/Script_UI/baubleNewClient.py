@@ -718,11 +718,14 @@ class InventoryPocketProxy(InventoryClassicProxy):
         self.openState = False
 
         # 原版路径
-        self.playerRenderBgPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg"
-        self.armorSetPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/label_and_renderer"
-        self.invGridMousePathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{}"
-        self.invGridTouchPathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane/scroll_touch/scroll_view/panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{}"
-        self.hotBarGridPathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/hotbar_section_panel/hotbar/hotbar_grid/hotbar_grid_item{}"
+        self.basePathOld = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel"
+        self.basePathNew = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/base_panel"
+
+        self.playerRenderBgPath = "/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg"
+        self.armorSetPath = "/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/label_and_renderer"
+        self.invGridMousePathModel = "/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{}"
+        self.invGridTouchPathModel = "/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane/scroll_touch/scroll_view/panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{}"
+        self.hotBarGridPathModel = "/hotbar_and_panels/hotbar_section_panel/hotbar/hotbar_grid/hotbar_grid_item{}"
         # 饰品栏路径
         self.helmetBtnBasePath = "/bauble_helmet_panel/bauble_helmet_btn"
         self.necklaceBtnBasePath = "/bauble_necklace_panel/bauble_necklace_btn"
@@ -764,6 +767,25 @@ class InventoryPocketProxy(InventoryClassicProxy):
             self.otherBtnBasePath3,
             self.otherBtnBasePath4
         ]
+
+    def OnCreate(self):
+        self.CheckPath()
+        self.CreateBaubleBtn()
+
+    def CheckPath(self):
+        screen = self.GetScreenNode()
+        if not screen.GetBaseUIControl(self.basePathOld):
+            self.playerRenderBgPath = self.basePathNew + self.playerRenderBgPath
+            self.armorSetPath = self.basePathNew + self.armorSetPath
+            self.invGridMousePathModel = self.basePathNew + self.invGridMousePathModel
+            self.invGridTouchPathModel = self.basePathNew + self.invGridTouchPathModel
+            self.hotBarGridPathModel = self.basePathNew + self.hotBarGridPathModel
+        else:
+            self.playerRenderBgPath = self.basePathOld + self.playerRenderBgPath
+            self.armorSetPath = self.basePathOld + self.armorSetPath
+            self.invGridMousePathModel = self.basePathOld + self.invGridMousePathModel
+            self.invGridTouchPathModel = self.basePathOld + self.invGridTouchPathModel
+            self.hotBarGridPathModel = self.basePathOld + self.hotBarGridPathModel
 
     def OnDestroy(self):
         screen = self.GetScreenNode()
