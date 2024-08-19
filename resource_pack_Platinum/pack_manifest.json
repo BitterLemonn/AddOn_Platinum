@@ -5,9 +5,9 @@
             "type": "resources",
             "uuid": "03777e06-5470-44e3-81bc-2bed1c511801",
             "version": [
+                1,
                 0,
-                0,
-                10
+                0
             ]
         }
     ],
@@ -16,11 +16,11 @@
         "name": "resource_pack",
         "uuid": "cc5881a5-b352-4e04-a58b-3641e165d4a1",
         "version": [
+            1,
             0,
-            0,
-            10
+            0
         ],
-        "min_engine_version":[ 1, 18, 0 ]
+        "min_engine_version": [1, 18, 0]
     },
-    "format_version": 1
+    "format_version": 2
 }
