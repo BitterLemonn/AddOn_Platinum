@@ -1,0 +1,15 @@
+{
+    "pocket_armor_tab_content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg": {
+        "modifications": [
+            {
+                "control_name": "player_renderer_panel",
+                "operation": "insert_before",
+                "value": [
+                    {
+                        "bauble_button@bauble_base_panel.bauble_btn_big": {}
+                    }
+                ]
+            }
+        ]
+    }
+}
