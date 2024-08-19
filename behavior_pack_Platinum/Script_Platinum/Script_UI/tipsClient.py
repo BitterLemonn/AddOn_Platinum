@@ -1,15 +1,18 @@
 # coding=utf-8
+import logging
+
 from ..QuModLibs.Client import *
 
 ScreenNode = clientApi.GetScreenNodeCls()
 
 
 @Listen(Events.UiInitFinished)
-def OnUiInitFinished(_):
+def OnTipsUiInitFinished(args):
     clientApi.RegisterUI("platinum", "info_tips", "Script_Platinum.Script_UI.tipsClient.TipsUI", "info_tips.screen")
     comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
     data = comp.GetConfigData("platinumTips", True)
     isSet = data.get("isSet", False)
+    logging.debug("铂:是否已经显示过提示: {}".format(isSet))
 
     if not isSet:
         clientApi.PushScreen("platinum", "info_tips")

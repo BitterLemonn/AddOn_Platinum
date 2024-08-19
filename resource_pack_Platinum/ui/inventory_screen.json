@@ -1,0 +1,15 @@
+{
+    "player_armor_panel/player_bg": {
+        "modifications": [
+            {
+                "control_name": "player_renderer_panel",
+                "operation": "insert_before",
+                "value": [
+                    {
+                        "bauble_button@bauble_base_panel.bauble_button": {}
+                    }
+                ]
+            }
+        ]
+    }
+}

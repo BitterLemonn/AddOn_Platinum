@@ -222,10 +222,25 @@ class GlobalData(object):
     }
 
 
+@Listen(Events.UiInitFinished)
+def OnBaubleUiInitFinished(args):
+    NativeScreenManager = clientApi.GetNativeScreenManagerCls()
+    # 注册经典背包界面代理
+    NativeScreenManager.instance().RegisterScreenProxy("crafting.inventory_screen",
+                                                       "Script_Platinum.Script_UI.baubleNewClient.InventoryClassicProxy")
+    # 注册口袋背包界面代理
+    NativeScreenManager.instance().RegisterScreenProxy("crafting_pocket.inventory_screen_pocket",
+                                                       "Script_Platinum.Script_UI.baubleNewClient.InventoryPocketProxy")
+
+    # 注册提示ui
+    clientApi.RegisterUI("lemon_artifact", "tips_ui", "Script_Platinum.Script_UI.baubleNewClient.TipNodeUi",
+                         "bauble_base_panel.main")
+
+
 @AllowCall
 def ChangeUiPosition(uiPosition):
     GlobalData.uiPosition = uiPosition
-    OnUiInitFinished(None)
+    OnBaubleUiInitFinished(None)
     SavePosition()
 
 
@@ -316,6 +331,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.infoManager = InfoManager(self.GetScreenNode(), self.flyingPanel)
 
     def OnCreate(self):
+        logging.info("铂: 饰品栏界面代理类已创建")
         self.CreateBaubleBtn()
 
     def OnDestroy(self):
@@ -368,14 +384,8 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     def CreateBaubleBtn(self):
         screen = self.GetScreenNode()
         panelPath = self.playerRenderBgPath
-        panel = screen.GetBaseUIControl(panelPath)
-        if not panel:
-            logging.error("铂: 无法找到特定界面")
-            return
-        try:
-            baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button").asButton()
-        except:
-            baubleBtn = screen.CreateChildControl(BaubleConfig.UI_DEF_BAUBLE_BTN, "bauble_button", panel).asButton()
+        baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button").asButton()
+        logging.info("铂: 创建饰品栏开关按钮: {}".format(baubleBtn))
 
         # 设置按钮回调
         self.SetBtnPosition(baubleBtn)
@@ -803,15 +813,8 @@ class InventoryPocketProxy(InventoryClassicProxy):
     def CreateBaubleBtn(self):
         screen = self.GetScreenNode()
         panelPath = self.playerRenderBgPath
-        panel = screen.GetBaseUIControl(panelPath)
-        if not panel:
-            logging.error("铂: 无法找到特定界面")
-            return
-        try:
-            baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button").asButton()
-            baubleBtn.SetVisible(True)
-        except:
-            baubleBtn = screen.CreateChildControl(BaubleConfig.UI_DEF_BAUBLE_BTN_BIG, "bauble_button", panel).asButton()
+
+        baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button").asButton()
 
         self.SetBtnPosition(baubleBtn)
         baubleBtn.AddTouchEventParams({"isSwallow": True})
@@ -998,21 +1001,6 @@ def SaveData():
         logging.error("铂: 保存饰品数据失败!!! 丢失玩家饰品数据")
 
 
-@Listen(Events.UiInitFinished)
-def OnUiInitFinished(args):
-    NativeScreenManager = clientApi.GetNativeScreenManagerCls()
-    # 注册经典背包界面代理
-    NativeScreenManager.instance().RegisterScreenProxy("crafting.inventory_screen",
-                                                       "Script_Platinum.Script_UI.baubleNewClient.InventoryClassicProxy")
-    # 注册口袋背包界面代理
-    NativeScreenManager.instance().RegisterScreenProxy("crafting_pocket.inventory_screen_pocket",
-                                                       "Script_Platinum.Script_UI.baubleNewClient.InventoryPocketProxy")
-
-    # 注册提示ui
-    clientApi.RegisterUI("lemon_artifact", "tips_ui", "Script_Platinum.Script_UI.baubleNewClient.TipNodeUi",
-                         "bauble_base_panel.main")
-
-
 class TipNodeUi(EasyScreenNodeCls):
 
     def __init__(self):
@@ -1117,7 +1105,7 @@ def OnScriptTickClient():
     uiProfile = comp.GetUIProfile()
     if uiProfile != GlobalData.uiProfile:
         GlobalData.uiProfile = uiProfile
-        OnUiInitFinished(None)
+        OnBaubleUiInitFinished(None)
 
 
 # 工具函数
