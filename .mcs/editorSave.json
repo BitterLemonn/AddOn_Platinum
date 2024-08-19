@@ -40,20 +40,7 @@
                     "/netease_prefab_screen"
                 ],
                 "bauble_base_panel.bauble_stack_panel": [
-                    "/netease_prefab_screen",
-                    "/netease_prefab_screen/bauble_stack_panel",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_helmet_panel",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_necklace_panel",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_back_panel",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_armor_panel",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_hand_panel_1",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_hand_panel_2",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_belt_panel",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_shoes_panel",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_other_panel_1",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_other_panel_2",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_other_panel_3",
-                    "/netease_prefab_screen/bauble_stack_panel/bauble_other_panel_4"
+                    "/netease_prefab_screen"
                 ],
                 "bauble_base_panel.item_info": [
                     "/netease_prefab_screen",
@@ -117,6 +104,9 @@
                 ],
                 "bauble_new.info": [
                     "/netease_prefab_screen"
+                ],
+                "info_tips.info_panel": [
+                    "/netease_prefab_screen"
                 ]
             },
             "screen": {
@@ -126,6 +116,16 @@
                 ],
                 "D:\\MCNetease\\MinecraftProject\\Platinum\\resource_pack_Platinum\\ui\\bauble_new.json": [
                     "/main"
+                ],
+                "D:\\MCNetease\\MinecraftProject\\Platinum\\resource_pack_Platinum\\ui\\info_tips.json": [
+                    "/screen",
+                    "/screen/variables_button_mappings_and_controls",
+                    "/screen/variables_button_mappings_and_controls/safezone_screen_matrix",
+                    "/screen/variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix",
+                    "/screen/variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel",
+                    "/screen/variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel",
+                    "/screen/variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/input_panel",
+                    "/screen/variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/input_panel/button_panel"
                 ],
                 "D:\\MCNetease\\MinecraftProject\\Platinum\\resource_pack_VfGuyCTi\\ui\\bauble_base_panel.json": [
                     "/main",

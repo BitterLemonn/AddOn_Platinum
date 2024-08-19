@@ -38,6 +38,8 @@ def CLIENT():
         setSystem(baubleNewClient, commonConfig.PLATINUM_BAUBLE_CLIENT)
         import Script_Main.broadcasterClient as broadcasterClient
         setSystem(broadcasterClient, "QU_BROADCAST_CLIENT")
+        import Script_UI.tipsClient as tipsClient
+        setSystem(tipsClient)
 
         # 注册原版系统
         import mod.client.extraClientApi as clientApi

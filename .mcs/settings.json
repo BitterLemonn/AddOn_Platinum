@@ -11,7 +11,8 @@
         "resource_pack_Platinum\\textures"
     ],
     "Uluru.autoLayerDict": {
-        "bauble_new": false
+        "bauble_new": false,
+        "info_tips": true
     },
     "Uluru.checkSuspectOldUI": true
 }
