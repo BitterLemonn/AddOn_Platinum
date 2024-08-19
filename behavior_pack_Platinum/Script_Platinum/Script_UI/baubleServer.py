@@ -47,9 +47,10 @@ def OnServerItemTryUseEvent(data):
         comp = serverApi.GetEngineCompFactory().CreateItem(playerId)
         itemInfo = comp.GetItemBasicInfo(itemUsed["newItemName"])
         # 不为盔甲时判断穿戴饰品
-        if itemInfo["itemType"] != "armor":
+        if itemInfo["itemType"] != "armor" and itemInfo["itemType"] != "food":
             baubleSlot = ItemName2BaubleSlot(itemUsed)
-            Call(playerId, "EquipBauble", itemUsed, baubleSlot)
+            if CheckBauble(itemUsed, baubleSlot):
+                Call(playerId, "EquipBauble", itemUsed, baubleSlot)
 
 
 def ItemName2BaubleSlot(itemDict):

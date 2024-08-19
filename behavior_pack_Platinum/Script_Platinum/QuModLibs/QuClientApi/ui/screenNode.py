@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from controls.baseUIControl import BaseUIControl
+if 1 > 2:
+    from controls.baseUIControl import BaseUIControl
 
 class ScreenNode(object):
     def Update(self):
@@ -209,13 +210,6 @@ class ScreenNode(object):
         # type: (str) -> BaseUIControl
         """
         根据路径获取BaseUIControl实例
-        """
-        pass
-
-    def AddTouchEventHandler(self, path, a , b):
-        # type: (str, object, dict) -> None
-        """
-        废弃AddTouchEventHandler，推荐使用UI面向对象ButtonUIControl.AddTouchEventParams接口开启按钮回调功能并通过SetButtonTouchUpCallback等接口绑定回调函数
         """
         pass
 

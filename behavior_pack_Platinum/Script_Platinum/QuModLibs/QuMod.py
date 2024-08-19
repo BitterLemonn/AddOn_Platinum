@@ -1,162 +1,132 @@
 # -*- coding: utf-8 -*-
-
 from mod.common.mod import Mod
 import mod.server.extraServerApi as serverApi
 import mod.client.extraClientApi as clientApi
-from Information import ApiVersion
-from Util import SetModDirName
+import traceback
+from Util import SetModDirName, import_module, SystemSide
 from uuid import uuid4
+import IN
 
 RandomKey = "Q"+str(uuid4()).replace("-","") # 随机钥匙
 
-# 创建随机UID
-def RandomUid():
-    return "QuMod_"+str(uuid4()).replace("-","")
-
-class SystemSide(object):
-    def __init__(self,Path,SystemName=None):
-        self.SystemName = SystemName # 绑定系统
-        self.Path = Path
-
 EasyModSl = [None,[],[]] # 记录实例
-ModDirName = SystemSide.__module__.split(".")[0]
+ModDirName = IN.ModDirName
+QuModLibsPath = IN.QuModLibsPath
 
 @Mod.Binding(name = "QuMod_"+ModDirName, version = "1.0.0")
-class modMain(object):
-    ''' 用于自动化注册Mod信息  '''
+class QUMOD_MOD_MAIN(object):
+    """ 用于自动化注册Mod信息  """
+    def __init__(self):
+        pass
+
     @Mod.InitServer()
     def ServerInit(self):
         # 服务端初始化
-        ### ======== 设置缓存阻止补全库真正导入,仅提供补全提示 ======== ###
-        # from Util import ModDirName, SetModuleCache, SetModuleAttr
-        # SetModuleCache(ModDirName+'.QuModLibs.QuServerApi.extraServerApi', serverApi)
-        # SetModuleAttr(
-        #     ModDirName+'.QuModLibs.QuServerApi', 'extraServerApi', serverApi
-        # )
-        ### ======== 设置缓存阻止补全库真正导入,仅提供补全提示 ======== ###
-        import IN; IN.IsServerUser = True
-
-        # === 插件系统处理 ===
-        import Server
-        key = "qumod_nx_server"
-        System = serverApi.GetSystem("Minecraft","game")
-        if not hasattr(System, key):
-            setattr(System, key, {})
-        dataDic = getattr(System, key)  # type: dict
-        dataDic[ModDirName] = Server
-        # === 插件系统处理 ===
-
-        this = EasyModSl[0] # type: EasyMod
+        from Systems.Loader.Server import LoaderSystem
+        IN.IsServerUser = True
+        this = EasyModSl[0]         # type: EasyMod
+        ServerLis = EasyModSl[1]    # type: list[SystemSide]
+        this.include._insertServerList(ServerLis)
+        sysPathList = []
+        for _data in ServerLis:
+            sysPathList.append((this.FormatPath(_data.Path), _data.SystemName))
+        IN.RuntimeService._serviceSystemList = sysPathList
+        if len(sysPathList) > 0:
+            LoaderSystem.getSystem()
+        # / =========== 自定义Function执行 ===========
         for func in this.ServerFunc:
             try:
                 func()
-            except Exception as e:
-                print("[Error]: $"+str(e))
-        
-        # ServerLis = EasyModSl[1]
+            except Exception:
+                traceback.print_exc()
         if not this: return None
         this.OnServerInit()
-        return
-        # from Server import SER_SYSTEM_APPEND
-        # for Data in ServerLis:
-        #     Path = Data.Path
-        #     SystemName = Data.SystemName
-        #     SysObj = import_module(this.FormatPath(Path))
-        #     if not SystemName: SystemName = str(uuid4()).replace("-","")
-        #     SER_SYSTEM_APPEND(SystemName,SysObj)
+        # =========== 自定义Function执行 =========== /
 
     @Mod.DestroyServer()
     def ServerDestroy(self):
         # 服务端销毁时
         this = EasyModSl[0]
-        if not this: return None
+        if not this:
+            return None
         from Server import SYSTEMDIC, Destroy
         Destroy() # 销毁处理方法
         for Name, Obj in SYSTEMDIC.items():
-            if hasattr(Obj, 'QuDestroy'): Obj.QuDestroy()
-            del SYSTEMDIC[Name]; del Obj
+            try:
+                if hasattr(Obj, "QuDestroy"):
+                    Obj.QuDestroy()
+                del SYSTEMDIC[Name]
+            except Exception:
+                traceback.print_exc()
 
     @Mod.InitClient()
     def ClientInit(self):
         # 客户端初始化
-        from Util import ModDirName
-        ### ======== 设置缓存阻止补全库真正导入,仅提供补全提示 ======== ###
-        # SetModuleCache(ModDirName+'.QuModLibs.QuClientApi.extraClientApi', clientApi)
-        # SetModuleAttr(
-        #     ModDirName+'.QuModLibs.QuClientApi', 'extraClientApi', clientApi
-        # )
-        # import QuModLibs.QuClientApi.ui.screenNodeEnu as screenNodeEnu
-        # SetModuleCache(
-        #     ModDirName+'.QuModLibs.QuClientApi.ui.screenNode',
-        #     screenNodeEnu,
-        # )
-        ### ======== 设置缓存阻止补全库真正导入,仅提供补全提示 ======== ###
-
-        def Load():
-            # === 插件系统处理 ===
-            import Client
-            key = "qumod_nx_client"
-            System = clientApi.GetSystem("Minecraft","game")
-            if not hasattr(System, key):
-                setattr(System, key, {})
-            dataDic = getattr(System, key)  # type: dict
-            dataDic[ModDirName] = Client
-            # === 插件系统处理 ===
-
-            this = EasyModSl[0] # type: EasyMod
-            for func in this.ClientFunc:
-                try:
-                    func()
-                except Exception as e:
-                    print("[Error]: $"+str(e))
-            # ClientLis = EasyModSl[2]
-            if not this: return None
-            this.OnClientInit()
-        comp = clientApi.GetEngineCompFactory().CreateGame(clientApi.GetLevelId())
-        comp.AddTimer(0.0, Load)
-        return
-        # from Client import CLI_SYSTEM_APPEND, EasyThread
-        # def Loading():
-        #     for Data in ClientLis:
-        #         Path = Data.Path
-        #         SystemName = Data.SystemName
-        #         SysObj = import_module(this.FormatPath(Path))
-        #         if not SystemName: SystemName = str(uuid4()).replace("-","")
-        #         CLI_SYSTEM_APPEND(SystemName,SysObj)
-        # EasyThread.NextTick(Loading)
+        from Systems.Loader.Client import LoaderSystem
+        this = EasyModSl[0]         # type: EasyMod
+        ClientLis = EasyModSl[2]    # type: list[SystemSide]
+        this.include._insertClientList(ClientLis)
+        sysPathList = []
+        for _data in ClientLis:
+            sysPathList.append((this.FormatPath(_data.Path), _data.SystemName))
+        IN.RuntimeService._clientSystemList = sysPathList
+        if len(sysPathList) > 0:
+            LoaderSystem.getSystem()
+        # / =========== 自定义Function执行 ===========
+        for func in this.ClientFunc:
+            try:
+                func()
+            except Exception:
+                traceback.print_exc()
+        if not this: return None
+        this.OnClientInit()
+        # =========== 自定义Function执行 =========== /
 
     @Mod.DestroyClient()
     def ClientDestroy(self):
         # 客户端销毁时
         this = EasyModSl[0]
-        if not this: return None
+        if not this:
+            return None
         from Client import SYSTEMDIC, Destroy
         Destroy() # 销毁处理方法
         for Name, Obj in SYSTEMDIC.items():
-            if hasattr(Obj, 'QuDestroy'): Obj.QuDestroy()
-            del SYSTEMDIC[Name]; del Obj
-    
-class QuPluginAPI(object):
-    ''' QuMod 插件API '''
-    def __init__(self, RePath, System):
-        self.RePath = RePath
-        self.Version = ApiVersion # 插件版本 : int
-        self.EasyMod = System # type: EasyMod
-    
-    def Server(self,Path,SystemName=None):
-        ''' 创建Plugin服务端 '''
-        self.EasyMod.Server(self.RePath+"."+Path,SystemName)
-        return self
+            try:
+                if hasattr(Obj, "QuDestroy"):
+                    Obj.QuDestroy()
+                del SYSTEMDIC[Name]
+            except Exception:
+                traceback.print_exc()
 
-    def Client(self,Path,SystemName=None):
-        ''' 创建Plugin客户端 '''
-        self.EasyMod.Client(self.RePath+"."+Path,SystemName)
-        return self
+class Include:
+    """ 扩展包管理 """
+    def __init__(self):
+        self.ctRender_v2 = False
+        """ CTRender v2 资源管理系统 """
+        self.attackExtend = False
+        """ AC战斗机制 链攻击系统 (暂未加入)
+            @依赖项:
+                CTRender - 应用与全局节点同步管理
+        """
+    def _insertClientList(self, lis):
+        # type: (list[SystemSide]) -> None
+        if self.ctRender_v2:
+            lis.insert(0, SystemSide(QuModLibsPath + ".Include.CT_Render.ClientApi"))
+        if self.attackExtend:
+            lis.insert(0, SystemSide(QuModLibsPath + ".Include.AttackExtend.Client"))
 
-# 简易Mod
+    def _insertServerList(self, lis):
+        # type: (list[SystemSide]) -> None
+        if self.ctRender_v2:
+            lis.insert(0, SystemSide(QuModLibsPath + ".Include.CT_Render.ServerApi"))
+        if self.attackExtend:
+            lis.insert(0, SystemSide(QuModLibsPath + ".Include.AttackExtend.Server"))
+
 class EasyMod(object):
-    ''' 创建EasyMod 模组开发的初始化入口 请确保完整的导入了整个QuMod包,否则可能不生效 '''
-    def __init__(self, ParentDir=modMain.__module__.split(".")[0], Plugins=[]):
+    """ 创建EasyMod 模组开发的初始化入口 请确保完整的导入了整个QuMod包,否则可能不生效 """
+    _MOD_NAME = "MOD_NAME"
+    _VERSION = "VERSION"
+    def __init__(self, ParentDir = QUMOD_MOD_MAIN.__module__.split(".")[0], **_):
         SetModDirName(ParentDir)
         self.__ParentDir = ParentDir # 所在的父路径
         self.__ServerLis = []   # 记录需要创建的服务端数据
@@ -165,14 +135,19 @@ class EasyMod(object):
         self.ServerFunc = []
         # -- 基本的初始与注销服务端/客户端回调 --
         NullFun = lambda *_: None
-        self.OnServerInit = NullFun; self.OnClientInit = NullFun
+        self.OnServerInit = NullFun
+        self.OnClientInit = NullFun
         # -- 基本的初始与注销服务端/客户端回调 --
         
-        EasyModSl[0] = self; EasyModSl[1] = self.__ServerLis
+        EasyModSl[0] = self
+        EasyModSl[1] = self.__ServerLis
         EasyModSl[2] = self.__ClientLis
-        for PluginData in Plugins:
-            self.__PluginsLoading(PluginData)
-    
+        
+        self.include = Include()
+        """ 扩展包管理 可设置扩展包为True启用加载 """
+        self._serverWaitTime = None
+        self._clientWaitTime = None
+        
     def addClientFunc(self, object):
         """ 增加客户端调用函数 自动执行 """
         self.ClientFunc.append(object)
@@ -180,57 +155,58 @@ class EasyMod(object):
     def addServerFunc(self, object):
         """ 增加服务端调用函数, 自动执行 """
         self.ServerFunc.append(object)
+    
+    def setServerWaitTime(self, waitTime):
+        # type: (float) -> None
+        """ 设置Server加载的等待时间 """
+        self._serverWaitTime = waitTime
 
-    # 插件处理
-    def __PluginsLoading(self, PluginData):
-        return
-        # try:
-        #     if isinstance(PluginData,tuple):
-        #         # === 带参数的处理 ===
-        #         PluginPath, PluginKwar = PluginData
-        #         ParameterPath = PluginPath+".Configure"
-        #         ParameterObj = import_module(self.FormatPath(ParameterPath))
-        #         for k, v in dict(PluginKwar).items():
-        #             setattr(ParameterObj,k,v)
-        #         self.__PluginsLoading(PluginPath)
-        #     elif isinstance(PluginData,str):
-        #         # === 无参数的处理 ===
-        #         InitPath = PluginData+".__init__"
-        #         InitObj = import_module(self.FormatPath(InitPath))
-        #         InitDic = InitObj.__dict__ # type: dict
-        #         if not (ApiVersion >= InitDic.get("MinApi",0) and ApiVersion <= InitDic.get("MaxApi", 114514)):
-        #             print("[Error] %s 不匹配当前API版本,无法加载"%(PluginData))
-        #             return None
-        #         MainPath = PluginData+".Main"
-        #         MainObj = import_module(self.FormatPath(MainPath))
-        #         if hasattr(MainObj,"__Main__"):
-        #             MainObj.__Main__(QuPluginAPI(PluginData.replace("/","."), self))
-        #     else:
-        #         print("[Error] %s 无效的参数"%(PluginData))
-        # except Exception as e:
-        #     print(e)
+    def setClientWaitTime(self, waitTime):
+        # type: (float) -> None
+        """ 设置Client加载的等待时间 """
+        self._clientWaitTime = waitTime
 
+    def getModName(self):
+        # type: () -> str | None
+        """ 获取ModName """
+        return getattr(QUMOD_MOD_MAIN, EasyMod._MOD_NAME)
+
+    def getModVersion(self):
+        # type: () -> str | None
+        """ 获取ModVersion """
+        return getattr(QUMOD_MOD_MAIN, EasyMod._VERSION)
+
+    def setModName(self, _name):
+        # type: (str) -> None
+        """ 设置ModName """
+        setattr(QUMOD_MOD_MAIN, EasyMod._MOD_NAME, _name)
+
+    def setModVersion(self, _version):
+        # type: (str) -> None
+        """ 设置ModVersion """
+        setattr(QUMOD_MOD_MAIN, EasyMod._VERSION, _version)
 
     # 格式化所在路径
-    def FormatPath(self,Path):
-        if len(self.__ParentDir):
+    def FormatPath(self, Path):
+        # type: (str) -> str
+        if len(self.__ParentDir) and not Path.startswith(QuModLibsPath):
             return str(self.__ParentDir+"."+Path).replace("/",".")
-        else:
-            return Path.replace("/",".")
+        return Path.replace("/",".")
     
-    # 增加/设置服务端
-    def Server(self,Path,SystemName=None):
-        ''' [已弃用] 创建服务端 Path即所在路径(从Mod设置的父路径开始) SystemName=None 可设置分配一个系统名'''
-        return
-        # Obj = SystemSide(Path,SystemName=SystemName)
-        # self.__ServerLis.append(Obj)
-        # return self
+    def Server(self, Path, SystemName = None):
+        """ 注册服务端 
+            @SystemName 选填 可分配一个系统名
+            ps: 系统名仅在当前作用域有效 与其他mod隔离
+        """
+        Obj = SystemSide(Path, SystemName = SystemName)
+        self.__ServerLis.append(Obj)
+        return self
 
-    # 增加/设置服务端
-    def Client(self,Path,SystemName=None):
-        ''' [已弃用] 创建客户端 Path即所在路径(从Mod设置的父路径开始) SystemName=None 可设置分配一个系统名'''
-        return
-        # Obj = SystemSide(Path,SystemName=SystemName)
-        # self.__ClientLis.append(Obj)
-        # return self
-
+    def Client(self, Path, SystemName = None):
+        """ 注册客户端 
+            @SystemName 选填 可分配一个系统名
+            ps: 系统名仅在当前作用域有效 与其他mod隔离
+        """
+        Obj = SystemSide(Path, SystemName = SystemName)
+        self.__ClientLis.append(Obj)
+        return self

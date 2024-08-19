@@ -90,48 +90,6 @@ def HideHudGUI(isHide):
     """
     pass
 
-def HidePauseGUI(isHide):
-    # type: (bool) -> None
-    """
-    隐藏暂停按钮原生UI。
-    """
-    pass
-
-def HideChatGUI(isHide):
-    # type: (bool) -> None
-    """
-    隐藏聊天按钮原生UI。该接口在开启新版聊天时不生效
-    """
-    pass
-
-def HideReportGUI(isHide):
-    # type: (bool) -> None
-    """
-    隐藏举报按钮原生UI。
-    """
-    pass
-
-def HideFoldGUI(isHide):
-    # type: (bool) -> None
-    """
-    隐藏下拉按钮原生UI。
-    """
-    pass
-
-def HideEmoteGUI(isHide):
-    # type: (bool) -> None
-    """
-    设置是否开启表情功能，默认PC端关闭，手机端开启，且该接口只能在手机端使用。该接口在开启新版聊天时不生效
-    """
-    pass
-
-def HideVoiceGUI(isHide):
-    # type: (bool) -> None
-    """
-    隐藏语音按钮原生UI。该接口在开启新版聊天时不生效
-    """
-    pass
-
 def HideWalkGui(isHide):
     # type: (bool) -> None
     """

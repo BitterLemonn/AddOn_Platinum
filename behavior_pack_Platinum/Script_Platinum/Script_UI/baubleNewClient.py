@@ -1,11 +1,10 @@
 # coding=utf-8
-from ..QuModLibs.Client import *
-from ..QuModLibs.UI import *
+import re
 
 from .. import loggingUtils as logging
+from ..QuModLibs.Client import *
+from ..QuModLibs.UI import *
 from ..commonConfig import BaubleEnum
-
-import re
 
 CustomUIScreenProxy = clientApi.GetUIScreenProxyCls()
 
@@ -719,11 +718,14 @@ class InventoryPocketProxy(InventoryClassicProxy):
         self.openState = False
 
         # 原版路径
-        self.playerRenderBgPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg"
-        self.armorSetPath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/label_and_renderer"
-        self.invGridMousePathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{}"
-        self.invGridTouchPathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane/scroll_touch/scroll_view/panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{}"
-        self.hotBarGridPathModel = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel/hotbar_and_panels/hotbar_section_panel/hotbar/hotbar_grid/hotbar_grid_item{}"
+        self.basePathOld = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/root_panel"
+        self.basePathNew = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel/base_panel"
+
+        self.playerRenderBgPath = "/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg"
+        self.armorSetPath = "/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/label_and_renderer"
+        self.invGridMousePathModel = "/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane/scroll_mouse/scroll_view/stack_panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{}"
+        self.invGridTouchPathModel = "/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane/scroll_touch/scroll_view/panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{}"
+        self.hotBarGridPathModel = "/hotbar_and_panels/hotbar_section_panel/hotbar/hotbar_grid/hotbar_grid_item{}"
         # 饰品栏路径
         self.helmetBtnBasePath = "/bauble_helmet_panel/bauble_helmet_btn"
         self.necklaceBtnBasePath = "/bauble_necklace_panel/bauble_necklace_btn"
@@ -765,6 +767,25 @@ class InventoryPocketProxy(InventoryClassicProxy):
             self.otherBtnBasePath3,
             self.otherBtnBasePath4
         ]
+
+    def OnCreate(self):
+        self.CheckPath()
+        self.CreateBaubleBtn()
+
+    def CheckPath(self):
+        screen = self.GetScreenNode()
+        if not screen.GetBaseUIControl(self.basePathOld):
+            self.playerRenderBgPath = self.basePathNew + self.playerRenderBgPath
+            self.armorSetPath = self.basePathNew + self.armorSetPath
+            self.invGridMousePathModel = self.basePathNew + self.invGridMousePathModel
+            self.invGridTouchPathModel = self.basePathNew + self.invGridTouchPathModel
+            self.hotBarGridPathModel = self.basePathNew + self.hotBarGridPathModel
+        else:
+            self.playerRenderBgPath = self.basePathOld + self.playerRenderBgPath
+            self.armorSetPath = self.basePathOld + self.armorSetPath
+            self.invGridMousePathModel = self.basePathOld + self.invGridMousePathModel
+            self.invGridTouchPathModel = self.basePathOld + self.invGridTouchPathModel
+            self.hotBarGridPathModel = self.basePathOld + self.hotBarGridPathModel
 
     def OnDestroy(self):
         screen = self.GetScreenNode()
@@ -897,8 +918,7 @@ class InventoryPocketProxy(InventoryClassicProxy):
 # 监听客户端mod加载完成读取饰品文件
 @Listen(Events.OnLocalPlayerStopLoading)
 def OnLoadClientAddonScriptsAfter(data):
-    comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId))
+    configData = GetBaubleData()
     loadData = configData.get(BaubleConfig.BAUBLE_SLOT_INFO, {})
     if len(loadData) == 0:
         logging.error("铂: 读取饰品数据失败!!! 已重置饰品数据")
@@ -941,11 +961,37 @@ def QuDestroy():
     SaveData()
 
 
-def SaveData():
+def GetBaubleData():
+    comp = clientApi.GetEngineCompFactory().CreatePlayer(playerId)
+    uid = comp.getUid()
+    comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
+    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(uid))
+    if configData is None or len(configData) == 0:
+        configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId))
+        DataBaseUpdate()
+    return configData
+
+
+def DataBaseUpdate():
+    comp = clientApi.GetEngineCompFactory().CreatePlayer(playerId)
+    uid = comp.getUid()
     comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
     configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId))
+    if not configData.get("isTrans", False):
+        # 旧数据转移
+        comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(uid), configData)
+        # 标志已转移
+        configData["isTrans"] = True
+        comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId), configData)
+
+
+def SaveData():
+    comp = clientApi.GetEngineCompFactory().CreatePlayer(playerId)
+    uid = comp.getUid()
+    comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
+    configData = comp.GetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(uid))
     configData[BaubleConfig.BAUBLE_SLOT_INFO] = GlobalData.baubleDict
-    isSave = comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(playerId), configData)
+    isSave = comp.SetConfigData(BaubleConfig.PLATINUM_LOCAL_DATA + "_{}".format(uid), configData)
     if isSave:
         logging.info("铂: 保存饰品数据成功")
     else:
@@ -1181,10 +1227,13 @@ class ChangeBaubleUtil(object):
             if itemInfo["maxDurability"] > 0:
                 baubleInfo["durability"] -= int(num)
                 if baubleInfo["durability"] <= 0:
-                    baubleInfo = {}
                     # 播放破碎音效
                     comp = clientApi.GetEngineCompFactory().CreateCustomAudio(levelId)
                     comp.PlayCustomMusic("random.break", (0, 0, 0), 0.8, 0.8, False, playerId)
+                    # 广播饰品脱下
+                    BaubleUnequippedBroadcaster(BaubleConfig.SlotName2TypeDict[slotName], baubleInfo)
+                    # 移除玩家饰品栏中的饰品
+                    baubleInfo = {}
                 GlobalData.baubleDict[slotName] = baubleInfo
             else:
                 logging.error("铂: 饰品 {} 无耐久值".format(baubleInfo["newItemName"]))

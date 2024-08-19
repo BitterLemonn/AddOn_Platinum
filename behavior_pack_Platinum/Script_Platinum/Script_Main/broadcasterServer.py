@@ -30,7 +30,6 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
 
         if isinstance(baubleSlot, list):
             baubleSlot = tuple(baubleSlot)
-            logging.error(baubleSlot)
             self.__BaubleRegister(baubleName, baubleSlot, customTips)
         else:
             self.__BaubleRegister(baubleName, baubleSlot, customTips)
