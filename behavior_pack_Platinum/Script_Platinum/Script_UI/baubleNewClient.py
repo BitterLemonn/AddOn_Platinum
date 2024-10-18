@@ -331,7 +331,6 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.infoManager = InfoManager(self.GetScreenNode(), self.flyingPanel)
 
     def OnCreate(self):
-        logging.info("铂: 饰品栏界面代理类已创建")
         self.CreateBaubleBtn()
 
     def OnDestroy(self):
@@ -385,7 +384,6 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         screen = self.GetScreenNode()
         panelPath = self.playerRenderBgPath
         baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button").asButton()
-        logging.info("铂: 创建饰品栏开关按钮: {}".format(baubleBtn))
 
         # 设置按钮回调
         self.SetBtnPosition(baubleBtn)
@@ -1225,3 +1223,5 @@ class ChangeBaubleUtil(object):
                 GlobalData.baubleDict[slotName] = baubleInfo
             else:
                 logging.error("铂: 饰品 {} 无耐久值".format(baubleInfo["newItemName"]))
+        else:
+            logging.error("铂: 饰品栏位 {} 为空".format(slotName))
