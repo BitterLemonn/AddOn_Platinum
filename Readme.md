@@ -24,38 +24,17 @@
 
 **由于组件实现方式的特殊，饰品有以下限制：**
 
-如果饰品需要使用自定义提示，需要在[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)中的**BaubleDict**
-字典中定义。如果不在此处定义，**写在物品Json定义文件中的```netease:customtips```中的自定义提示将会被覆盖。**
-
 饰品的**最大堆叠数量**只能为1，否则会导致饰品注册失败
 
-当饰品物品被定义为盔甲时不能通过直接交互（右键，长按屏幕）直接穿戴饰品，请开发者避免出现此类情况
+当饰品物品被定义为盔甲或食物时不能通过直接交互（右键，长按屏幕）直接穿戴饰品，请开发者避免出现此类情况(除非刻意为之)
 
 ### 五、使用方法
 
 #### 1. 饰品注册
 
-##### a. 作为内容库直接导入开发项目
+**开发者不能将本组件作为内容导入(可能会引发模组冲突)**，本组件会同时发布在网易资源市场当中，只需要玩家同时装载即可正常使用组件。
 
-当作为内容库直接导入开发项目时，开发者需将[脚本文件](behavior_pack_Platinum/Script_Platinum)
-复制到自己的开发项目的behavior_pack当中，以及将resource_pack中的[textures文件夹](/resource_pack_Platinum/textures)
-和[ui文件夹](/resource_pack_Platinum/ui)复制到开发项目中，
-不推荐直接将此开发包作为项目文件直接开发，可能会产生模组冲突。**注册饰品推荐使用服务端发送注册时间的方法注册(见五.1.b)。**虽然可以通过直接更改[配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)中的BaubleDict字典达到注册的目的，**但是不建议使用此方式注册饰品，可能会造成无法预料的错误。**
-
-```py
-# coding=utf-8
-# BaubleDict注册格式如下
-"命名空间:物品名称": 槽位(**BaubleEnum** 中的常量)
-"命名空间:物品名称": [槽位]
-"命名空间:物品名称": [槽位, 自定义提示(customTips)]
-"命名空间:物品名称": [(槽位1, 槽位2), 自定义提示(customTips)]
-```
-
-##### b.不使用直接导入
-
-当开发者熟练掌握使用方法后可以不将本组件作为内容库导入，本组件会同时发布在网易资源市场当中，只需要玩家同时装载即可正常使用组件。
-
-此时完成饰品注册需要通过以下代码发送事件来完成：
+完成饰品注册需要通过以下代码发送事件来完成：
 
 ```py
 # coding=utf-8
@@ -86,7 +65,7 @@ class BaubleRegister(serverApi.GetServerSystemCls()):
             "baubleSlot": "commonConfig.py中BaubleEnum定义的常量",
             # 此处可以填入一个列表，将饰品注册到多个槽位
             # "baubleSlot": ["槽位1", "槽位2"],
-            # 可选 自定义信息提示
+            # 可选 自定义信息提示 在此处设置自定义提示将会覆盖物品Json定义文件中的customTips
             "customTips": "自定义信息提示"
         }
         # 调用注册函数

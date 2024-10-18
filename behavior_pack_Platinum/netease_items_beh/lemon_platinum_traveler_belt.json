@@ -2,7 +2,10 @@
     "format_version": "1.10",
     "minecraft:item": {
         "components": {
-            "minecraft:max_stack_size": 1
+            "minecraft:max_stack_size": 1,
+            "netease:customtips": {
+                "value": "§9装备时:\n+0.5 跨越高度§r"
+            }
         },
         "description": {
             "category": "Equipment",
