@@ -40,17 +40,13 @@ class BaubleEnum(object):
 """
 在Script_Platinum外使用时
 可以将以上参数(除BaubleDict以外)复制到自己的Script目录下
-配置饰品仍需修改此处的BaubleDict
 """
 
 # 饰品字典
-# 注册饰品时, 建议通过服务端发送BaubleRegister事件注册饰品, 直接修改此处BaubleDict可能会产生不可预料的错误
-"""
-支持的格式如下:
-物品标识符 : [栏位, 其他物品描述(customTips)]
-物品标识符 : [栏位]
-物品标识符 : 栏位
-"""
+# 注册饰品时, 请通过服务端发送BaubleRegister事件注册饰品, 不允许直接修改此处BaubleDict
 BaubleDict = {
-    "lemon_platinum:traveler_belt": [BaubleEnum.BELT, "§9装备时:\n+0.5 跨越高度§r"]
+    # "lemon_platinum:traveler_belt": {
+    #     "baubleSlot": [BaubleEnum.BELT],
+    #     "customTips": "xxxxx"
+    # }
 }

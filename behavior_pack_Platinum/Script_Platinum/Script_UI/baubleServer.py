@@ -55,8 +55,8 @@ def OnServerItemTryUseEvent(data):
 
 def ItemName2BaubleSlot(itemDict):
     itemName = itemDict["newItemName"]
-    if BaubleDict.get(itemName, None):
-        return BaubleDict[itemName] if isinstance(BaubleDict[itemName], type("")) else BaubleDict[itemName][0]
+    if itemName in BaubleDict.keys():
+        return BaubleDict[itemName]["baubleSlot"][0]
 
 
 @AllowCall
@@ -66,17 +66,15 @@ def CheckBauble(itemDict, baubleSlot):
     if baseInfo["maxStackSize"] > 1:
         logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(itemDict["newItemName"]))
         return False
+
     if itemDict["newItemName"] in BaubleDict.keys():
         baubleValue = BaubleDict[itemDict["newItemName"]]
-        if isinstance(baubleValue, type("")):
-            targetSlot = baubleValue
-        elif isinstance(baubleValue, type([])):
-            targetSlot = baubleValue[0]
-        else:
+        targetSlot = baubleValue.get("baubleSlot", [])
+        if len(baubleSlot) == 0:
             logging.error("铂: 饰品 {} 配置错误, 请检查饰品注册信息".format(itemDict["newItemName"]))
             return False
-
         if baubleSlot in targetSlot:
+            logging.info("baubleName: {} in baubleSlot: {}".format(itemDict["newItemName"], baubleSlot))
             return True
 
     return False

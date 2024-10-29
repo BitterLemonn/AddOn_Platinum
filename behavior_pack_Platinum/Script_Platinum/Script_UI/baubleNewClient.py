@@ -240,7 +240,7 @@ def OnBaubleUiInitFinished(args):
 @AllowCall
 def ChangeUiPosition(uiPosition):
     GlobalData.uiPosition = uiPosition
-    OnUiInitFinished(None)
+    OnBaubleUiInitFinished(None)
     SavePosition()
 
 
@@ -385,7 +385,6 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         screen = self.GetScreenNode()
         panelPath = self.playerRenderBgPath
         baubleBtn = screen.GetBaseUIControl(panelPath + "/bauble_button").asButton()
-        logging.info("铂: 创建饰品栏开关按钮: {}".format(baubleBtn))
 
         # 设置按钮回调
         self.SetBtnPosition(baubleBtn)
@@ -1105,7 +1104,7 @@ def OnScriptTickClient():
     uiProfile = comp.GetUIProfile()
     if uiProfile != GlobalData.uiProfile:
         GlobalData.uiProfile = uiProfile
-        OnUiInitFinished(None)
+        OnBaubleUiInitFinished(None)
 
 
 # 工具函数
@@ -1225,3 +1224,5 @@ class ChangeBaubleUtil(object):
                 GlobalData.baubleDict[slotName] = baubleInfo
             else:
                 logging.error("铂: 饰品 {} 无耐久值".format(baubleInfo["newItemName"]))
+        else:
+            logging.error("铂: 饰品栏位 {} 为空".format(slotName))

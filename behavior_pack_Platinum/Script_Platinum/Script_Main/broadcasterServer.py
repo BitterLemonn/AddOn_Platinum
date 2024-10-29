@@ -21,7 +21,12 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         baubleName = data["baubleName"]
         baubleSlot = data["baubleSlot"]
         customTips = data.get("customTips", "")
-        comp = serverApi.GetEngineCompFactory().CreateGame(serverApi.GetLevelId())
+        # 直接设置的自定义提示优先级更高
+        if customTips == "":
+            comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
+            info = comp.GetItemBasicInfo(baubleName, 0)
+            customTips = info.get("customTips", "")
+        comp = serverApi.GetEngineCompFactory().CreateGame(levelId)
         exist = comp.LookupItemByName(baubleName)
 
         if not exist:
@@ -58,21 +63,39 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
             return
 
         if len(customTips) > 0:
-            commonConfig.BaubleDict[baubleName] = [baubleSlot, customTips]
+            if isinstance(baubleSlot, tuple):
+                commonConfig.BaubleDict[baubleName] = {
+                    "baubleSlot": [slot for slot in baubleSlot],
+                    "customTips": customTips
+                }
+            else:
+                commonConfig.BaubleDict[baubleName] = {
+                    "baubleSlot": [baubleSlot],
+                    "customTips": customTips
+                }
         else:
-            commonConfig.BaubleDict[baubleName] = baubleSlot
+            if isinstance(baubleSlot, tuple):
+                commonConfig.BaubleDict[baubleName] = {
+                    "baubleSlot": [slot for slot in baubleSlot]
+                }
+            else:
+                commonConfig.BaubleDict[baubleName] = {
+                    "baubleSlot": [baubleSlot]
+                }
 
         logging.info("铂: 饰品 {} 注册成功".format(baubleName))
 
-    def GetPlayerBaubleInfo(self, playerId):
+    @staticmethod
+    def GetPlayerBaubleInfo(playerId):
         """
         获取玩家饰品信息
         :param playerId: 玩家ID
         :return:
         """
-        GetPlayerBaubleInfo(playerId)
+        Call(playerId, "GetPlayerBaubleInfo")
 
-    def SetPlayerBaubleInfo(self, playerId, baubleDict):
+    @staticmethod
+    def SetPlayerBaubleInfo(playerId, baubleDict):
         """
         设置玩家饰品信息
         :param playerId: 玩家ID
@@ -81,9 +104,10 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :type playerId: str
         :return:
         """
-        SetPlayerBaubleInfo(playerId, baubleDict)
+        Call(playerId, "SetPlayerBaubleInfo", baubleDict)
 
-    def SetPlayerBaubleInfoWithSlot(self, playerId, baubleInfo, slotName):
+    @staticmethod
+    def SetPlayerBaubleInfoWithSlot(playerId, baubleInfo, slotName):
         """
         设置玩家饰品信息
         :param playerId: 玩家ID
@@ -94,9 +118,10 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :type slotName: str
         :return:
         """
-        SetPlayerBaubleInfoWithSlot(playerId, baubleInfo, slotName)
+        Call(playerId, "SetPlayerBaubleInfoWithSlot", baubleInfo, slotName)
 
-    def DecreaseBaubleDurability(self, playerId, slotName, num=1):
+    @staticmethod
+    def DecreaseBaubleDurability(playerId, slotName, num=1):
         """
         减少饰品耐久度
         :param playerId: 玩家ID
@@ -104,7 +129,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :param slotName: 饰品槽位
         :return:
         """
-        DecreaseBaubleDurability(playerId, slotName, num)
+        Call(playerId, "DecreaseBaubleDurability", num, slotName)
 
 
 @AllowCall
@@ -119,25 +144,6 @@ def BaubleUnequipped(data):
     server.BroadcastEvent(commonConfig.BAUBLE_UNEQUIPPED_EVENT, data)
 
 
-# 获取玩家饰品信息
-def GetPlayerBaubleInfo(playerId):
-    Call(playerId, "GetPlayerBaubleInfo")
-
-
-# 设置玩家饰品信息
-def SetPlayerBaubleInfo(playerId, baubleDict):
-    Call(playerId, "SetPlayerBaubleInfo", baubleDict)
-
-
-def SetPlayerBaubleInfoWithSlot(playerId, baubleInfo, slotName):
-    Call(playerId, "SetPlayerBaubleInfoWithSlot", baubleInfo, slotName)
-
-
-# 减少饰品耐久度
-def DecreaseBaubleDurability(playerId, slotName, num):
-    Call(playerId, "DecreaseBaubleDurability", num, slotName)
-
-
 # 接收玩家饰品信息回调
 @AllowCall
 def OnGetPlayerBaubleInfo(data):
@@ -145,14 +151,3 @@ def OnGetPlayerBaubleInfo(data):
     baubleDict = data["baubleInfo"]
     server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
     server.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, {"playerId": playerId, "baubleDict": baubleDict})
-
-
-# 开发者测试用
-@Listen(Events.ServerChatEvent)
-def OnServerChat(data):
-    # message = data["message"]  # type: str
-    # playerId = data["playerId"]
-    # if message.startswith("#platinum de "):
-    #     num = re.findall(r"\d+", message)[0]
-    #     DecreaseBaubleDurability(playerId, "helmet", num)
-    pass

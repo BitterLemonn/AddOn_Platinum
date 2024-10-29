@@ -20,7 +20,6 @@ def SERVER():
         setSystem(broadcasterServer, "QU_BROADCAST_SERVER")
 
         # 注册原版系统
-        import mod.server.extraServerApi as serverApi
         serverApi.RegisterSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
                                  "Script_Platinum.Script_Main.broadcasterServer.BroadcasterServer")
         serverApi.RegisterSystem("buildInBauble", "buildInBaubleServer",

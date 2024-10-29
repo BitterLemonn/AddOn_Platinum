@@ -3,6 +3,7 @@ import loggingUtils as logging
 
 import commonConfig
 import mod.server.extraServerApi as serverApi
+from commonConfig import BaubleEnum
 
 
 class BuildInBaubleServer(serverApi.GetServerSystemCls()):
@@ -18,6 +19,20 @@ class BuildInBaubleServer(serverApi.GetServerSystemCls()):
         # 监听饰品卸下事件
         self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
                             commonConfig.BAUBLE_UNEQUIPPED_EVENT, self, self.onBaubleUnequipped)
+        # 监听模组加载完毕事件
+        self.ListenForEvent(serverApi.GetEngineNamespace(), serverApi.GetEngineSystemName(),
+                            "ClientLoadAddonsFinishServerEvent", self, self.onClientLoadAddonsFinish)
+
+    def onClientLoadAddonsFinish(self, data):
+        """
+        客户端加载模组完毕事件
+        """
+        travelerBelt = {
+            "baubleName": "lemon_platinum:traveler_belt",
+            "baubleSlot": BaubleEnum.BELT
+        }
+        serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
+                            commonConfig.PLATINUM_BROADCAST_SERVER).BaubleRegister(travelerBelt)
 
     def onBaubleEquipped(self, data):
         """
