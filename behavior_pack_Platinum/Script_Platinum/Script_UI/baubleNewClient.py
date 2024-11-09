@@ -331,6 +331,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.infoManager = InfoManager(self.GetScreenNode(), self.flyingPanel)
 
     def OnCreate(self):
+        logging.info("铂: 饰品栏界面代理类已创建")
         self.CreateBaubleBtn()
 
     def OnDestroy(self):
