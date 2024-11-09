@@ -1208,7 +1208,7 @@ class ChangeBaubleUtil(object):
     @AllowCall
     def DecreaseBaubleDurability(num, slotName):
         baubleInfo = GlobalData.baubleDict[slotName]
-        slotId = re.findall(r"\d+", slotName)[0] if len(re.findall(r"\d+", slotName)) > 0 else 0
+        slotId = int(re.findall(r"\d+", slotName)[-1]) if len(re.findall(r"\d+", slotName)) > 0 else 0
         if len(baubleInfo) > 0:
             comp = clientApi.GetEngineCompFactory().CreateItem(levelId)
             itemInfo = comp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
