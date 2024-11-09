@@ -1208,6 +1208,7 @@ class ChangeBaubleUtil(object):
     @AllowCall
     def DecreaseBaubleDurability(num, slotName):
         baubleInfo = GlobalData.baubleDict[slotName]
+        slotId = int(re.findall(r"\d+", slotName)[-1]) if len(re.findall(r"\d+", slotName)) > 0 else 0
         if len(baubleInfo) > 0:
             comp = clientApi.GetEngineCompFactory().CreateItem(levelId)
             itemInfo = comp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
@@ -1218,7 +1219,7 @@ class ChangeBaubleUtil(object):
                     comp = clientApi.GetEngineCompFactory().CreateCustomAudio(levelId)
                     comp.PlayCustomMusic("random.break", (0, 0, 0), 0.8, 0.8, False, playerId)
                     # 广播饰品脱下
-                    BaubleUnequippedBroadcaster(BaubleConfig.SlotName2TypeDict[slotName], baubleInfo)
+                    BaubleUnequippedBroadcaster(BaubleConfig.SlotName2TypeDict[slotName], baubleInfo, slotId)
                     # 移除玩家饰品栏中的饰品
                     baubleInfo = {}
                 GlobalData.baubleDict[slotName] = baubleInfo
