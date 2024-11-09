@@ -53,7 +53,6 @@ def OnItemChanged(playerId, itemDict, slot):
             baubleSlotStr = itemI18nName + "\n" + baubleSlotStr
             if customTips is not None:
                 baubleSlotStr += customTips
-            logging.warn("铂: 饰品 {} 描述: {}".format(itemName, baubleSlotStr))
             itemDict["customTips"] = baubleSlotStr
             AddItem({"slot": slot, "itemDict": itemDict, "playerId": playerId})
         except:
