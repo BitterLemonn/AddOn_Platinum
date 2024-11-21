@@ -11,10 +11,11 @@ def OnTipsUiInitFinished(args):
     clientApi.RegisterUI("platinum", "info_tips", "Script_Platinum.Script_UI.tipsClient.TipsUI", "info_tips.screen")
     comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
     data = comp.GetConfigData("platinumTips", True)
-    isSet = data.get("isSet", False)
-    logging.debug("铂:是否已经显示过提示: {}".format(isSet))
+    isSet = data.get("isSet", 0)
+    if isinstance(isSet, bool):
+        isSet = 0
 
-    if not isSet:
+    if isSet % 20 == 0:
         clientApi.PushScreen("platinum", "info_tips")
 
 
@@ -48,6 +49,6 @@ class TipsUI(ScreenNode):
     def OnConfirmBtnTouchUp(self, _):
         comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
         data = comp.GetConfigData("platinumTips", True)
-        data["isSet"] = True
+        data["isSet"] = data.get("isSet", 0) + 1
         comp.SetConfigData("platinumTips", data, True)
         clientApi.PopScreen()
