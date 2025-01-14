@@ -3,10 +3,8 @@ from functools import wraps
 from threading import Thread,Lock
 from Information import Version
 from types import FunctionType
-
-def import_module(*args):
-    """ [已废弃] 导入模块 """
-    return {}
+from time import time
+import pickle as _pickle
 
 class UniversalObject(object):
     """ 万用对象 """
@@ -14,11 +12,9 @@ class UniversalObject(object):
         pass
 
     def __getattribute__(self, __name):
-        print("{}: GET {}".format(str(self), str(__name)))
         return self
 
     def __call__(self, *args, **kwds):
-        print("{}: {} {}".format(str(self), str(args), str(kwds)))
         return self
 
 class EventsData(object):
@@ -41,15 +37,12 @@ class SystemSide(object):
         self.SystemName = SystemName # 绑定系统
         self.Path = Path
 
+ModDirName = SystemSide.__module__.split(".")[0]
 buil = UniversalObject()
-ModDirName = "None"
-GlobSpaceName = "QuModForMc"
-CallDict = GlobSpaceName+"_DicForCall"
-# 未知类 用于通过网易静态代码检测器 部分场景可代替None
 Unknown = type("Unknown",(object,),{})
 ThreadLock = Lock()
 
-def ParameterType(*Args, **Kwargs):
+def ParameterType(*Args, **Kwargs):       # 运行时类型检测有损性能
     """ 函数类型校验装饰器 可以使用列表/元组代表多个类型 """
     def __ParameterType(Func):
         ArgsType = Args+tuple(Kwargs.values())
@@ -85,51 +78,20 @@ def ParameterType(*Args, **Kwargs):
         return newFun
     return __ParameterType
 
-# 创建随机UID
 def RandomUid():
+    """ 创建随机UID """
     from uuid import uuid4
-    return "QuMod_"+str(uuid4()).replace("-","")
+    return "QuMod_"+uuid4().hex
 
-@ParameterType(String = str)
-def Base64(String = 'String'):
-    """将string值进行加密"""
+def Base64(_text = ""):
+    # type: (str) -> str
+    """ 将string值进行加密 """
     from base64 import b64encode
-    String = str(String)
-    BasText = str(b64encode(String.encode()))
-    if len(BasText) > 16:
-        BasText = BasText[:16]
-    return BasText
-
-@ParameterType(Value = str)
-def SetModDirName(Value=""):
-    global ModDirName
-    global GlobSpaceName
-    global CallDict
-    ModDirName = str(Value)
-    GlobSpaceName = "QuMod_"+str(ModDirName)
-    CallDict = GlobSpaceName+"_DicForCall"
-SetModDirName()
-
-@ParameterType(str, Value=object)
-def SetModuleCache(Key, Value=buil):
-    # from sys import modules
-    # try:
-    #     modules[Key] = Value
-    # except Exception as e:
-    #     print('[Error] '+str(e))
-    #     return False
-    # return True
-    return False
-
-@ParameterType(object, str, Value=object)
-def SetModuleAttr(Module, Key, Value=buil):
-    """ 设置模块Attr """
-    try:
-        setattr(import_module(Module), Key, Value)
-    except Exception as e:
-        print('[Error] '+str(e))
-        return False
-    return True
+    _text = str(_text)
+    basText = str(b64encode(_text.encode()))
+    if len(basText) > 16:
+        basText = basText[:16]
+    return basText
 
 def ExceptionHandling(errorFun=lambda: None, output=False):
     """ 异常处理装饰器 当函数抛出异常时将会返回预定值 """
@@ -141,6 +103,8 @@ def ExceptionHandling(errorFun=lambda: None, output=False):
             except Exception as e:
                 if output:
                     print("[Error]: 异常捕获 {}".format(str(e)))
+                    import traceback
+                    traceback.print_exc()
                 return errorFun()
         return newFun
     return exceptionHandling
@@ -161,35 +125,8 @@ def InitOperation(fun):
         print("[Error] " + str(e))
     return fun
 
-def PyCompile(*Args, **Kwagrs):
-    return buil.compile(*Args, **Kwagrs)
-
-
-def NewFun(String, Globals={}, FunctionName = "Function"):
-    # type: (str, dict, str) -> FunctionType
-    """ 
-        [已废弃] 动态创建一个函数, 如: 
-            NewFun('''
-                Define (Args):
-                    print(666)
-            ''', globals())
-    """
-    Key = 'Define' #  关键词
-    Indent = 0   # 缩进级
-    NewStrCo = []; Append = NewStrCo.append;  # 存储新字符串
-    for Line in String.split('\n'):
-        if Line.count(Key) == 1:
-            Indent = Line.find(Key)
-            Line = Line.replace(Key, 'def '+FunctionName, 1)
-        Append(Line[Indent:])
-    CodeStr = '\n'.join(NewStrCo)
-    Code = PyCompile(CodeStr,'','exec')
-    Function = FunctionType(Code.co_consts[0], Globals)
-    return Function
-
-
 class Math:
-    """ QuMod提供的数学运算类 """
+    """ 简易数学运算类 """
     @staticmethod
     def pointDistance(point1, point2):
         # type: (tuple, tuple) -> float
@@ -203,7 +140,7 @@ class Math:
     def getUnitVector(vector):
         # type: (tuple[int|float]) -> tuple[int|float]
         """ 获取向量的单位向量 """
-        length = (sum(i ** 2 for i in vector))**0.5
+        length = (sum(i ** 2 for i in vector)) ** 0.5
         if length == 0:
             return vector
         unitVector = tuple((i / length) for i in vector)
@@ -211,7 +148,8 @@ class Math:
 
 class ObjectConversion:
     """ 对象转换工具类 By Zero123
-        此工具类用于解决自定义数据对象的序列化与反序列化加载 用于持久化储存数据/传输数据
+        此工具类用于旧版本中解决自定义数据对象的序列化与反序列化加载 用于持久化储存数据/传输数据
+        新版本推荐使用pickle模块
     """
 
     baseType = set([
@@ -229,7 +167,7 @@ class ObjectConversion:
     def getClsWithPath(path):
         # type: (str) -> object
         lastPos = path.rfind(".")
-        impObj = import_module(path[:lastPos])
+        impObj = Unknown
         return getattr(impObj, path[lastPos+1:])
 
     @staticmethod
@@ -250,7 +188,7 @@ class ObjectConversion:
             return data
         value = {
             k: ObjectConversion.dumpsObject(getattr(data, k))
-            for k in dir(data) if not k.startswith("__") and not hasattr(getattr(data, k), "__call__")
+            for k in dir(data) if not k.startswith("__") and not hasattr(getattr(data, k), "__call__") and not isinstance(getattr(data, k), type)
         }
         return {
             ObjectConversion._typeKey: ObjectConversion.getClsPath(data),
@@ -293,8 +231,112 @@ class ObjectConversion:
 
 class QuFreeObject(object):
     def free(self):
-        print("[Qu.FREE] 资源释放 {}".format(self))
+        pass
 
 def errorPrint(charPtr):
     """ 异常输出 """
     print("[Error] "+str(charPtr))
+
+def TRY_EXEC_FUN(funObj, *args, **kwargs):
+    try:
+        return funObj(*args, **kwargs)
+    except Exception as e:
+        import traceback
+        print("TRY_EXEC发生异常: {}".format(e))
+        traceback.print_exc()
+
+def printStack(printNow=True):  
+    # 获取当前的堆栈跟踪
+    import traceback
+    stackTrace = traceback.extract_stack()
+    # 打印堆栈跟踪
+    outStr = []
+    for args in stackTrace:
+        outStr.append("<{}({})> {}".format(args[0], args[1], args[2]))
+    outPut = "\n".join(outStr)
+    if printNow:
+        print("\n".join(outStr))
+    return outPut
+
+def getObjectPathName(_callObj = lambda: None):
+    # type: (object) -> str
+    """ 获取可执行对象的目录名 """
+    funcModule = _callObj.__module__
+    funcName = _callObj.__name__
+    keyName = "{}.{}".format(funcModule, funcName)
+    return keyName
+
+def QThrottle(intervalTime=0.1):
+    """ 该装饰器用于限制函数重复执行的最小时间间隔 """
+    def _func(f):
+        lastTime = [0.0]
+        def _newFunc(*args, **kwargs):
+            nowTime = time()
+            if nowTime > lastTime[0] + intervalTime:
+                lastTime[0] = nowTime
+                return f(*args, **kwargs)
+            return None
+        return _newFunc
+    return _func
+
+class QStruct:
+    """ 结构体 用于通用数据模型约定(即不涉及任何API) 应定义在Server/Client以外的通用文件 同理Struct也不应该持有任何涉及端侧API的内容 """
+    _SIGN_FORMAT = "_QSTRUCT[{}]"
+    def dumps(self):
+        """ 序列化对象 """
+        return _pickle.dumps(self)
+
+    def signDumps(self):
+        """ 带有特征签名的序列化 """
+        data = self.dumps()
+        return [QStruct._SIGN_FORMAT.format(hex(hash(data))), data]
+
+    @staticmethod
+    def isSignData(data):
+        """ 校验数据 """
+        if not isinstance(data, list) or len(data) != 2:
+            return False
+        signKey = data[0]
+        if isinstance(signKey, str):
+            dataObj = data[1]
+            return signKey == QStruct._SIGN_FORMAT.format(hex(hash(dataObj)))
+        return False
+
+    @staticmethod
+    def loads(data):
+        # type: (str) -> QStruct
+        """ 反序列化加载对象 """
+        return _pickle.loads(data)
+
+    @staticmethod
+    def loadSignData(data):
+        # type: (list) -> QStruct
+        """ 反序列化加载Sign对象表(不会校验) """
+        return _pickle.loads(data[1])
+
+    def onNetUnPack(self):
+        return self
+
+# 为性能考虑Call不会盲目的计算每一个容器的所有数据字段 因此有了以下类型封装 在Call后将会解包原型数据
+class QRefStruct(QStruct):
+    """ 万能引用 """
+    def __init__(self, refObject):
+        self.ref = refObject
+
+    def onNetUnPack(self):
+        return self.ref
+
+class QListStruct(QStruct, list):
+    """ List容器结构 """
+    def onNetUnPack(self):
+        return list(self)
+
+class QDictStruct(QStruct, dict):
+    """ Dict容器结构 """
+    def onNetUnPack(self):
+        return dict(self)
+
+class QTupleStruct(QStruct, tuple):
+    """ Tuple容器结构 """
+    def onNetUnPack(self):
+        return tuple(self)

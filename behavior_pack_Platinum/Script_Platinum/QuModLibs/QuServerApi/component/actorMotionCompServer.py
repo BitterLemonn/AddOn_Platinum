@@ -9,6 +9,14 @@ class ActorMotionComponentServer(BaseComponent):
         """
         pass
 
+    def SetPlayerMotion(self, motion):
+        # type: (tuple[float,float,float]) -> bool
+        """
+        设置玩家的瞬时移动方向向量
+        在damageEvent事件里面使用该接口时，需把damageEvent事件回调的knock参数设置为Fals
+        """
+        pass
+
     def GetMotion(self):
         # type: () -> tuple[int,int,int]
         """

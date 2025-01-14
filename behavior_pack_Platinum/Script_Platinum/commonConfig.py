@@ -1,5 +1,4 @@
 # coding=utf-8
-
 """
 MIT License
 Copyright (c) 2023 Bitterlemon
@@ -8,6 +7,7 @@ Copyright (c) 2023 Bitterlemon
 将以下参数(除BaubleDict以外)复制到自己的Script目录下
 配置饰品请通过服务端发送BaubleRegister事件注册饰品
 """
+import logging
 
 # 装备饰品广播事件 (请勿更改!!)
 BAUBLE_EQUIPPED_EVENT = "BaubleEquipped"

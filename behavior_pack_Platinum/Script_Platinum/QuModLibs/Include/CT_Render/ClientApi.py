@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from ...Client import *
 from Configure import PlayerRes, QueryList
+# CTRender即将在未来废弃 推荐使用GLRender替代相关业务
 
 __InitState = False
 __PlayerRes = {
@@ -409,7 +410,7 @@ def UpDateEntityDyRender(data):
         ReRender(data)
     
     if not CAN_UP_DATE:
-        Request("__CTRENDER.RenderParms__", Args=(ND_QUERY_RES,), OnResponse=OnResponse)
+        Request("__CTRENDER.RenderParms__", args=(ND_QUERY_RES,), onResponse=OnResponse)
     else:
         ReRender(data)
 

@@ -2,6 +2,7 @@
 from ...Server import *
 from ...Modules.SharedAPI.Util import SharedBox
 from Configure import QueryList
+# CTRender即将在未来废弃 推荐使用GLRender替代相关业务
 
 UpDateEntityQuery = "__CTRENDER.UpDateEntityQuery__"
 UpDateEntityDyRender = "__CTRENDER.UpDateEntityDyRender__"

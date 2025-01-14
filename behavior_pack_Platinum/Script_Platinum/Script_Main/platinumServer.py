@@ -1,63 +1,14 @@
 # coding=utf-8
+import logging
+
+from ..ItemFactory import ItemFactory
+from ..QuModLibs.Modules.Services.Globals import BaseTimer
 from ..QuModLibs.Server import *
-from .. import loggingUtils as logging
+from ..QuModLibs.Modules.Services.Server import BaseService
+from ..Script_UI.baubleInfoRegister import BaubleInfoRegister
+from ..Script_UI.baubleSlotRegister import BaubleSlotRegister
 from ..commonConfig import BaubleDict
-
-
-def DelayRun(func, delayTime=0.0, *args, **kwargs):
-    comp = serverApi.GetEngineCompFactory().CreateGame(levelId)
-    comp.AddTimer(delayTime, func, *args, **kwargs)
-
-
-@AllowCall
-def AddItem(data):
-    playerId = data["playerId"]
-    slot = data.get("slot", -1)
-    itemDict = data["itemDict"]
-
-    if slot == -1:
-        comp = serverApi.GetEngineCompFactory().CreateItem(playerId)
-        slot = comp.GetSelectSlotId()
-
-    def addItem():
-        comp = serverApi.GetEngineCompFactory().CreateItem(playerId)
-        comp.SpawnItemToPlayerInv(itemDict, playerId, slot)
-
-    DelayRun(addItem)
-
-
-@AllowCall
-def OnItemChanged(playerId, itemDict, slot):
-    if BaubleDict.get(itemDict["newItemName"], None) is not None:
-        baubleValue = BaubleDict[itemDict["newItemName"]]
-        try:
-            baubleSlot = baubleValue.get("baubleSlot", [])
-            customTips = baubleValue.get("customTips", None)
-
-            # 转化栏位描述
-            baubleSlotStr = ""
-            for index, slotStr in enumerate(baubleSlot):
-                if len(baubleValue) > 1 and index != len(baubleSlot) - 1:
-                    slotStr = slotStr.replace("§r\n", "、")
-                if index != 0:
-                    slotStr = slotStr.replace("§6栏位: §g", "")
-                baubleSlotStr += slotStr
-
-            if baubleSlotStr == "" or baubleSlotStr in itemDict["customTips"]:
-                return
-
-                # 获取物品名称
-            itemName = itemDict["newItemName"]
-            itemI18nName = serverApi.GetEngineCompFactory(). \
-                CreateItem(levelId).GetItemBasicInfo(itemName)["itemName"]
-            baubleSlotStr = itemI18nName + "\n" + baubleSlotStr
-            if customTips is not None:
-                baubleSlotStr += customTips
-            itemDict["customTips"] = baubleSlotStr
-            AddItem({"slot": slot, "itemDict": itemDict, "playerId": playerId})
-        except:
-            logging.error(
-                "铂: 饰品 {} 描述格式错误, 请检查Script_Platinum/commonConfig.py".format(itemDict["newItemName"]))
+from .. import serverUtil
 
 
 @AllowCall
@@ -66,3 +17,49 @@ def NeedSendInfo(playerId):
     comp.NotifyOneMessage(playerId,
                           "铂: 如遇到饰品无法安装请先尝试铂自带的旅行者腰带, 如可以正常安装反馈问题请到无法安装的饰品模组处反馈, 请勿在铂模组处反馈, 谢谢!",
                           "§6")
+
+
+@BaseService.Init
+class PlatinumServerService(BaseService):
+    def __init__(self):
+        BaseService.__init__(self)
+        comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
+        comp.GetUserDataInEvent("InventoryItemChangedServerEvent")
+
+    @BaseService.Listen("InventoryItemChangedServerEvent")
+    def OnInventoryItemChangedServerEvent(self, data):
+        playerId = data.get("playerId")
+        itemDict = data.get("newItemDict")
+        slot = data.get("slot")
+        itemName = itemDict.get("newItemName")
+        if itemName and itemName in BaubleInfoRegister.getBaubleInfoDict().keys():
+            baubleInfo = BaubleInfoRegister.getBaubleInfoDict().get(itemName)
+            try:
+                customTips = ItemFactory(itemDict).getCustomTips()
+                baubleTips = baubleInfo.get("customTips")
+                if "§6栏位: §g" in (customTips or ""):
+                    return
+                else:
+                    baubleSlotTypeList = baubleInfo.get("baubleSlot")
+                    tips = "§6栏位: §g"
+                    for slotType in baubleSlotTypeList:
+                        isLast = baubleSlotTypeList.index(slotType) == len(baubleSlotTypeList) - 1
+                        slotName = BaubleSlotRegister().getSlotTypeNameDict().get(slotType)
+                        tips += slotName + ("、" if not isLast else "") + ("§r\n" if isLast else "")
+                    customTips = "%name%%category%%enchanting%\n" + tips + \
+                                 (baubleTips if baubleTips else "") + "%attack_damage%"
+                    itemDict = ItemFactory(itemDict).setCustomTips(customTips).build()
+                    self.addTimer(BaseTimer(
+                        callObject=serverUtil.GivePlayerItem,
+                        kwargsDict={
+                            "playerId": playerId,
+                            "itemDict": itemDict,
+                            "slot": slot
+                        },
+                        time=0.0
+                    ))
+
+            except Exception as e:
+                logging.error("铂: 饰品 {} 描述格式错误, 请检查Script_Platinum/commonConfig.py {}".format(
+                    itemDict.get("newItemName"), e)
+                )

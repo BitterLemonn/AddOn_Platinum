@@ -1,20 +1,25 @@
 # -*- coding: utf-8 -*-
-from ...Server import serverApi, SuperEntityCompCls
+from ...Server import serverApi
+from ..EntityComps.Server import QBaseEntityComp
 from Util import SharedBox, _DEFAULT
 
 lambda: "By Zero123"
 
-class ImmuneDamageComp(SuperEntityCompCls):
+class ImmuneDamageComp(QBaseEntityComp):
     """ 免疫伤害组件 """
-    def __init__(self, entityId):
-        SuperEntityCompCls.__init__(self, entityId)
-        self.sharedBox = SharedBox(
-            lambda: serverApi.GetEngineCompFactory().CreateHurt(entityId).ImmuneDamage(True),
-            lambda: self.RemoveComp()
-        )
+    def __init__(self):
+        QBaseEntityComp.__init__(self)
+        self.sharedBox = SharedBox()
     
-    def OnRemove(self):
-        SuperEntityCompCls.OnRemove(self)
+    def onBind(self):
+        QBaseEntityComp.onBind(self)
+        self.sharedBox = SharedBox(
+            lambda: serverApi.GetEngineCompFactory().CreateHurt(self.entityId).ImmuneDamage(True),
+            lambda: self.unbind()
+        )
+
+    def onUnBind(self):
+        QBaseEntityComp.onUnBind(self)
         self.sharedBox.free()
         serverApi.GetEngineCompFactory().CreateHurt(self.entityId).ImmuneDamage(False)
 
@@ -26,11 +31,10 @@ class EntitySharedAPI:
             state 为True时引用次数+1 否则-1 基于Key值处理边界
         """
         if state:
-            comp = ImmuneDamageComp.GetComp(entityId)
+            comp = ImmuneDamageComp.getComp(entityId)
             if not comp:
-                ImmuneDamageComp.create(entityId)
-
-        comp = ImmuneDamageComp.GetComp(entityId)   # type: ImmuneDamageComp | None
+                ImmuneDamageComp().bind(entityId)
+        comp = ImmuneDamageComp.getComp(entityId)
         if comp and state:
             comp.sharedBox.increaseRefCountWithKey(key)
         elif comp and not state:

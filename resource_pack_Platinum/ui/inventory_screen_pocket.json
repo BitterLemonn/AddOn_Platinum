@@ -6,7 +6,9 @@
                 "operation": "insert_before",
                 "value": [
                     {
-                        "bauble_button@bauble_base_panel.bauble_btn_big": {}
+                        "bauble_button@bauble_reborn.bauble_button": {
+                            "size": [20, 20]
+                        }
                     }
                 ]
             }

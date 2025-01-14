@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+import math
 from Util import Math
+lambda: "By Zero123"
 
 class Vec3(object):
     """ QuMod Vec3向量类 用于描述坐标/向量
@@ -8,9 +10,9 @@ class Vec3(object):
     def __init__(self, x = 0.0, y = 0.0, z = 0.0):
         self._disableUpdate = False
         self._tuple = None      # type: tuple
-        self.x = x
-        self.y = y
-        self.z = z
+        self.x = float(x)
+        self.y = float(y)
+        self.z = float(z)
         self._upDate()
 
     def getTuple(self):
@@ -123,7 +125,6 @@ class Vec3(object):
             @angle: 旋转角度(欧拉角)
             @return: self
         """
-        import math
         angleRad = math.radians(angle)
         # 计算旋转矩阵分量
         cosTheta = math.cos(angleRad)
@@ -139,9 +140,171 @@ class Vec3(object):
         self._upDate()
         return self
 
+    # def rotate(self, axis, angle):
+    #     # type: (Vec3, float) -> Vec3
+    #     angle = math.radians(angle)
+    #     ux, uy, uz = axis.x, axis.y, axis.z
+    #     cos_theta = math.cos(angle)
+    #     sin_theta = math.sin(angle)
+    #     x, y, z = self.x, self.y, self.z
+    #     # Rotation matrix application
+    #     rotated_x = (cos_theta + (1 - cos_theta) * ux * ux) * x + ((1 - cos_theta) * ux * uy - uz * sin_theta) * y + ((1 - cos_theta) * ux * uz + uy * sin_theta) * z
+    #     rotated_y = ((1 - cos_theta) * uy * ux + uz * sin_theta) * x + (cos_theta + (1 - cos_theta) * uy * uy) * y + ((1 - cos_theta) * uy * uz - ux * sin_theta) * z
+    #     rotated_z = ((1 - cos_theta) * uz * ux - uy * sin_theta) * x + ((1 - cos_theta) * uz * uy + ux * sin_theta) * y + (cos_theta + (1 - cos_theta) * uz * uz) * z
+    #     return Vec3(rotated_x, rotated_y, rotated_z)
+
+    @staticmethod
+    def dot(vc1, vc2):
+        # type: (Vec3, Vec3) -> float
+        """ 点积运算 """
+        t1 = vc1.getTuple()
+        t2 = vc2.getTuple()
+        return sum(t1[i] * t2[i] for i in range(len(t1)))
+
+    def vecAngle(self, otherVec):
+        # type: (Vec3) -> float
+        """ 向量夹角运算 计算两个向量之间的夹角 """
+        dotValue = Vec3.dot(self, otherVec)
+        return math.acos(dotValue) * (180.0 / 3.1415926)
+
+    def scale(self, scalar):  
+        # type: (float) -> Vec3
+        """ 向量缩放 在当前向量所有轴上乘以一个对应的标量 """
+        self._disableUpdate = True
+        self.x *= scalar
+        self.y *= scalar
+        self.z *= scalar
+        self._disableUpdate = False
+        self._upDate()
+        return self
+
+    @staticmethod
+    def projectOn(withVec, otherVec):
+        # type: (Vec3, Vec3) -> Vec3
+        """ 计算投影向量 返回新的Vec3 """
+        projLength = Vec3.dot(withVec, otherVec) / otherVec.getLength() ** 2
+        return otherVec.copy().convertToUnitVector().scale(projLength)
+
+class QBox3D:
+    """ 表示一个支持旋转的简易三维盒子 用于简单的碰撞测量计算 实现便捷索敌/物理计算 """
+    def __init__(self, boxSize, centerPos, rotationAxis=None, rotationAngle=0):
+        # type: (Vec3, Vec3, Vec3 | None, float) -> None
+        """
+            @boxSize: Vec3 - 描述盒子的xyz大小
+            @centerPos: Vec3 - 描述盒子的中心点位置
+            @rotationAxis: Vec3 | None - 描述旋转轴心 默认为y轴
+            @rotationAngle: float - 描述旋转角度(自动换算弧度)
+        """
+        self.center = centerPos
+        self.width = boxSize.x
+        self.height = boxSize.y
+        self.depth = boxSize.z
+        self.rotationAxis = rotationAxis or Vec3(0, 1, 0)  # 默认为绕y轴旋转
+        self.rotationAngle = rotationAngle
+        # 旋转之前的盒子角点
+        self.corners = self.getLocalCorners()
+    
+    def getScaleXYZ(self):
+        # type: () -> Vec3
+        """ 获取XYZ大小 """
+        return Vec3(self.width, self.height, self.depth)
+
+    def setScaleXYZ(self, newXYZ=Vec3(0, 0, 0)):
+        # type: (Vec3) -> None
+        """ 设置XYZ大小 """
+        self.width = newXYZ.x
+        self.height = newXYZ.y
+        self.depth = newXYZ.z
+
+    def setCenterPos(self, newXYZ=Vec3(0, 0, 0)):
+        # type: (Vec3) -> None
+        """ 设置中心位置 """
+        self.center = newXYZ
+
+    def getCenterPosRef(self):
+        # type: () -> Vec3
+        """ 获取中心位置的引用 """
+        return self.center
+
+    def setRot(self, rotationAngle=0, axis=None):
+        # type: (float, Vec3 | None) -> None
+        """ 设置旋转 当axis为None时保留当前旋转轴 """
+        if axis:
+            self.rotationAxis = axis
+        self.rotationAngle = rotationAngle
+        self.corners = self.getLocalCorners()
+
+    def xyzMaxLength(self):
+        # type: () -> float
+        """ 获取盒状XYZ轴最大长度轴的值 """
+        return max(self.width, self.height, self.depth)
+
+    @staticmethod
+    def createNullBox3D():
+        # type: () -> QBox3D
+        """ 创建空3D盒子对象 """
+        return QBox3D(Vec3(0.0, 0.0, 0.0), Vec3(0.0, 0.0, 0.0))
+
+    def getLocalCorners(self):
+        """ 获取盒子的8个角点（未旋转前）"""
+        halfWidth, halfHeight, halfDepth = self.width / 2.0, self.height / 2.0, self.depth / 2.0
+        corners = [
+            Vec3(halfWidth, halfHeight, halfDepth), Vec3(-halfWidth, halfHeight, halfDepth), 
+            Vec3(-halfWidth, -halfHeight, halfDepth), Vec3(halfWidth, -halfHeight, halfDepth),
+            Vec3(halfWidth, halfHeight, -halfDepth), Vec3(-halfWidth, halfHeight, -halfDepth),
+            Vec3(-halfWidth, -halfHeight, -halfDepth), Vec3(halfWidth, -halfHeight, -halfDepth)
+        ]
+        return corners
+
+    def getWorldCorners(self):
+        # type: () -> list[Vec3]
+        """ 获取盒子在世界坐标系中的8个角点(旋转后) """
+        worldCorners = []
+        for corner in self.corners:
+            rotatedCorner = corner.copy().rotateVector(self.rotationAxis, self.rotationAngle)
+            # rotatedCorner = corner.rotate(self.rotationAxis, self.rotationAngle)
+            worldCorner = Vec3(self.center.x + rotatedCorner.x, self.center.y + rotatedCorner.y, self.center.z + rotatedCorner.z)
+            worldCorners.append(worldCorner)
+        return worldCorners
+
+    def overlapsAABB(self, otherBox):
+        # type: (QBox3D) -> bool
+        """ 基于AABB算法检测两个Box3D是否重叠(不支持旋转) """
+        aMin = Vec3(self.center.x - self.width / 2.0, self.center.y - self.height / 2.0, self.center.z - self.depth / 2.0)
+        aMax = Vec3(self.center.x + self.width / 2.0, self.center.y + self.height / 2.0, self.center.z + self.depth / 2.0)
+
+        bMin = Vec3(otherBox.center.x - otherBox.width / 2.0, otherBox.center.y - otherBox.height / 2.0, otherBox.center.z - otherBox.depth / 2.0)
+        bMax = Vec3(otherBox.center.x + otherBox.width / 2.0, otherBox.center.y + otherBox.height / 2.0, otherBox.center.z + otherBox.depth / 2.0)
+        # 检查在三个轴上的投影是否重叠
+        return (aMin.x <= bMax.x and aMax.x >= bMin.x and aMin.y <= bMax.y and aMax.y >= bMin.y and aMin.z <= bMax.z and aMax.z >= bMin.z)
+
+    def overlapsSAT(self, otherBox):
+        # type: (QBox3D) -> bool
+        """ 使用分离轴定理 (SAT) 进行碰撞检测，检测两个旋转后的Box3D是否重叠 """
+        # 获取两个盒子的8个角点
+        aCorners = self.getWorldCorners()
+        bCorners = otherBox.getWorldCorners()
+        # 定义需要投影的分离轴，分别是两个盒子的三个轴的法向量
+        axes = [
+            Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1),  # self 盒子的轴
+            otherBox.rotationAxis  # 可以添加更多分离轴，基于旋转的法向量
+        ]
+        # 对每一个轴进行投影
+        for axis in axes:
+            # 投影 self 的角点
+            aProjections = [Vec3.dot(corner, axis) for corner in aCorners]
+            aMinProj, aMaxProj = min(aProjections), max(aProjections)
+            # 投影 otherBox 的角点
+            bProjections = [Vec3.dot(corner, axis) for corner in bCorners]
+            bMinProj, bMaxProj = min(bProjections), max(bProjections)
+            # 如果在这个轴上没有重叠，则盒子不相交
+            if aMaxProj < bMinProj or bMaxProj < aMinProj:
+                return False  # 找到一个分离轴，说明盒子不重叠
+        # 所有轴都没有找到分离轴，盒子重叠
+        return True
 
 class Vec2(Vec3):
-    """ QuMod Vec2向量类 用于描述2D坐标/2D向量/2D旋转 继承于Vec3 """
+    """ [不推荐] Vec2向量类 用于描述2D向量 继承于Vec3并抹除特定坐标轴 """
     def __init__(self, x = 0, y = 0):
         Vec3.__init__(self, x, y, 0)
 

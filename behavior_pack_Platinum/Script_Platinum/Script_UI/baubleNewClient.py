@@ -1,7 +1,7 @@
 # coding=utf-8
 import re
 
-from .. import loggingUtils as logging
+import logging
 from ..QuModLibs.Client import *
 from ..QuModLibs.UI import *
 from ..commonConfig import BaubleEnum
@@ -169,12 +169,12 @@ class BaubleConfig(object):
 
     UI_DEF = "bauble_base_panel"
     UI_DEF_MAIN = "bauble_base_panel.main"
-    UI_DEF_BAUBLE_BTN = "bauble_base_panel.bauble_button"
+    UI_DEF_BAUBLE_BTN = "bauble_reborn.bauble_button"
     UI_DEF_BAUBLE_BTN_BIG = "bauble_base_panel.bauble_btn_big"
 
     UI_DEF_NEW = "bauble_new"
     UI_DEF_NEW_MAIN = "bauble_new.main"
-    UI_DEF_NEW_BAUBLE_CLASSIC = "bauble_new.bauble_classic_new"
+    UI_DEF_NEW_BAUBLE_CLASSIC = "bauble_reborn.bauble_vertical_panel"
     UI_DEF_NEW_BAUBLE_POCKET = "bauble_new.bauble_pocket"
     UI_DEF_NEW_BAUBLE_TRANS_BTN = "bauble_new.transparent_btn"
 
@@ -224,17 +224,18 @@ class GlobalData(object):
 
 @Listen(Events.UiInitFinished)
 def OnBaubleUiInitFinished(args):
-    NativeScreenManager = clientApi.GetNativeScreenManagerCls()
-    # 注册经典背包界面代理
-    NativeScreenManager.instance().RegisterScreenProxy("crafting.inventory_screen",
-                                                       "Script_Platinum.Script_UI.baubleNewClient.InventoryClassicProxy")
-    # 注册口袋背包界面代理
-    NativeScreenManager.instance().RegisterScreenProxy("crafting_pocket.inventory_screen_pocket",
-                                                       "Script_Platinum.Script_UI.baubleNewClient.InventoryPocketProxy")
-
-    # 注册提示ui
-    clientApi.RegisterUI("lemon_artifact", "tips_ui", "Script_Platinum.Script_UI.baubleNewClient.TipNodeUi",
-                         "bauble_base_panel.main")
+    pass
+    # NativeScreenManager = clientApi.GetNativeScreenManagerCls()
+    # # # 注册经典背包界面代理
+    # NativeScreenManager.instance().RegisterScreenProxy("crafting.inventory_screen",
+    #                                                    "Script_Platinum.Script_UI.baubleNewClient.InventoryClassicProxy")
+    # # 注册口袋背包界面代理
+    # NativeScreenManager.instance().RegisterScreenProxy("crafting_pocket.inventory_screen_pocket",
+    #                                                    "Script_Platinum.Script_UI.baubleNewClient.InventoryPocketProxy")
+    #
+    # # 注册提示ui
+    # clientApi.RegisterUI("lemon_artifact", "tips_ui", "Script_Platinum.Script_UI.baubleNewClient.TipNodeUi",
+    #                      "bauble_base_panel.main")
 
 
 @AllowCall
@@ -720,8 +721,16 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         return 1.0
 
 
-# 背包口袋界面代理类
+# 背包口袋界面代理类 (bug 导致需要使用单例模式)
 class InventoryPocketProxy(InventoryClassicProxy):
+    # 单例模式 不经过__init__方法
+    instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.instance is None:
+            cls.instance = super(InventoryPocketProxy, cls).__new__(cls)
+        return cls.instance
+
     def __init__(self, screenName, screenNode):
         InventoryClassicProxy.__init__(self, screenName, screenNode)
         self.openState = False
@@ -778,6 +787,10 @@ class InventoryPocketProxy(InventoryClassicProxy):
         ]
 
     def OnCreate(self):
+        pass
+
+    def OnInit(self):
+        logging.error("铂: 饰品栏界面代理类初始化")
         self.CheckPath()
         self.CreateBaubleBtn()
 
@@ -797,6 +810,8 @@ class InventoryPocketProxy(InventoryClassicProxy):
             self.hotBarGridPathModel = self.basePathOld + self.hotBarGridPathModel
 
     def OnDestroy(self):
+        # 注销单例对象
+        InventoryPocketProxy.instance = None
         screen = self.GetScreenNode()
         if self.openState:
             self.CloseBaublePanel()

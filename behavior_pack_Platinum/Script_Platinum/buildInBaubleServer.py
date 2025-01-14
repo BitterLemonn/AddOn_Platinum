@@ -1,5 +1,5 @@
 # coding=utf-8
-import loggingUtils as logging
+import logging
 
 import commonConfig
 import mod.server.extraServerApi as serverApi

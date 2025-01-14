@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ...Client import ListenForEvent, UnListenForEvent, Events, clientApi, playerId, levelId, Entity, Vec3
+from ...Client import ListenForEvent, UnListenForEvent, clientApi, playerId, levelId, Entity, Vec3
 
 lambda: "QuModLibs 摄像机模块 By Zero123"
 
@@ -41,24 +41,30 @@ class LensPlayer:
         self._animObj = None                    # type: LensAnim | None
         self._workState = False
         self._speed = 1.0
-        self.create()
+        self._isListen = False
+
+    def _createListen(self):
+        if not self._isListen:
+            self._isListen = True
+            ListenForEvent("OnScriptTickNonChaseFrameClient", self, self.onFpsUpdate)
     
-    def create(self):
-        """ 加载处理 """
-        ListenForEvent(Events.OnScriptTickClient, self, self.onTick)
+    def _freeListen(self):
+        if self._isListen:
+            self._isListen = False
+            UnListenForEvent("OnScriptTickNonChaseFrameClient", self, self.onFpsUpdate)
     
     def free(self):
         """ 释放资源 """
-        UnListenForEvent(Events.OnScriptTickClient, self, self.onTick)
         if self.getPlayState():
             self.onEnd()
+        self._freeListen()
     
     def loadAnim(self, obj):
         # type: (CameraData) -> None
         comp = clientApi.GetEngineCompFactory().CreateCamera(levelId)
         comp.LockCamera((obj.x, obj.y, obj.z), (obj.rotX, obj.rotY))
         
-    def onTick(self):
+    def onFpsUpdate(self):
         if not self._animObj:
             return
         if self._animObj.getTimeIsEnd(self._animTime):
@@ -68,7 +74,8 @@ class LensPlayer:
             self._animObj = None
             return
         self.loadAnim(self._animObj.getTransformationWithTime(self._animTime))
-        self._animTime += (1.0 / 30.0) * self._speed
+        comp = clientApi.GetEngineCompFactory().CreateGame(levelId)
+        self._animTime += (1.0 / comp.GetFps()) * self._speed
     
     def play(self, animObj, speed = 1.0):
         # type: (LensAnim, float) -> None
@@ -100,6 +107,7 @@ class LensPlayer:
 
     def onStart(self):
         self._workState = True
+        self._createListen()
         comp = clientApi.GetEngineCompFactory().CreateCamera(levelId)
         comp.LockModCameraYaw(1)    # 锁定摄像机 不允许玩家主动控制
         comp.LockModCameraPitch(1)
@@ -117,6 +125,7 @@ class LensPlayer:
 
     def onEnd(self):
         self._workState = False
+        self._freeListen()
         comp = clientApi.GetEngineCompFactory().CreateCamera(levelId)
         comp.LockModCameraYaw(0)
         comp.LockModCameraPitch(0)

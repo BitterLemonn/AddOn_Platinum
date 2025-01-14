@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from ...Client import Call, ListenForEvent, Events
+from ...Client import Call, Events
+from ..EventsPool.Client import POOL_ListenForEvent
 
 class CallService:
-    """ 呼叫服务 """
+    """ 通信服务封装 (客户端推荐使用) """
     _cache = []
     _workState = False
 
@@ -11,7 +12,7 @@ class CallService:
         if CallService._workState:
             return
         CallService._workState = True
-        ListenForEvent(Events.OnScriptTickClient, CallService, CallService._OnScriptTickClient)
+        POOL_ListenForEvent(Events.OnScriptTickClient, CallService._OnScriptTickClient)
     
     @staticmethod
     def _OnScriptTickClient(_={}):
@@ -28,3 +29,7 @@ class CallService:
         CallService._cache.append(
             (key, args, kwargs)
         )
+
+    @staticmethod
+    def updateNow():
+        CallService._OnScriptTickClient()

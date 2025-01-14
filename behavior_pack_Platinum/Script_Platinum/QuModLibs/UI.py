@@ -8,7 +8,7 @@ from types import MethodType
 from functools import wraps
 
 __all__ = [
-    "EasyScreenNodeCls", "ESNC", "QuScreenAnimation"
+    "EasyScreenNodeCls", "ESNC"
 ]
 
 class QuGridObject(object):
@@ -51,93 +51,6 @@ class QuGridObject(object):
         if self.DelayUpdate:
             self.uiNode.UpdateScreen(True)
 
-class QuBaseAnimation(object):
-    """ 基本动画类 """
-    def Start(self):
-        """ 开始播放时 """
-        pass
-
-    def OnEnd(self):
-        """ 结束播放时 """
-        pass
-
-    def OnTick(self):
-        pass
-
-class QuScreenAnimation(object):
-    """ 界面动画类 """
-    class MoveAnimation(QuBaseAnimation):
-        """ 移动动画 """
-        def __init__(self, Length=0.0, StartPos=(0,0), EndPos=(0,0)):
-            # type: (float, tuple, tuple) -> None
-            from Util import Unknown
-            self.Length = Length                        # 时长
-            self.StartPos = StartPos                    # 开始位置
-            self.EndPos = EndPos                        # 结束位置
-            self.Time = 0.0                             # 播放时长
-            self.CallBack = lambda *_:None              # 播放完毕的回调
-            self.ConText = Unknown    # 界面上下文
-            self.ConPath = ""                           # 控件目标
-
-        def Start(self, ConText, ConPath, OnEnd=lambda *_:None):
-            # type: (EasyScreenNodeCls, str, object) -> None
-            """ 开始播放时 """
-            from Client import ListenForEvent, TickEvent
-            ListenForEvent(TickEvent, self, self.OnTick)
-            self.IsRun = True
-            self.CallBack = OnEnd
-            self.ConText = ConText
-            self.ConPath = ConPath
-        
-        def CurvilinearParabola(self, Value, M=2):
-            """ 抛物线曲线 """
-            # j = min(Value/2.0, 1.0)
-            j = Value
-            j *= M
-            result = -(j**2)/(M**2) + (2*j)/M
-            return result
-
-        def OnTick(self):
-            if self.Time<=self.Length:
-                self.Time += 1/30.0
-                Time = min(self.Time, self.Length)
-                Proportion = self.CurvilinearParabola(Time/self.Length)        # 进度占比
-                self.ConText.GetBaseUIControl(self.ConPath).SetPosition(
-                    tuple(self.StartPos[i]+(self.EndPos[i]-self.StartPos[i])*Proportion for i in range(2))
-                )                                                              # 设置位置
-                return None
-            self.OnEnd()
-    
-        def OnEnd(self):
-            """ 结束播放时 """
-            from Client import UnListenForEvent, TickEvent
-            UnListenForEvent(TickEvent, self, self.OnTick)
-            self.Time = 0.0
-            self.CallBack()
-    
-    @staticmethod
-    def Play(ConText, ConPath, Animation, OnEnd=lambda *_:None):
-        # type: (EasyScreenNodeCls, str, QuBaseAnimation, object) -> None
-        """ 播放动画 """
-        from copy import copy
-        copy(Animation).Start(ConText, ConPath, OnEnd)
-    
-    @staticmethod
-    def CreatControlEffect(ConText, ConPath, Anim, OnEnd=lambda *_:None, Layer=1000):
-        # type: (EasyScreenNodeCls, str, QuBaseAnimation, object, int) -> None
-        """ 创建控件效果 创建新控件再播放 结束后自动销毁 """
-        RandomName = RandomUid()
-        Parent = "/"
-        NewConPath = Parent+RandomName
-        ConText.Clone(ConPath, Parent, RandomName)
-        def END():
-            OnEnd()
-            ConText.RemoveComponent(NewConPath, Parent)
-        ConText.GetBaseUIControl(NewConPath).SetLayer(Layer)
-        QuScreenAnimation.Play(
-            ConText, NewConPath, Anim, OnEnd=END
-        )
-
 class EasyScreenNodeCls(BaseScreenNode):
     """ 简易界面类 可继承并开发 """
     UiName = "Ui_"+RandomUid()              # Ui名字 默认随机
@@ -148,6 +61,28 @@ class EasyScreenNodeCls(BaseScreenNode):
     RandomSc = "Sc"+RandomUid()
     UiInitListen = {}
     DeBugMode = 0                           # 调试模式
+
+    @classmethod
+    def CreatUIBindEntity(cls, entityId, bindOffset = (0, 0, 0), autoScale = True):
+        """
+            为特定实体创建UI并绑定, 如若成功则返回uiNode否则None
+        """
+        oldParm = cls.ParamDict
+        cls.ParamDict = {
+            "bindEntityId": entityId,
+            "bindOffset": bindOffset,
+            "autoScale": int(autoScale)
+        }
+        uiNode = None
+        try:
+            uiNode = cls()
+        except:
+            import traceback
+            traceback.print_exc()
+        finally:
+            cls.ParamDict = oldParm
+        return uiNode
+
     @classmethod
     def GetUi(cls, Ui=None):
         # type: (object|EasyScreenNodeCls) -> EasyScreenNodeCls | None
@@ -229,7 +164,7 @@ class EasyScreenNodeCls(BaseScreenNode):
             IsPushScreen=False
         ):
         UiName = UiName if UiName else RandomUid()
-        from Client import System,EnSp,EnSy,creatTemporaryContainer
+        from Client import creatTemporaryContainer
         """ 
             [装饰器] 用于绑定界面类与UI.json文件的操作
             大多数情况下只要设置 UiDef="xxx.main"即可
@@ -245,7 +180,7 @@ class EasyScreenNodeCls(BaseScreenNode):
             Cls.IsPushScreen = IsPushScreen   
             def Register(Args={}):
                 # 智能注册UI
-                ScreenNodeClsPath = ModDirName+".QuModLibs.UIExchange."+Cls.RandomSc
+                ScreenNodeClsPath = ModDirName+".QuModLibs.UI."+Cls.RandomSc
                 clientApi.RegisterUI(ModDirName, Cls.UiName, ScreenNodeClsPath, Cls.UiDef)
 
             if NowPath in EasyScreenNodeCls.UiInitListen:
@@ -466,7 +401,6 @@ class EasyScreenNodeCls(BaseScreenNode):
     def __CREAT__(uiNode,Data):
         # type: (EasyScreenNodeCls, dict) -> None
         # ======= 界面创建完毕后自动执行 ========
-        from Client import System,EnSp,EnSy, EasyThread
         uiNode.QUGRIDRENDER = []
         OnClick = Data["OnClick"] # type: dict
         OnTouch = Data["OnTouch"] # type: dict
@@ -560,7 +494,6 @@ class EasyScreenNodeCls(BaseScreenNode):
     @staticmethod
     def __DESTROY__(uiNode,Data):
         # ======= 界面销毁后自动执行 ========
-        from Client import System,EnSp,EnSy
         ListenEvents = Data["ListenEvents"] # type: list
         for EventName,FunName in ListenEvents:
             # System.UnListenForEvent(EnSp,EnSy,EventName,uiNode,getattr(uiNode,FunName))
@@ -573,16 +506,16 @@ class EasyScreenNodeCls(BaseScreenNode):
         GetUi = cls.GetUi()
         if not GetUi:
             from copy import deepcopy
-            import UIExchange
+            import UI
             NewCls = deepcopy(cls.ScreenNodeCls)
-            setattr(UIExchange, cls.RandomSc, NewCls)
+            setattr(UI, cls.RandomSc, NewCls)
             # 创建UI界面
             if cls.IsPushScreen:
                 uiNode = clientApi.PushScreen(ModDirName, cls.UiName, cls.CreateParams)
             else:
                 uiNode = clientApi.CreateUI(ModDirName, cls.UiName, cls.ParamDict)
                 if not uiNode:
-                    ScreenNodeClsPath = ModDirName+".QuModLibs.UIExchange."+cls.RandomSc
+                    ScreenNodeClsPath = ModDirName+".QuModLibs.UI."+cls.RandomSc
                     clientApi.RegisterUI(ModDirName, cls.UiName, ScreenNodeClsPath, cls.UiDef)
                     uiNode = clientApi.CreateUI(ModDirName, cls.UiName, cls.ParamDict)
             # ==== 添加后处理数据信息 ====

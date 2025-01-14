@@ -6,10 +6,80 @@
                 "operation": "insert_before",
                 "value": [
                     {
-                        "bauble_button@bauble_base_panel.bauble_button": {}
+                        "bauble_button@bauble_reborn.bauble_button": {
+                            "size": [12, 12]
+                        }
                     }
                 ]
             }
+        ]
+    },
+    "recipe_inventory_screen_content/content_stack_panel/toolbar_anchor": {
+        "modifications": [
+            {
+                "control_name": "toolbar_panel",
+                "operation": "insert_before",
+                "value": [
+                    {
+                        "bauble_vertical_panel@bauble_reborn.bauble_vertical_panel": {
+                            "$content_offset": [4, 0],
+                            "property_bag": {
+                                "#visible": false
+                            },
+                            "anchor_to": "top_left",
+                            "anchor_from": "top_left",
+                            "offset": [-5, 0],
+                            "bindings": [
+                                {
+                                    "binding_name": "#bauble_reborn.vertical_grid.right_visible",
+                                    "binding_name_override": "#visible",
+                                    "binding_condition": "always"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "recipe_inventory_screen_content/content_stack_panel/survival_padding": {
+        "modifications": [
+            {
+                "array_name": "controls",
+                "operation": "insert_front",
+                "value": [
+                    {
+                        "bauble_vertical_panel@bauble_reborn.bauble_vertical_panel": {
+                            "property_bag": {
+                                "#visible": false
+                            },
+                            "anchor_to": "top_right",
+                            "anchor_from": "top_right",
+                            "offset": [6, 0],
+                            "bindings": [
+                                {
+                                    "binding_name": "#bauble_reborn.vertical_grid.left_visible",
+                                    "binding_name_override": "#visible",
+                                    "binding_condition": "always"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "recipe_inventory_screen_content": {
+        "modifications": [
+            {
+                "array_name": "controls",
+                "operation": "insert_back",
+                "value": [
+                    {
+                        "bauble_tool_tips@bauble_reborn.hud_tip_text": {}
+                    }
+                ]
+            }  
         ]
     }
 }
