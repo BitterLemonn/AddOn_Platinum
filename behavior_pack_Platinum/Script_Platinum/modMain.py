@@ -18,6 +18,7 @@ MyMod.regNativePyServer("buildInBauble", "buildInBaubleServer",
 MyMod.Client("Script_UI.baubleClient")
 MyMod.Client("Script_UI.baubleDatabase")
 MyMod.Client("Script_Main.broadcasterClient")
+MyMod.Client("animSoundClient")
 MyMod.regNativePyClient(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_CLIENT,
                         "Script_Main.broadcasterClient.BroadcasterClient")
 

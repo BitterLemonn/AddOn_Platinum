@@ -6,7 +6,7 @@ from ..QuModLibs.Modules.Services.Client import BaseService, QRequests
 from ..QuModLibs.QuClientApi.ui.screenNode import ScreenNode
 from ..QuModLibs.UI import EasyScreenNodeCls
 
-from .baubleDatabase import BaubleDataController
+from .baubleDatabase import BaubleDataController, BaubleDatabase
 from .baubleSlotRegister import BaubleSlotRegister
 from .flyingItemRenderer import FlyingItemRenderer
 from ..ItemFactory import ItemFactory
@@ -47,6 +47,67 @@ class BaubleBroadcastService(BaseService):
                              {"baubleSlotId": baubleSlotId, "baubleSlot": baubleSlotType, "slotIndex": slotIndex,
                               "itemDict": baubleItem, "isFirstLoad": isFirstLoad, "playerId": playerId}))
 
+    # 试图装备饰品(右键穿戴)
+    @BaseService.REG_API("platinum/tryEquipBauble")
+    def tryEquipBauble(self, baubleItem, inventorySlotId, baubleSlotTypeList=None, baubleSlotId=None):
+        if baubleSlotTypeList:
+            # 查询饰品栏空位
+            baubleSlotIdList = BaubleSlotRegister().getBaubleSlotIdByTypeList(baubleSlotTypeList)
+            for slotId in baubleSlotIdList:
+                if not BaubleDataController.getBaubleInfo(slotId):
+                    baubleSlotId = slotId
+                    break
+            if not baubleSlotId:
+                baubleSlotId = baubleSlotIdList[0]
+        if baubleSlotId:
+            oldBaubleInfo = BaubleDataController.popBaubleInfo(baubleSlotId)
+            Call("DecreaseItem", playerId, 1, inventorySlotId, True)
+            BaubleDataController.addBaubleInfo(baubleSlotId, baubleItem)
+            self.onBaublePutOn(baubleItem, baubleSlotId)
+            if oldBaubleInfo:
+                Call("GivePlayerItem", oldBaubleInfo, playerId, inventorySlotId)
+                self.onBaubleTakeOff(oldBaubleInfo, baubleSlotId)
+
+    @BaseService.REG_API("platinum/onPlayerDie")
+    def onPlayerDie(self, pos, dimensionId):
+        playerBaubleInfoList = [item for item in BaubleDataController.getAllBaubleInfo().values() if item]
+        BaubleDataController.clearBaubleInfo()
+        self.syncRequest("platinum/spawnItem", QRequests.Args(playerBaubleInfoList, pos, dimensionId))
+
+    @BaseService.REG_API("platinum/getPlayerBaubleInfo")
+    def getPlayerBaubleInfo(self):
+        return {"playerId": playerId, "baubleInfo": BaubleDataController.getAllBaubleInfo()}
+
+    @BaseService.REG_API("platinum/setBaubleSlotInfo")
+    def setBaubleSlotInfo(self, baubleSlotInfo):
+        BaubleDataController.setAllBaubleInfo(baubleSlotInfo)
+
+    @BaseService.REG_API("platinum/setBaubleSlotInfoBySlotId")
+    def setBaubleSlotInfoBySlotId(self, slotId, baubleSlotInfo):
+        BaubleDataController.setBaubleInfo(slotId, baubleSlotInfo)
+
+    @BaseService.REG_API("platinum/decreaseBaubleDurability")
+    def decreaseBaubleDurability(self, slotId, decrease=1):
+        baubleInfo = BaubleDataController.getBaubleInfo(slotId)
+        if baubleInfo:
+            baubleName = baubleInfo["newItemName"]
+            baubleAux = baubleInfo["newAuxValue"]
+            baseInfo = clientApi.GetEngineCompFactory().CreateItem(levelId).GetItemBasicInfo(baubleName, baubleAux)
+            maxDurability = baseInfo["maxDurability"]
+            if maxDurability:
+                durability = (ItemFactory(baubleInfo).getDurability() or maxDurability) - decrease
+                if durability <= 0:
+                    BaubleDataController.popBaubleInfo(slotId)
+                    # 广播卸下饰品事件
+                    self.onBaubleTakeOff(baubleInfo, slotId)
+                    # 播放物品破碎音效
+                    CallOTClient(playerId, "PlaySound", {"soundName": "random.break", "targetId": playerId})
+                else:
+                    baubleInfo = ItemFactory(baubleInfo).setDurability(durability).build()
+                    BaubleDataController.setBaubleInfo(slotId, baubleInfo)
+            else:
+                logging.error("铂: 饰品 {} 无耐久度".format(baubleName))
+
 
 @BaseService.Init
 class BaubleClientService(BaseService):
@@ -78,7 +139,8 @@ class BaubleClientService(BaseService):
             # 获取玩家饰品栏信息
             baubleInfoDict = BaubleDataController.getAllBaubleInfo()
             print (
-                "[DEBUG]铂: 玩家: {} 饰品栏信息".format(clientApi.GetEngineCompFactory().CreateName(playerId).GetName()))
+                "[DEBUG]铂: 玩家: {} 饰品栏信息".format(
+                    clientApi.GetEngineCompFactory().CreateName(playerId).GetName()))
             for baubleSlotId, baubleItem in baubleInfoDict.items():
                 if baubleItem:
                     BaubleBroadcastService.access().onBaublePutOn(baubleItem, baubleSlotId, True)
@@ -112,9 +174,9 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.tipsLabel = ""
 
         self.ListenEvent()
+        self.isDestroy = False
 
     def ListenEvent(self):
-        pass
         ListenForEvent("OnItemSlotButtonClickedEvent", self, self.onItemSlotButtonClickedEvent)
 
     def OnTick(self):
@@ -122,6 +184,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.inputMode = self.optionComp.GetToggleOption(minecraftEnum.OptionId.INPUT_MODE)
 
     def OnDestroy(self):
+        # self.flyingItemController.OnDestroy()
         UnListenForEvent("OnItemSlotButtonClickedEvent", self, self.onItemSlotButtonClickedEvent)
 
     @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.bauble_button")
@@ -226,13 +289,16 @@ class InventoryClassicProxy(CustomUIScreenProxy):
                                                                            customTips=customTips))
 
     # 绑定耐久度数值
-    @Binding.binding_collection(Binding.BF_BindInt, "platinum_bauble_collection",
+    @Binding.binding_collection(Binding.BF_BindFloat, "platinum_bauble_collection",
                                 "#bauble_reborn.durability_bar.clip_ratio")
     def bindingSlotClipRatio(self, index):
         baubleIdentifier = BaubleSlotRegister().getBaubleSlotList()[index]["baubleSlotIdentifier"]
         baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
-        if baubleInfo and baubleInfo.get("maxDurability"):
-            return baubleInfo["currentDurability"] / baubleInfo["maxDurability"]
+        if baubleInfo:
+            baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
+            if baseInfo["maxDurability"]:
+                return 1 - float(baubleInfo["durability"]) / baseInfo["maxDurability"]
+        return 0.0
 
     # 绑定耐久度显示
     @Binding.binding_collection(Binding.BF_BindBool, "platinum_bauble_collection",
@@ -240,16 +306,24 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     def bindingSlotDurabilityVisible(self, index):
         baubleIdentifier = BaubleSlotRegister().getBaubleSlotList()[index]["baubleSlotIdentifier"]
         baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
-        return baubleInfo and baubleInfo.get("maxDurability")
+        if baubleInfo:
+            baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
+            if baseInfo["maxDurability"] and baubleInfo["durability"] < baseInfo["maxDurability"]:
+                return True
+        return False
 
     # 绑定耐久度颜色
     @Binding.binding_collection(Binding.BF_BindColor, "platinum_bauble_collection",
-                                "#bauble_reborn.durability_bar.clip_color")
+                                "#bauble_reborn.durability_bar.color")
     def bindingSlotClipColor(self, index):
         baubleIdentifier = BaubleSlotRegister().getBaubleSlotList()[index]["baubleSlotIdentifier"]
         baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
-        if baubleInfo and baubleInfo.get("maxDurability"):
-            return ratioToColor(baubleInfo["currentDurability"] / baubleInfo["maxDurability"])
+        if baubleInfo:
+            baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
+            if baseInfo["maxDurability"]:
+                color = ratioToColor(float(baubleInfo["durability"]) / baseInfo["maxDurability"])
+                return color
+        return 0.0, 1.0, 0.0, 1.0
 
     # 背包点击
     def onItemSlotButtonClickedEvent(self, data):
@@ -349,4 +423,4 @@ class InventoryClassicProxy(CustomUIScreenProxy):
 
 
 def ratioToColor(ratio):
-    return [ratio, 1 - ratio, 0]
+    return 1 - ratio, ratio, 0.0, 1.0

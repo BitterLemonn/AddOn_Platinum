@@ -1,13 +1,15 @@
 # coding=utf-8
 import re
 
+from ..BroadcastEvent.getPlayerBaubleInfoEvent import GetPlayerBaubleInfoServerEvent
 from ..QuModLibs.Server import *
-from ..QuModLibs.Modules.Services.Server import BaseService
+from ..QuModLibs.Modules.Services.Server import BaseService, QRequests
 from .. import commonConfig
 import logging
 from .. import oldVersionFixer
 from ..Script_UI.baubleInfoRegister import BaubleInfoRegister
 from ..Script_UI.baubleSlotRegister import BaubleSlotRegister
+from ..Script_UI.baubleServer import BaubleServerService
 
 
 class BroadcasterServer(serverApi.GetServerSystemCls()):
@@ -62,7 +64,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :param playerId: 玩家ID
         :return:
         """
-        Call(playerId, "GetPlayerBaubleInfo")
+        BaubleServerService.access().getPlayerBaubleInfo(playerId)
 
     @staticmethod
     def SetPlayerBaubleInfo(playerId, baubleDict):
@@ -74,7 +76,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :type playerId: str
         :return:
         """
-        Call(playerId, "SetPlayerBaubleInfo", baubleDict)
+        BaubleServerService.access().setBaubleSlotInfo(playerId, baubleDict)
 
     @staticmethod
     def SetPlayerBaubleInfoWithSlot(playerId, baubleInfo, slotName):
@@ -88,7 +90,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :type slotName: str
         :return:
         """
-        Call(playerId, "SetPlayerBaubleInfoWithSlot", baubleInfo, slotName)
+        BaubleServerService.access().setBaubleSlotInfoBySlotId(playerId, slotName, baubleInfo)
 
     @staticmethod
     def DecreaseBaubleDurability(playerId, slotName, num=1):
@@ -99,11 +101,11 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :param slotName: 饰品槽位
         :return:
         """
-        Call(playerId, "DecreaseBaubleDurability", num, slotName)
+        BaubleServerService.access().decreaseBaubleDurability(playerId, slotName, num)
 
 
 @BaseService.Init
-class BroadcasterService(BaseService):
+class BroadcasterServerService(BaseService):
     def __init__(self):
         BaseService.__init__(self)
 
@@ -117,23 +119,10 @@ class BroadcasterService(BaseService):
         server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
         server.BroadcastEvent(commonConfig.BAUBLE_UNEQUIPPED_EVENT, data)
 
-
-# @AllowCall
-# def BaubleEquipped(data):
-#     server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
-#     server.BroadcastEvent(commonConfig.BAUBLE_EQUIPPED_EVENT, data)
-#
-#
-# @AllowCall
-# def BaubleUnequipped(data):
-#     server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
-#     server.BroadcastEvent(commonConfig.BAUBLE_UNEQUIPPED_EVENT, data)
-#
-
-# 接收玩家饰品信息回调
-@AllowCall
-def OnGetPlayerBaubleInfo(data):
-    playerId = data["playerId"]
-    baubleDict = data["baubleInfo"]
-    server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
-    server.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, {"playerId": playerId, "baubleDict": baubleDict})
+    @BaseService.ServiceListen(GetPlayerBaubleInfoServerEvent)
+    def onGetPlayerBaubleInfo(self, data):
+        data = GetPlayerBaubleInfoServerEvent.getData(data)
+        playerId = data.playerId
+        baubleDict = data.baubleDict
+        server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        server.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, {"playerId": playerId, "baubleDict": baubleDict})

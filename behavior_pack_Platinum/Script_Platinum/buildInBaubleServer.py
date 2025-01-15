@@ -22,6 +22,12 @@ class BuildInBaubleServer(serverApi.GetServerSystemCls()):
         # 监听模组加载完毕事件
         self.ListenForEvent(serverApi.GetEngineNamespace(), serverApi.GetEngineSystemName(),
                             "ClientLoadAddonsFinishServerEvent", self, self.onClientLoadAddonsFinish)
+        # 监听玩家饰品栏信息回调
+        self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
+                            commonConfig.BAUBLE_GET_INFO_EVENT, self, self.onBaubleInfoEvent)
+        # 测试事件
+        self.ListenForEvent(serverApi.GetEngineNamespace(), serverApi.GetEngineSystemName(),
+                            "ServerChatEvent", self, self.onServerChatEvent)
 
     def onClientLoadAddonsFinish(self, data):
         """
@@ -31,8 +37,14 @@ class BuildInBaubleServer(serverApi.GetServerSystemCls()):
             "baubleName": "lemon_platinum:traveler_belt",
             "baubleSlot": BaubleEnum.BELT
         }
+        testHelmet = {
+            "baubleName": "minecraft:diamond_helmet",
+            "baubleSlot": BaubleEnum.HELMET
+        }
         serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
                             commonConfig.PLATINUM_BROADCAST_SERVER).BaubleRegister(travelerBelt)
+        serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
+                            commonConfig.PLATINUM_BROADCAST_SERVER).BaubleRegister(testHelmet)
 
     def onBaubleEquipped(self, data):
         """
@@ -62,3 +74,34 @@ class BuildInBaubleServer(serverApi.GetServerSystemCls()):
         if bauble["newItemName"] == "lemon_platinum:traveler_belt":
             comp = serverApi.GetEngineCompFactory().CreateAttr(playerId)
             comp.SetStepHeight(0.5626)
+
+    def onBaubleInfoEvent(self, data):
+        logging.debug("铂 测试: 玩家饰品栏数据: {}".format(data))
+
+    def onServerChatEvent(self, data):
+        playerId = data["playerId"]
+        msg = data["message"]
+        if msg.startswith("#platinum_"):
+            msg = msg.replace("#platinum_", "")
+            if msg == "info":
+                data["cancel"] = True
+                serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
+                                    commonConfig.PLATINUM_BROADCAST_SERVER).GetPlayerBaubleInfo(playerId)
+            elif msg == "set":
+                data["cancel"] = True
+                serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
+                                    commonConfig.PLATINUM_BROADCAST_SERVER).SetPlayerBaubleInfo(
+                    playerId,
+                    {"bauble_belt": {"newItemName": "lemon_platinum:traveler_belt", "count": 1, "newAuxValue": 0}})
+            elif msg == "add":
+                data["cancel"] = True
+                serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
+                                    commonConfig.PLATINUM_BROADCAST_SERVER).SetPlayerBaubleInfoWithSlot(
+                    playerId,
+                    {"newItemName": "lemon_platinum:traveler_belt", "count": 1, "newAuxValue": 0},
+                    "bauble_belt")
+            elif msg == "dec":
+                data["cancel"] = True
+                serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
+                                    commonConfig.PLATINUM_BROADCAST_SERVER).DecreaseBaubleDurability(playerId,
+                                                                                                     "bauble_helmet", 100)

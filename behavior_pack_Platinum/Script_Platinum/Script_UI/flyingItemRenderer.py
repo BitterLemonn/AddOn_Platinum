@@ -22,6 +22,8 @@ class FlyingItemRenderer:
         self.flyingPool = []  # type: list[BaseUIControl]
         self.flyingUsing = []  # type: list[BaseUIControl]
 
+
+
     def OnDestroy(self):
         for flyingRender in self.flyingPool:
             self.screen.RemoveChildControl(flyingRender)

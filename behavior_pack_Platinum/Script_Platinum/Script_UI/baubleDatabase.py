@@ -31,9 +31,10 @@ class BaubleDataController(object):
 
     @classmethod
     def popBaubleInfo(cls, slotIdentifier):
-        if slotIdentifier in BaubleDatabase.playerBaubleInfo.keys():
-            return BaubleDatabase.playerBaubleInfo.pop(slotIdentifier)
-        return None
+        baubleInfo = BaubleDatabase.playerBaubleInfo.get(slotIdentifier)
+        if baubleInfo:
+            BaubleDatabase.playerBaubleInfo[slotIdentifier] = None
+        return baubleInfo
 
     @classmethod
     def getBaubleInfo(cls, slotIdentifier):
@@ -44,6 +45,24 @@ class BaubleDataController(object):
         return BaubleDatabase.playerBaubleInfo
 
     @classmethod
+    def setAllBaubleInfo(cls, baubleInfoDict):
+        keys = BaubleDatabase.playerBaubleInfo.keys()
+        for key in keys:
+            BaubleDatabase.playerBaubleInfo[key] = None
+        for slotIdentifier, baubleInfo in baubleInfoDict.items():
+            if slotIdentifier in keys:
+                BaubleDatabase.playerBaubleInfo[slotIdentifier] = baubleInfo
+            else:
+                logging.error("铂: 未找到槽位标识符 {}".format(slotIdentifier))
+
+    @classmethod
+    def setBaubleInfo(cls, slotIdentifier, baubleInfo):
+        if slotIdentifier in BaubleDatabase.playerBaubleInfo.keys():
+            BaubleDatabase.playerBaubleInfo[slotIdentifier] = baubleInfo
+        else:
+            logging.error("铂: 未找到槽位标识符 {}".format(slotIdentifier))
+
+    @classmethod
     def checkUnRegisterSlot(cls):
         removeList = []
         for slotIdentifier in BaubleDatabase.playerBaubleInfo.keys():
@@ -52,6 +71,10 @@ class BaubleDataController(object):
                 if removeInfo:
                     removeList.append(removeInfo)
         return removeList if removeList else None
+
+    @classmethod
+    def clearBaubleInfo(cls):
+        BaubleDatabase.playerBaubleInfo.clear()
 
 
 @BaseService.Init

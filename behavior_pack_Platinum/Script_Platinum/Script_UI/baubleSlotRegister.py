@@ -129,6 +129,13 @@ class BaubleSlotRegister(object):
                 return slotInfoDict.get("baubleSlotType")
         return None
 
+    def getBaubleSlotIdByTypeList(self, baubleSlotTypeList):
+        baubleSlotIdList = []
+        for slotInfoDict in self.__baubleSlotList:
+            if slotInfoDict.get("baubleSlotType") in baubleSlotTypeList:
+                baubleSlotIdList.append(slotInfoDict.get("baubleSlotIdentifier"))
+        return baubleSlotIdList
+
     def getSlotIndex(self, baubleSlotIdentifier):
         baubleType = None
         for slotInfoDict in self.__baubleSlotList:
