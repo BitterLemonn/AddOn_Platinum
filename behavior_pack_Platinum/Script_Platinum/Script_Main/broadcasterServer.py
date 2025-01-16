@@ -1,6 +1,4 @@
 # coding=utf-8
-import re
-
 from ..BroadcastEvent.getPlayerBaubleInfoEvent import GetPlayerBaubleInfoServerEvent
 from ..QuModLibs.Server import *
 from ..QuModLibs.Modules.Services.Server import BaseService, QRequests
@@ -102,6 +100,32 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :return:
         """
         BaubleServerService.access().decreaseBaubleDurability(playerId, slotName, num)
+
+    @staticmethod
+    def AddTargetBaubleSlot(playerId, slotId, slotType, slotName=None, slotPlaceHolderPath=None):
+        """
+        添加目标饰品槽位
+        :param playerId: 玩家ID
+        :param slotId: 槽位标识符
+        :param slotType: 槽位类型
+        :param slotName: 槽位名称
+        :param slotPlaceHolderPath: 槽位占位符图片路径
+        :return:
+        """
+        BaubleServerService.access().addTargetBaubleSlot(playerId, slotId, slotType, slotName, slotPlaceHolderPath)
+
+    @staticmethod
+    def AddGlobalBaubleSlot(slotId, slotType, slotName=None, slotPlaceHolderPath=None, isDefault=False):
+        """
+        添加全局饰品槽位
+        :param slotId: 槽位标识符
+        :param slotType: 槽位类型
+        :param slotName: 槽位名称
+        :param slotPlaceHolderPath: 槽位占位符图片路径
+        :param isDefault: 是否为默认槽位
+        :return:
+        """
+        BaubleServerService.access().addGlobalBaubleSlot(slotId, slotType, slotName, slotPlaceHolderPath, isDefault)
 
 
 @BaseService.Init

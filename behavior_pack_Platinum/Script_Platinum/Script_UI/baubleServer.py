@@ -78,6 +78,15 @@ class BaubleServerService(BaseService):
         for itemDict in itemDictList:
             self.itemComp.SpawnItemToLevel(itemDict, dimensionId, pos)
 
+    # 检测玩家加入游戏
+    @BaseService.Listen(Events.PlayerJoinMessageEvent)
+    def onPlayerJoinMessageEvent(self, data):
+        playerId = data["id"]
+        defaultSlot = [info for info in BaubleSlotRegister().getBaubleSlotList() if info["isDefault"]]
+        logging.debug("铂: 玩家 {} 加入游戏, 正在同步默认饰品栏信息: {}".format(playerId, defaultSlot))
+        self.syncRequest(playerId, "platinum/syncBaubleDefaultSlot",
+                         QRequests.Args(defaultSlot))
+
     # 获取玩家饰品信息
     def getPlayerBaubleInfo(self, playerId):
         self.syncRequest(playerId, "platinum/getPlayerBaubleInfo",
@@ -113,6 +122,20 @@ class BaubleServerService(BaseService):
     # 减少特定饰品耐久值
     def decreaseBaubleDurability(self, playerId, slotId, decrease=1):
         self.syncRequest(playerId, "platinum/decreaseBaubleDurability", QRequests.Args(slotId, decrease))
+
+    # 同步已注册的饰品信息
+    def syncBaubleSlotInfo(self, baubleSlotInfoList):
+        self.syncRequest("*", "platinum/syncBaubleSlotInfo", QRequests.Args(baubleSlotInfoList))
+
+    # 添加某个玩家的饰品栏槽位
+    def addTargetBaubleSlot(self, playerId, slotId, slotType, slotName=None, slotPlaceHolderPath=None):
+        self.syncRequest(playerId, "platinum/addBaubleSlot",
+                         QRequests.Args(slotId, slotType, slotName, slotPlaceHolderPath))
+
+    # 添加全部玩家的饰品栏槽位
+    def addGlobalBaubleSlot(self, slotId, slotType, slotName=None, slotPlaceHolderPath=None, isDefault=False):
+        self.syncRequest("*", "platinum/addBaubleSlot",
+                         QRequests.Args(slotId, slotType, slotName, slotPlaceHolderPath, isDefault))
 
 
 @AllowCall

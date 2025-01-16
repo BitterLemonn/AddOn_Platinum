@@ -62,11 +62,12 @@ class BaubleBroadcastService(BaseService):
         if baubleSlotId:
             oldBaubleInfo = BaubleDataController.popBaubleInfo(baubleSlotId)
             Call("DecreaseItem", playerId, 1, inventorySlotId, True)
-            BaubleDataController.addBaubleInfo(baubleSlotId, baubleItem)
-            self.onBaublePutOn(baubleItem, baubleSlotId)
             if oldBaubleInfo:
                 Call("GivePlayerItem", oldBaubleInfo, playerId, inventorySlotId)
                 self.onBaubleTakeOff(oldBaubleInfo, baubleSlotId)
+            BaubleDataController.addBaubleInfo(baubleSlotId, baubleItem)
+            self.onBaublePutOn(baubleItem, baubleSlotId)
+            CallOTClient(playerId, "PlaySound", {"soundName": "armor.equip_iron", "targetId": playerId})
 
     @BaseService.REG_API("platinum/onPlayerDie")
     def onPlayerDie(self, pos, dimensionId):
@@ -108,6 +109,43 @@ class BaubleBroadcastService(BaseService):
             else:
                 logging.error("铂: 饰品 {} 无耐久度".format(baubleName))
 
+    @BaseService.REG_API("platinum/syncBaubleDefaultSlot")
+    def syncBaubleDefaultSlot(self, defaultSlot):
+        addSlotList = BaubleSlotRegister().syncDefaultSlot(defaultSlot)
+        for slotId in addSlotList:
+            BaubleDataController.addBaubleSlot(slotId)
+
+    @BaseService.REG_API("platinum/addBaubleSlot")
+    def addBaubleSlot(self, slotId, slotType, slotName, slotPlaceHolderPath, isDefault=False):
+        if not slotName or not slotPlaceHolderPath:
+            # 检查是否是继承槽位类型
+            if slotType not in BaubleSlotRegister().getBaubleSlotTypeList():
+                logging.error("铂: 添加槽位失败, 未注册的槽位类型, 请使用registerSlot方法注册槽位")
+                return
+            else:
+                # 注册槽位
+                if BaubleSlotRegister().addSlot(slotType, slotId):
+                    # 添加玩家槽位信息
+                    BaubleDataController.addBaubleSlot(slotId)
+                    logging.debug("铂:玩家 {} 添加饰品栏槽位 {}".format(
+                        clientApi.GetEngineCompFactory().CreateName(playerId).GetName(), slotId)
+                    )
+
+        else:
+            # 注册槽位
+            if BaubleSlotRegister().registerSlot(
+                    {"baubleSlotName": slotName,
+                     "placeholderPath": slotPlaceHolderPath,
+                     "baubleSlotIdentifier": slotId,
+                     "baubleSlotType": slotType,
+                     "isDefault": isDefault}
+            ):
+                # 添加玩家槽位信息
+                BaubleDataController.addBaubleSlot(slotId)
+                logging.debug("铂:玩家 {} 添加饰品栏槽位 {}".format(
+                    clientApi.GetEngineCompFactory().CreateName(playerId).GetName(), slotId)
+                )
+
 
 @BaseService.Init
 class BaubleClientService(BaseService):
@@ -132,10 +170,11 @@ class BaubleClientService(BaseService):
             for baubleId in baubleIdList:
                 BaubleDataController.addBaubleSlot(baubleId)
             # 移除未注册的饰品栏信息
-            removeInfoList = BaubleDataController.checkUnRegisterSlot()
-            for removeInfo in removeInfoList or []:
-                logging.error("remove info: {}".format(removeInfo))
-                pass
+            removeInfoDict = BaubleDataController.checkUnRegisterSlot()
+            for baubleId, baubleInfo in (removeInfoDict or {}).items():
+                logging.error("铂: 由于玩家饰品信息出现未注册的饰品栏 {}, 已取消穿戴对应栏位的饰品: {}"
+                              .format(baubleId, baubleInfo["newItemName"]))
+                Call("GivePlayerItem", baubleInfo, playerId)
             # 获取玩家饰品栏信息
             baubleInfoDict = BaubleDataController.getAllBaubleInfo()
             print (
@@ -212,6 +251,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     # 饰品栏个数
     @Binding.binding(Binding.BF_BindInt, "#bauble_reborn.vertical_grid.max_items_count")
     def bindingPanelMaxItemsCount(self):
+        # logging.error("铂: 饰品栏个数 {}".format(BaubleSlotRegister().getBaubleSlotList()))
         return len(BaubleSlotRegister().getBaubleSlotList())
 
     # 饰品栏图标
@@ -285,8 +325,8 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             customTips = ItemFactory(baubleItem).getCustomTips() or ""
             customTips = customTips.replace("%name%", "").replace("%category%", "").replace("%enchanting%", "").replace(
                 "%attack_damage%", "")
-            self.setToolTips("{name}\n§9{category}§r\n{customTips}".format(name=name, category=categoryName,
-                                                                           customTips=customTips))
+            self.setToolTips("{name}§9{category}§r{customTips}".format(name=name, category=categoryName,
+                                                                       customTips=customTips))
 
     # 绑定耐久度数值
     @Binding.binding_collection(Binding.BF_BindFloat, "platinum_bauble_collection",

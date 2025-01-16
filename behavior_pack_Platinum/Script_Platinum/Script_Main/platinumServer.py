@@ -6,6 +6,7 @@ from ..QuModLibs.Modules.Services.Globals import BaseTimer
 from ..QuModLibs.Server import *
 from ..QuModLibs.Modules.Services.Server import BaseService
 from ..Script_UI.baubleInfoRegister import BaubleInfoRegister
+from ..Script_UI.baubleServer import BaubleServerService
 from ..Script_UI.baubleSlotRegister import BaubleSlotRegister
 from ..commonConfig import BaubleDict
 from .. import serverUtil
@@ -63,3 +64,68 @@ class PlatinumServerService(BaseService):
                 logging.error("铂: 饰品 {} 描述格式错误, 请检查Script_Platinum/commonConfig.py {}".format(
                     itemDict.get("newItemName"), e)
                 )
+
+    @BaseService.Listen("CustomCommandTriggerServerEvent")
+    def OnCustomCommandTriggerServerEvent(self, data):
+        command = data.get("command")
+        args = data.get("args")
+        origin = data.get("origin")
+
+        entityId = origin.get("entityId")
+        dimensionId = origin.get("dimension")
+        # 添加槽位
+        if command == "platinum_add":
+            if not entityId:
+                data["return_failed"] = False
+                data["return_msg_key"] = "铂: 仅允许玩家执行该指令"
+
+            targetTuple = ()
+            slotName = ""
+            slotType = ""
+            isGlobal = False
+            for argDict in args:
+                name = argDict.get("name")
+                value = argDict.get("value")
+                if name == "目标":
+                    targetTuple = value
+                elif name == "槽位id":
+                    slotName = value
+                elif name == "槽位类型":
+                    slotType = value
+                elif name == "是否为全局注册":
+                    isGlobal = value
+            if not targetTuple or not slotName or not slotType:
+                data["return_failed"] = False
+                data["return_msg_key"] = "§c铂: 参数异常 请检查指令是否输入正确§r"
+                return
+            # 检查输入槽位类型是否存在
+            allSlotType = BaubleSlotRegister().getBaubleSlotTypeList()
+            if slotType not in allSlotType:
+                data["return_failed"] = False
+                data["return_msg_key"] = "§c铂: 槽位类型不存在 请检查槽位类型是否正确 输入/platinum_help查看帮助§r"
+                return
+            # 检查槽位id是否已存在
+            allSlotId = BaubleSlotRegister().getBaubleSlotIdentifierList()
+            if slotName in allSlotId:
+                data["return_failed"] = False
+                data["return_msg_key"] = "§c铂: 目标槽位id已存在 请重新输入槽位id§r"
+                return
+            playerList = [player for player in targetTuple if Entity(player).IsPlayer]
+            if not playerList:
+                data["return_failed"] = False
+                data["return_msg_key"] = "§c铂: 未找到目标玩家 请检查目标是否正确§r"
+                return
+            # 对比玩家列表是否为全部玩家
+            allPlayerList = serverApi.GetPlayerList()
+            if len(playerList) != len(allPlayerList) and isGlobal:
+                data["return_failed"] = False
+                data["return_msg_key"] = "§c铂: 全局注册时目标玩家必须为全部玩家§r"
+                return
+
+            if isGlobal:
+                BaubleServerService.access().addGlobalBaubleSlot(slotId=slotName, slotType=slotType)
+                data["return_msg_key"] = "铂: 已执行全局注册槽位 {}".format(slotName)
+            else:
+                for playerId in playerList:
+                    BaubleServerService.access().addTargetBaubleSlot(playerId, slotName, slotType)
+                data["return_msg_key"] = "铂: 已执行为特定玩家注册槽位 {}".format(slotName)

@@ -16,7 +16,6 @@ class BaubleDataController(object):
     @classmethod
     def addBaubleSlot(cls, slotIdentifier, slotInfo=None):
         if slotIdentifier not in BaubleDatabase.playerBaubleInfo.keys():
-            logging.error("add slot: {}".format(slotIdentifier))
             BaubleDatabase.playerBaubleInfo[slotIdentifier] = slotInfo
 
     @classmethod
@@ -64,13 +63,13 @@ class BaubleDataController(object):
 
     @classmethod
     def checkUnRegisterSlot(cls):
-        removeList = []
+        removeDict = {}
         for slotIdentifier in BaubleDatabase.playerBaubleInfo.keys():
             if slotIdentifier not in BaubleSlotRegister().getBaubleSlotIdentifierList():
                 removeInfo = BaubleDatabase.playerBaubleInfo.pop(slotIdentifier)
                 if removeInfo:
-                    removeList.append(removeInfo)
-        return removeList if removeList else None
+                    removeDict[slotIdentifier] = removeInfo
+        return removeDict if removeDict else None
 
     @classmethod
     def clearBaubleInfo(cls):

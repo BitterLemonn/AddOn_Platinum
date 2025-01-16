@@ -98,9 +98,15 @@ class BaubleSlotRegister(object):
             cls.__instance = super(BaubleSlotRegister, cls).__new__(cls)
         return cls.__instance
 
+    # 获取槽位列表
     def getBaubleSlotList(self):
         return self.__baubleSlotList
 
+    # 设置槽位列表
+    def setBaubleSlotList(self, baubleSlotList):
+        self.__baubleSlotList = baubleSlotList
+
+    # 获取槽位标识符列表
     def getBaubleSlotIdentifierList(self, defaultFilter=False):
         baubleSlotIdentifierList = []
         for baubleSlotInfoDict in self.__baubleSlotList:
@@ -112,9 +118,7 @@ class BaubleSlotRegister(object):
                     baubleSlotIdentifierList.append(baubleSlotIdentifier)
         return baubleSlotIdentifierList
 
-    def setBaubleSlotList(self, baubleSlotList):
-        self.__baubleSlotList = baubleSlotList
-
+    # 获取槽位类型列表
     def getBaubleSlotTypeList(self):
         baubleSlotTypeList = []
         for baubleSlotInfoDict in self.__baubleSlotList:
@@ -123,12 +127,14 @@ class BaubleSlotRegister(object):
                 baubleSlotTypeList.append(baubleSlotType)
         return baubleSlotTypeList
 
+    # 根据槽位标识符获取槽位类型
     def getBaubleSlotTypeBySlotIdentifier(self, baubleSlotIdentifier):
         for slotInfoDict in self.__baubleSlotList:
             if slotInfoDict.get("baubleSlotIdentifier") == baubleSlotIdentifier:
                 return slotInfoDict.get("baubleSlotType")
         return None
 
+    # 根据槽位类型获取槽位标识符列表
     def getBaubleSlotIdByTypeList(self, baubleSlotTypeList):
         baubleSlotIdList = []
         for slotInfoDict in self.__baubleSlotList:
@@ -136,6 +142,7 @@ class BaubleSlotRegister(object):
                 baubleSlotIdList.append(slotInfoDict.get("baubleSlotIdentifier"))
         return baubleSlotIdList
 
+    # 根据槽位标识符获取槽位索引
     def getSlotIndex(self, baubleSlotIdentifier):
         baubleType = None
         for slotInfoDict in self.__baubleSlotList:
@@ -145,12 +152,12 @@ class BaubleSlotRegister(object):
         if not baubleType:
             logging.error("铂: 获取槽位索引失败, 未找到对应槽位")
             return None
-        index = 0
+
+        baubleSlotList = []
         for slotInfoDict in self.__baubleSlotList:
             if slotInfoDict.get("baubleSlotType") == baubleType:
-                if slotInfoDict.get("baubleSlotIdentifier") == baubleSlotIdentifier:
-                    return index
-                index += 1
+                baubleSlotList.append(slotInfoDict.get("baubleSlotIdentifier"))
+        return baubleSlotList.index(baubleSlotIdentifier) if len(baubleSlotList) > 1 else -1
 
     def __getBaubleSlotIdentifierList(self):
         baubleSlotIdentifierList = []
@@ -160,11 +167,14 @@ class BaubleSlotRegister(object):
                 baubleSlotIdentifierList.append(baubleSlotIdentifier)
         return baubleSlotIdentifierList
 
+    # 注册槽位
     def registerSlot(self, baubleSlotInfoDict):
         baubleSlotName = baubleSlotInfoDict.get("baubleSlotName")
         placeholderPath = baubleSlotInfoDict.get("placeholderPath")
         baubleSlotIdentifier = baubleSlotInfoDict.get("baubleSlotIdentifier")
         baubleSlotType = baubleSlotInfoDict.get("baubleSlotType")
+        isDefault = baubleSlotInfoDict.get("isDefault", False)
+        baubleSlotInfoDict["isDefault"] = isDefault
         if not baubleSlotName:
             logging.error("铂: 注册槽位失败, 槽位名称为空")
             return False
@@ -186,7 +196,8 @@ class BaubleSlotRegister(object):
         self.__baubleSlotList.append(baubleSlotInfoDict)
         return True
 
-    def addSlot(self, slotType, baubleIdentifier):
+    # 添加槽位
+    def addSlot(self, slotType, baubleIdentifier, isDefault=False):
         if slotType not in self.getBaubleSlotTypeList():
             logging.error("铂: 添加槽位失败, 未注册的槽位类型, 请使用registerSlot方法注册槽位")
             return False
@@ -201,12 +212,14 @@ class BaubleSlotRegister(object):
             "baubleSlotName": originSlotInfoDict.get("baubleSlotName"),
             "placeholderPath": originSlotInfoDict.get("placeholderPath"),
             "baubleSlotIdentifier": baubleIdentifier,
-            "baubleSlotType": slotType
+            "baubleSlotType": slotType,
+            "isDefault": isDefault
         }
         self.__baubleSlotList.append(registerSlotInfoDict)
         logging.debug("铂: 添加槽位{}成功".format(baubleIdentifier))
         return True
 
+    # 删除槽位
     def deleteSlot(self, baubleType):
         if baubleType not in self.getBaubleSlotTypeList():
             logging.error("铂: 删除槽位失败, 未注册的槽位类型")
@@ -229,14 +242,28 @@ class BaubleSlotRegister(object):
         logging.error("铂: 删除槽位{}成功".format(removeSlotInfoDict.get("baubleSlotIdentifier")))
         return True
 
+    # 获取槽位名称类型字典
     def getSlotNameTypeDict(self):
         slotNameTypeDict = {}
         for slotInfoDict in self.__baubleSlotList:
             slotNameTypeDict[slotInfoDict.get("baubleSlotName")] = slotInfoDict.get("baubleSlotType")
         return slotNameTypeDict
 
+    # 获取槽位类型名称字典
     def getSlotTypeNameDict(self):
         slotTypeNameDict = {}
         for slotInfoDict in self.__baubleSlotList:
             slotTypeNameDict[slotInfoDict.get("baubleSlotType")] = slotInfoDict.get("baubleSlotName")
         return slotTypeNameDict
+
+    # 同步默认槽位信息
+    def syncDefaultSlot(self, defaultSlotInfoList):
+        addSlotInfoList = []
+        for slotInfo in defaultSlotInfoList:
+            if slotInfo.get("baubleSlotIdentifier") not in self.getBaubleSlotIdentifierList():
+                if slotInfo.get("baubleSlotType") not in self.getBaubleSlotTypeList():
+                    self.registerSlot(slotInfo)
+                else:
+                    self.addSlot(slotInfo.get("baubleSlotType"), slotInfo.get("baubleSlotIdentifier"), True)
+                addSlotInfoList.append(slotInfo["baubleSlotIdentifier"])
+        return addSlotInfoList

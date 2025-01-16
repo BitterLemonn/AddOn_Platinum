@@ -74,34 +74,3 @@ class BuildInBaubleServer(serverApi.GetServerSystemCls()):
         if bauble["newItemName"] == "lemon_platinum:traveler_belt":
             comp = serverApi.GetEngineCompFactory().CreateAttr(playerId)
             comp.SetStepHeight(0.5626)
-
-    def onBaubleInfoEvent(self, data):
-        logging.debug("铂 测试: 玩家饰品栏数据: {}".format(data))
-
-    def onServerChatEvent(self, data):
-        playerId = data["playerId"]
-        msg = data["message"]
-        if msg.startswith("#platinum_"):
-            msg = msg.replace("#platinum_", "")
-            if msg == "info":
-                data["cancel"] = True
-                serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
-                                    commonConfig.PLATINUM_BROADCAST_SERVER).GetPlayerBaubleInfo(playerId)
-            elif msg == "set":
-                data["cancel"] = True
-                serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
-                                    commonConfig.PLATINUM_BROADCAST_SERVER).SetPlayerBaubleInfo(
-                    playerId,
-                    {"bauble_belt": {"newItemName": "lemon_platinum:traveler_belt", "count": 1, "newAuxValue": 0}})
-            elif msg == "add":
-                data["cancel"] = True
-                serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
-                                    commonConfig.PLATINUM_BROADCAST_SERVER).SetPlayerBaubleInfoWithSlot(
-                    playerId,
-                    {"newItemName": "lemon_platinum:traveler_belt", "count": 1, "newAuxValue": 0},
-                    "bauble_belt")
-            elif msg == "dec":
-                data["cancel"] = True
-                serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
-                                    commonConfig.PLATINUM_BROADCAST_SERVER).DecreaseBaubleDurability(playerId,
-                                                                                                     "bauble_helmet", 100)
