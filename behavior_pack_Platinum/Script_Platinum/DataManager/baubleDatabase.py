@@ -1,17 +1,34 @@
 # coding=utf-8
 import json
 import logging
+import re
 
-from .baubleSlotRegister import BaubleSlotRegister
+from .baubleSlotManager import BaubleSlotManager
 from ..QuModLibs.Client import *
 from ..QuModLibs.Modules.Services.Client import BaseService
 
 
+class DataAlias(object):
+    PLATINUM_LOCAL_DATA = "platinum_local_data"
+    BAUBLE_SLOT_INFO = "bauble_slot_info"
+    BAUBLE_BTN_POSITION = "bauble_btn_position"
+    BAUBLE_FORMAT_VERSION = "bauble_format_version"
+
+
 class BaubleDatabase(object):
+    formatVersion = 1
     playerBaubleInfo = {}
+    uiPosition = "left_top"
 
 
 class BaubleDataController(object):
+    @classmethod
+    def getUiPosition(cls):
+        return BaubleDatabase.uiPosition
+
+    @classmethod
+    def setUiPosition(cls, position):
+        BaubleDatabase.uiPosition = position
 
     @classmethod
     def addBaubleSlot(cls, slotIdentifier, slotInfo=None):
@@ -65,7 +82,7 @@ class BaubleDataController(object):
     def checkUnRegisterSlot(cls):
         removeDict = {}
         for slotIdentifier in BaubleDatabase.playerBaubleInfo.keys():
-            if slotIdentifier not in BaubleSlotRegister().getBaubleSlotIdentifierList():
+            if slotIdentifier not in BaubleSlotManager().getBaubleSlotIdentifierList():
                 removeInfo = BaubleDatabase.playerBaubleInfo.pop(slotIdentifier)
                 if removeInfo:
                     removeDict[slotIdentifier] = removeInfo
@@ -90,10 +107,44 @@ class BaubleDatabaseService(BaseService):
         self.__savingData()
 
     def __loadingData(self):
+        playerComp = clientApi.GetEngineCompFactory().CreatePlayer(playerId)
+        uid = playerComp.getUid()
         comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-        data = comp.GetConfigData("baubleDatabase")
-        BaubleDatabase.playerBaubleInfo = data
+        data = comp.GetConfigData(DataAlias.PLATINUM_LOCAL_DATA + "_{}".format(uid))
+        if data:
+            formatVersion = data.get(DataAlias.BAUBLE_FORMAT_VERSION, 0)
+            BaubleDatabase.uiPosition = data.get(DataAlias.BAUBLE_BTN_POSITION, "left_top")
+            BaubleDatabase.playerBaubleInfo = self.migrateData(formatVersion,
+                                                               data.get(DataAlias.BAUBLE_SLOT_INFO, {}))
 
     def __savingData(self):
+        playerComp = clientApi.GetEngineCompFactory().CreatePlayer(playerId)
+        uid = playerComp.getUid()
         comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-        comp.SetConfigData("baubleDatabase", BaubleDatabase.playerBaubleInfo)
+        dataDict = {
+            DataAlias.BAUBLE_SLOT_INFO: BaubleDatabase.playerBaubleInfo,
+            DataAlias.BAUBLE_FORMAT_VERSION: BaubleDatabase.formatVersion,
+            DataAlias.BAUBLE_BTN_POSITION: BaubleDatabase.uiPosition
+        }
+        comp.SetConfigData(DataAlias.PLATINUM_LOCAL_DATA + "_{}".format(uid), dataDict)
+
+    def migrateData(self, formatVersion, data):
+        if formatVersion != BaubleDatabase.formatVersion:
+            # 数据版本从0升级到1
+            if formatVersion == 0:
+                formatVersion = 1
+                for baubleName, value in data.items():
+                    newId = self.oldNameToNewId(baubleName)
+                    data[newId] = value
+                    data.pop(baubleName)
+            self.migrateData(formatVersion, data)
+        return data
+
+    @staticmethod
+    def oldNameToNewId(oldName):
+        # 判断原字符串是否存在数字
+        num = re.search(r"\d", oldName)
+        if num:
+            return "bauble_" + oldName.replace("_", "").replace(num.group(), "") + str(int(num.group()) - 1)
+        else:
+            return "bauble_" + oldName.replace("_", "")

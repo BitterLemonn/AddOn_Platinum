@@ -5,10 +5,9 @@ from ..ItemFactory import ItemFactory
 from ..QuModLibs.Modules.Services.Globals import BaseTimer
 from ..QuModLibs.Server import *
 from ..QuModLibs.Modules.Services.Server import BaseService
-from ..Script_UI.baubleInfoRegister import BaubleInfoRegister
+from ..DataManager.baubleInfoManager import BaubleInfoManager
 from ..Script_UI.baubleServer import BaubleServerService
-from ..Script_UI.baubleSlotRegister import BaubleSlotRegister
-from ..commonConfig import BaubleDict
+from ..DataManager.baubleSlotManager import BaubleSlotManager
 from .. import serverUtil
 
 
@@ -33,8 +32,8 @@ class PlatinumServerService(BaseService):
         itemDict = data.get("newItemDict")
         slot = data.get("slot")
         itemName = itemDict.get("newItemName")
-        if itemName and itemName in BaubleInfoRegister.getBaubleInfoDict().keys():
-            baubleInfo = BaubleInfoRegister.getBaubleInfoDict().get(itemName)
+        if itemName and itemName in BaubleInfoManager.getBaubleInfoDict().keys():
+            baubleInfo = BaubleInfoManager.getBaubleInfoDict().get(itemName)
             try:
                 customTips = ItemFactory(itemDict).getCustomTips()
                 baubleTips = baubleInfo.get("customTips")
@@ -45,7 +44,7 @@ class PlatinumServerService(BaseService):
                     tips = "§6栏位: §g"
                     for slotType in baubleSlotTypeList:
                         isLast = baubleSlotTypeList.index(slotType) == len(baubleSlotTypeList) - 1
-                        slotName = BaubleSlotRegister().getSlotTypeNameDict().get(slotType)
+                        slotName = BaubleSlotManager().getSlotTypeNameDict().get(slotType)
                         tips += slotName + ("、" if not isLast else "") + ("§r\n" if isLast else "")
                     customTips = "%name%%category%%enchanting%\n" + tips + \
                                  (baubleTips if baubleTips else "") + "%attack_damage%"
@@ -99,13 +98,13 @@ class PlatinumServerService(BaseService):
                 data["return_msg_key"] = "§c铂: 参数异常 请检查指令是否输入正确§r"
                 return
             # 检查输入槽位类型是否存在
-            allSlotType = BaubleSlotRegister().getBaubleSlotTypeList()
+            allSlotType = BaubleSlotManager().getBaubleSlotTypeList()
             if slotType not in allSlotType:
                 data["return_failed"] = False
                 data["return_msg_key"] = "§c铂: 槽位类型不存在 请检查槽位类型是否正确 输入/platinum_help查看帮助§r"
                 return
             # 检查槽位id是否已存在
-            allSlotId = BaubleSlotRegister().getBaubleSlotIdentifierList()
+            allSlotId = BaubleSlotManager().getBaubleSlotIdentifierList()
             if slotName in allSlotId:
                 data["return_failed"] = False
                 data["return_msg_key"] = "§c铂: 目标槽位id已存在 请重新输入槽位id§r"

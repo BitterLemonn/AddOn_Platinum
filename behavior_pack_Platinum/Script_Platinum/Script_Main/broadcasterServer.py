@@ -1,12 +1,13 @@
 # coding=utf-8
+import logging
+
 from ..BroadcastEvent.getPlayerBaubleInfoEvent import GetPlayerBaubleInfoServerEvent
 from ..QuModLibs.Server import *
-from ..QuModLibs.Modules.Services.Server import BaseService, QRequests
+from ..QuModLibs.Modules.Services.Server import BaseService
 from .. import commonConfig
-import logging
 from .. import oldVersionFixer
-from ..Script_UI.baubleInfoRegister import BaubleInfoRegister
-from ..Script_UI.baubleSlotRegister import BaubleSlotRegister
+from ..DataManager.baubleInfoManager import BaubleInfoManager
+from ..DataManager.baubleSlotServerService import BaubleSlotServerService
 from ..Script_UI.baubleServer import BaubleServerService
 
 
@@ -43,7 +44,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         baubleSlot = oldVersionFixer.oldSlotTypeChanger(baubleSlot)
 
         for slot in baubleSlot:
-            if slot not in BaubleSlotRegister().getBaubleSlotTypeList():
+            if slot not in BaubleSlotServerService.access().getBaubleSlotTypeList():
                 logging.error("铂: 饰品 {} 插槽 {} 不存在,请检查饰品槽位是否正确".format(baubleName, slot))
                 return
 
@@ -53,7 +54,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
             logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(baubleName))
             return
 
-        BaubleInfoRegister.registerBaubleInfo(baubleName, baubleSlot, customTips)
+        BaubleInfoManager.registerBaubleInfo(baubleName, baubleSlot, customTips)
 
     @staticmethod
     def GetPlayerBaubleInfo(playerId):
@@ -126,6 +127,25 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :return:
         """
         BaubleServerService.access().addGlobalBaubleSlot(slotId, slotType, slotName, slotPlaceHolderPath, isDefault)
+
+    @staticmethod
+    def DeleteTargetBaubleSlot(playerId, slotId):
+        """
+        删除目标饰品槽位
+        :param playerId: 玩家ID
+        :param slotId: 槽位标识符
+        :return:
+        """
+        BaubleServerService.access().removeTargetBaubleSlot(playerId, slotId)
+
+    @staticmethod
+    def DeleteGlobalBaubleSlot(slotId):
+        """
+        删除全局饰品槽位
+        :param slotId: 槽位标识符
+        :return:
+        """
+        BaubleServerService.access().removeGlobalBaubleSlot(slotId)
 
 
 @BaseService.Init

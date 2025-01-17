@@ -2,101 +2,16 @@
 import logging
 
 
-# 槽位注册字典
-class BaubleSlotRegister(object):
+# 槽位字典(客户端各自拥有 记录客户端拥有的槽位信息 注意维护)
+class BaubleSlotManager(object):
     # 单例模式
-    __instance = None
-    __baubleSlotList = [
-        {
-            "baubleSlotName": "头盔",  # 槽位名称
-            "placeholderPath": "textures/ui/bauble_helmet_slot",  # 占位图路径
-            "baubleSlotIdentifier": "bauble_helmet",  # 槽位标识符(唯一)
-            "baubleSlotType": "helmet",  # 槽位类型(可继承)
-            "isDefault": True  # 是否默认拥有
-        },
-        {
-            "baubleSlotName": "项链",
-            "placeholderPath": "textures/ui/bauble_necklace_slot",
-            "baubleSlotIdentifier": "bauble_necklace",
-            "baubleSlotType": "necklace",
-            "isDefault": True
-        },
-        {
-            "baubleSlotName": "背饰",
-            "placeholderPath": "textures/ui/bauble_back_slot",
-            "baubleSlotIdentifier": "bauble_back",
-            "baubleSlotType": "back",
-            "isDefault": True
-        },
-        {
-            "baubleSlotName": "胸饰",
-            "placeholderPath": "textures/ui/bauble_armor_slot",
-            "baubleSlotIdentifier": "bauble_armor",
-            "baubleSlotType": "armor",
-            "isDefault": True
-        },
-        {
-            "baubleSlotName": "手环",
-            "placeholderPath": "textures/ui/bauble_hand_slot",
-            "baubleSlotIdentifier": "bauble_hand0",
-            "baubleSlotType": "hand",
-            "isDefault": True
-        },
-        {
-            "baubleSlotName": "手环",
-            "placeholderPath": "textures/ui/bauble_hand_slot",
-            "baubleSlotIdentifier": "bauble_hand1",
-            "baubleSlotType": "hand",
-            "isDefault": True
-        },
-        {
-            "baubleSlotName": "腰带",
-            "placeholderPath": "textures/ui/bauble_belt_slot",
-            "baubleSlotIdentifier": "bauble_belt",
-            "baubleSlotType": "belt",
-            "isDefault": True
-        },
-        {
-            "baubleSlotName": "鞋子",
-            "placeholderPath": "textures/ui/bauble_shoes_slot",
-            "baubleSlotIdentifier": "bauble_shoes",
-            "baubleSlotType": "shoes",
-            "isDefault": True
-        },
-        {
-            "baubleSlotName": "护符",
-            "placeholderPath": "textures/ui/bauble_other_slot",
-            "baubleSlotIdentifier": "bauble_other0",
-            "baubleSlotType": "other",
-            "isDefault": True
-        },
-        {
-            "baubleSlotName": "护符",
-            "placeholderPath": "textures/ui/bauble_other_slot",
-            "baubleSlotIdentifier": "bauble_other1",
-            "baubleSlotType": "other",
-            "isDefault": True
-        },
-        {
-            "baubleSlotName": "护符",
-            "placeholderPath": "textures/ui/bauble_other_slot",
-            "baubleSlotIdentifier": "bauble_other2",
-            "baubleSlotType": "other",
-            "isDefault": True
-        },
-        {
-            "baubleSlotName": "护符",
-            "placeholderPath": "textures/ui/bauble_other_slot",
-            "baubleSlotIdentifier": "bauble_other3",
-            "baubleSlotType": "other",
-            "isDefault": True
-        }
-    ]
+    _instance = None
+    __baubleSlotList = []
 
     def __new__(cls, *args, **kwargs):
-        if not cls.__instance:
-            cls.__instance = super(BaubleSlotRegister, cls).__new__(cls)
-        return cls.__instance
+        if not cls._instance:
+            cls._instance = super(BaubleSlotManager, cls).__new__(cls)
+        return cls._instance
 
     # 获取槽位列表
     def getBaubleSlotList(self):
@@ -216,30 +131,26 @@ class BaubleSlotRegister(object):
             "isDefault": isDefault
         }
         self.__baubleSlotList.append(registerSlotInfoDict)
-        logging.debug("铂: 添加槽位{}成功".format(baubleIdentifier))
         return True
 
     # 删除槽位
-    def deleteSlot(self, baubleType):
-        if baubleType not in self.getBaubleSlotTypeList():
-            logging.error("铂: 删除槽位失败, 未注册的槽位类型")
-            return False
-
-        deleteSlotInfoDictList = []
-        for slotInfoDict in self.__baubleSlotList:
-            if slotInfoDict.get("baubleSlotType") == baubleType:
-                deleteSlotInfoDictList.append(slotInfoDict)
-
-        if not deleteSlotInfoDictList:
+    def deleteSlot(self, baubleSlotId):
+        # 判断槽位是否存在
+        if baubleSlotId not in self.getBaubleSlotIdentifierList():
             logging.error("铂: 删除槽位失败, 未找到对应槽位")
             return False
-        elif len(deleteSlotInfoDictList) == 1:
-            logging.error("铂: 删除槽位失败, 无法删除唯一槽位")
-            return False
-
-        removeSlotInfoDict = deleteSlotInfoDictList[-1]
-        self.__baubleSlotList.remove(removeSlotInfoDict)
-        logging.error("铂: 删除槽位{}成功".format(removeSlotInfoDict.get("baubleSlotIdentifier")))
+        # 判断是否为默认槽位
+        for slotInfoDict in self.__baubleSlotList:
+            if slotInfoDict.get("baubleSlotIdentifier") == baubleSlotId:
+                if slotInfoDict.get("isDefault"):
+                    logging.error("铂: 删除槽位失败, 无法删除默认槽位")
+                    return False
+                break
+        # 删除槽位
+        for slotInfoDict in self.__baubleSlotList:
+            if slotInfoDict.get("baubleSlotIdentifier") == baubleSlotId:
+                self.__baubleSlotList.remove(slotInfoDict)
+                break
         return True
 
     # 获取槽位名称类型字典

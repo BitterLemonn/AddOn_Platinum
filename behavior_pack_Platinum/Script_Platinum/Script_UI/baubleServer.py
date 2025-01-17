@@ -1,11 +1,11 @@
 # coding=utf-8
-from .baubleInfoRegister import BaubleInfoRegister
-from .baubleSlotRegister import BaubleSlotRegister
+from ..DataManager.baubleInfoManager import BaubleInfoManager
+from ..DataManager.baubleSlotManager import BaubleSlotManager
 from ..BroadcastEvent.getPlayerBaubleInfoEvent import GetPlayerBaubleInfoServerEvent
+from ..DataManager.baubleSlotServerService import BaubleSlotServerService
 from ..QuModLibs.Modules.Services.Globals import QRequests
 from ..QuModLibs.Server import *
 from ..QuModLibs.Modules.Services.Server import BaseService
-from ..commonConfig import BaubleDict
 from .. import serverUtil
 import logging
 
@@ -20,7 +20,7 @@ class BaubleServerService(BaseService):
     # 检查饰品是否可用安装至指定槽位
     @staticmethod
     def checkBaubleAvailable(baubleSlotType, baubleName):
-        baubleInfoDict = BaubleInfoRegister.getBaubleInfoDict()
+        baubleInfoDict = BaubleInfoManager.getBaubleInfoDict()
         baubleInfo = baubleInfoDict.get(baubleName)
         if baubleInfo and baubleSlotType:
             baubleSlotList = baubleInfo.get("baubleSlot")
@@ -52,7 +52,7 @@ class BaubleServerService(BaseService):
         playerId = data["playerId"]
         itemInfo = self.itemComp.GetItemBasicInfo(itemUsed["newItemName"])
         if itemInfo["itemType"] != "armor" and itemInfo["itemType"] != "food":
-            baubleRegDict = BaubleInfoRegister.getBaubleInfoDict()
+            baubleRegDict = BaubleInfoManager.getBaubleInfoDict()
             if itemUsed["newItemName"] in baubleRegDict.keys():
                 baubleSlotTypeList = baubleRegDict[itemUsed["newItemName"]]["baubleSlot"]
                 itemComp = serverApi.GetEngineCompFactory().CreateItem(playerId)
@@ -82,10 +82,9 @@ class BaubleServerService(BaseService):
     @BaseService.Listen(Events.PlayerJoinMessageEvent)
     def onPlayerJoinMessageEvent(self, data):
         playerId = data["id"]
-        defaultSlot = [info for info in BaubleSlotRegister().getBaubleSlotList() if info["isDefault"]]
-        logging.debug("铂: 玩家 {} 加入游戏, 正在同步默认饰品栏信息: {}".format(playerId, defaultSlot))
-        self.syncRequest(playerId, "platinum/syncBaubleDefaultSlot",
-                         QRequests.Args(defaultSlot))
+        logging.debug("铂: 玩家 {} 加入游戏 开始同步默认槽位".format(
+            serverApi.GetEngineCompFactory().CreateName(playerId).GetName()))
+        BaubleSlotServerService.access().syncToClient(playerId)
 
     # 获取玩家饰品信息
     def getPlayerBaubleInfo(self, playerId):
@@ -102,7 +101,7 @@ class BaubleServerService(BaseService):
     def setBaubleSlotInfo(self, playerId, baubleSlotInfo):
         isAllAvailable = True
         for slotId, baubleInfo in baubleSlotInfo.items():
-            baubleSlotType = BaubleSlotRegister().getBaubleSlotTypeBySlotIdentifier(slotId)
+            baubleSlotType = BaubleSlotServerService.access().getBaubleSlotTypeBySlotIdentifier(slotId)
             success = BaubleServerService.access().checkBaubleAvailable(baubleSlotType, baubleInfo["newItemName"])
             if not success:
                 logging.error("铂: 饰品 {} 无法安装至槽位 {} 请检查饰品注册".format(baubleInfo["newItemName"], slotId))
@@ -112,7 +111,7 @@ class BaubleServerService(BaseService):
 
     # 设置特定饰品栏信息
     def setBaubleSlotInfoBySlotId(self, playerId, slotId, baubleSlotInfo):
-        baubleSlotType = BaubleSlotRegister().getBaubleSlotTypeBySlotIdentifier(slotId)
+        baubleSlotType = BaubleSlotServerService.access().getBaubleSlotTypeBySlotIdentifier(slotId)
         success = BaubleServerService.access().checkBaubleAvailable(baubleSlotType, baubleSlotInfo["newItemName"])
         if success:
             self.syncRequest(playerId, "platinum/setBaubleSlotInfoBySlotId", QRequests.Args(slotId, baubleSlotInfo))
@@ -129,13 +128,51 @@ class BaubleServerService(BaseService):
 
     # 添加某个玩家的饰品栏槽位
     def addTargetBaubleSlot(self, playerId, slotId, slotType, slotName=None, slotPlaceHolderPath=None):
-        self.syncRequest(playerId, "platinum/addBaubleSlot",
-                         QRequests.Args(slotId, slotType, slotName, slotPlaceHolderPath))
+        if self.addBaubleSlot(slotId, slotType, slotName, slotPlaceHolderPath):
+            self.syncRequest(playerId, "platinum/addBaubleSlot",
+                             QRequests.Args(slotId, slotType, slotName, slotPlaceHolderPath))
 
     # 添加全部玩家的饰品栏槽位
     def addGlobalBaubleSlot(self, slotId, slotType, slotName=None, slotPlaceHolderPath=None, isDefault=False):
-        self.syncRequest("*", "platinum/addBaubleSlot",
-                         QRequests.Args(slotId, slotType, slotName, slotPlaceHolderPath, isDefault))
+        if self.addBaubleSlot(slotId, slotType, slotName, slotPlaceHolderPath, isDefault):
+            self.syncRequest("*", "platinum/addBaubleSlot",
+                             QRequests.Args(slotId, slotType, slotName, slotPlaceHolderPath, isDefault))
+
+    # 添加槽位到服务端注册列表
+    @staticmethod
+    def addBaubleSlot(slotId, slotType, slotName, placeholderPath, isDefault=False):
+        if slotId in BaubleSlotServerService.access().getBaubleSlotIdentifierList():
+            return True
+
+        if not slotName or not placeholderPath:
+            # 检查是否是继承槽位类型
+            if slotType not in BaubleSlotServerService.access().getBaubleSlotTypeList():
+                logging.error("铂: 添加槽位失败, 未注册的槽位类型, 请使用registerSlot方法注册槽位")
+                return False
+            else:
+                # 注册槽位
+                if BaubleSlotServerService.access().addSlot(slotType, slotId):
+                    return True
+
+        else:
+            # 注册槽位
+            if BaubleSlotServerService.access().registerSlot(
+                    {"baubleSlotName": slotName,
+                     "placeholderPath": placeholderPath,
+                     "baubleSlotIdentifier": slotId,
+                     "baubleSlotType": slotType,
+                     "isDefault": isDefault}
+            ):
+                return True
+        return False
+
+    # 删除某个玩家的饰品栏槽位
+    def removeTargetBaubleSlot(self, playerId, slotId):
+        self.syncRequest(playerId, "platinum/removeBaubleSlot", QRequests.Args(slotId))
+
+    # 删除全部玩家的饰品栏槽位
+    def removeGlobalBaubleSlot(self, slotId):
+        self.syncRequest("*", "platinum/removeBaubleSlot", QRequests.Args(slotId))
 
 
 @AllowCall

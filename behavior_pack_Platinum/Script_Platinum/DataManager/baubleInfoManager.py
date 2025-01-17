@@ -2,7 +2,7 @@
 import logging
 
 
-class BaubleInfoRegister(object):
+class BaubleInfoManager(object):
     __baubleInfoDict = {
         # "lemon_platinum:traveler_belt": {
         #     "baubleSlot": ["belt"],

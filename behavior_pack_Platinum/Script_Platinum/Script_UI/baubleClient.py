@@ -4,10 +4,9 @@ import logging
 from ..QuModLibs.Client import *
 from ..QuModLibs.Modules.Services.Client import BaseService, QRequests
 from ..QuModLibs.QuClientApi.ui.screenNode import ScreenNode
-from ..QuModLibs.UI import EasyScreenNodeCls
 
-from .baubleDatabase import BaubleDataController, BaubleDatabase
-from .baubleSlotRegister import BaubleSlotRegister
+from ..DataManager.baubleDatabase import BaubleDataController
+from ..DataManager.baubleSlotManager import BaubleSlotManager
 from .flyingItemRenderer import FlyingItemRenderer
 from ..ItemFactory import ItemFactory
 from .. import oldVersionFixer
@@ -24,8 +23,8 @@ class BaubleBroadcastService(BaseService):
         BaseService.__init__(self)
 
     def onBaublePutOn(self, baubleItem, baubleSlotId, isFirstLoad=False):
-        slotIndex = BaubleSlotRegister().getSlotIndex(baubleSlotId) + 1
-        baubleSlotType = BaubleSlotRegister().getBaubleSlotTypeBySlotIdentifier(baubleSlotId)
+        slotIndex = BaubleSlotManager().getSlotIndex(baubleSlotId) + 1
+        baubleSlotType = BaubleSlotManager().getBaubleSlotTypeBySlotIdentifier(baubleSlotId)
         baubleSlotType = oldVersionFixer.oldVersionFixer(baubleSlotType)
         self.localRequest("platinum/onBaublePutOn",
                           {"baubleSlotId": baubleSlotId, "baubleSlot": baubleSlotType, "slotIndex": slotIndex,
@@ -36,8 +35,8 @@ class BaubleBroadcastService(BaseService):
                               "itemDict": baubleItem, "isFirstLoad": isFirstLoad, "playerId": playerId}))
 
     def onBaubleTakeOff(self, baubleItem, baubleSlotId, isFirstLoad=False):
-        slotIndex = BaubleSlotRegister().getSlotIndex(baubleSlotId) + 1
-        baubleSlotType = BaubleSlotRegister().getBaubleSlotTypeBySlotIdentifier(baubleSlotId)
+        slotIndex = BaubleSlotManager().getSlotIndex(baubleSlotId) + 1
+        baubleSlotType = BaubleSlotManager().getBaubleSlotTypeBySlotIdentifier(baubleSlotId)
         baubleSlotType = oldVersionFixer.oldVersionFixer(baubleSlotType)
         self.localRequest("platinum/onBaubleTakeOff",
                           {"baubleSlotId": baubleSlotId, "baubleSlot": baubleSlotType, "slotIndex": slotIndex,
@@ -52,7 +51,7 @@ class BaubleBroadcastService(BaseService):
     def tryEquipBauble(self, baubleItem, inventorySlotId, baubleSlotTypeList=None, baubleSlotId=None):
         if baubleSlotTypeList:
             # 查询饰品栏空位
-            baubleSlotIdList = BaubleSlotRegister().getBaubleSlotIdByTypeList(baubleSlotTypeList)
+            baubleSlotIdList = BaubleSlotManager().getBaubleSlotIdByTypeList(baubleSlotTypeList)
             for slotId in baubleSlotIdList:
                 if not BaubleDataController.getBaubleInfo(slotId):
                     baubleSlotId = slotId
@@ -111,20 +110,23 @@ class BaubleBroadcastService(BaseService):
 
     @BaseService.REG_API("platinum/syncBaubleDefaultSlot")
     def syncBaubleDefaultSlot(self, defaultSlot):
-        addSlotList = BaubleSlotRegister().syncDefaultSlot(defaultSlot)
+        addSlotList = BaubleSlotManager().syncDefaultSlot(defaultSlot)
         for slotId in addSlotList:
             BaubleDataController.addBaubleSlot(slotId)
 
     @BaseService.REG_API("platinum/addBaubleSlot")
     def addBaubleSlot(self, slotId, slotType, slotName, slotPlaceHolderPath, isDefault=False):
+        if slotId in BaubleSlotManager().getBaubleSlotIdentifierList():
+            logging.error("铂: 添加槽位失败, 重复的槽位标识符")
+            return
         if not slotName or not slotPlaceHolderPath:
             # 检查是否是继承槽位类型
-            if slotType not in BaubleSlotRegister().getBaubleSlotTypeList():
+            if slotType not in BaubleSlotManager().getBaubleSlotTypeList():
                 logging.error("铂: 添加槽位失败, 未注册的槽位类型, 请使用registerSlot方法注册槽位")
                 return
             else:
                 # 注册槽位
-                if BaubleSlotRegister().addSlot(slotType, slotId):
+                if BaubleSlotManager().addSlot(slotType, slotId):
                     # 添加玩家槽位信息
                     BaubleDataController.addBaubleSlot(slotId)
                     logging.debug("铂:玩家 {} 添加饰品栏槽位 {}".format(
@@ -133,7 +135,7 @@ class BaubleBroadcastService(BaseService):
 
         else:
             # 注册槽位
-            if BaubleSlotRegister().registerSlot(
+            if BaubleSlotManager().registerSlot(
                     {"baubleSlotName": slotName,
                      "placeholderPath": slotPlaceHolderPath,
                      "baubleSlotIdentifier": slotId,
@@ -146,13 +148,19 @@ class BaubleBroadcastService(BaseService):
                     clientApi.GetEngineCompFactory().CreateName(playerId).GetName(), slotId)
                 )
 
+    @BaseService.REG_API("platinum/removeBaubleSlot")
+    def removeBaubleSlot(self, slotId):
+        if BaubleSlotManager().deleteSlot(slotId):
+            baubleItem = BaubleDataController.removeBaubleSlot(slotId)
+            if baubleItem:
+                Call("GivePlayerItem", baubleItem, playerId)
+
 
 @BaseService.Init
 class BaubleClientService(BaseService):
 
     def __init__(self):
         BaseService.__init__(self)
-        logging.debug("饰品栏客户端服务初始化")
 
     @BaseService.Listen(Events.UiInitFinished)
     def onUiInitFinished(self, data):
@@ -166,15 +174,9 @@ class BaubleClientService(BaseService):
         targetId = data.get("playerId")
         if targetId == playerId:
             # 添加已注册默认的饰品栏信息
-            baubleIdList = BaubleSlotRegister().getBaubleSlotIdentifierList(True)
+            baubleIdList = BaubleSlotManager().getBaubleSlotIdentifierList(True)
             for baubleId in baubleIdList:
                 BaubleDataController.addBaubleSlot(baubleId)
-            # 移除未注册的饰品栏信息
-            removeInfoDict = BaubleDataController.checkUnRegisterSlot()
-            for baubleId, baubleInfo in (removeInfoDict or {}).items():
-                logging.error("铂: 由于玩家饰品信息出现未注册的饰品栏 {}, 已取消穿戴对应栏位的饰品: {}"
-                              .format(baubleId, baubleInfo["newItemName"]))
-                Call("GivePlayerItem", baubleInfo, playerId)
             # 获取玩家饰品栏信息
             baubleInfoDict = BaubleDataController.getAllBaubleInfo()
             print (
@@ -184,12 +186,23 @@ class BaubleClientService(BaseService):
                 if baubleItem:
                     BaubleBroadcastService.access().onBaublePutOn(baubleItem, baubleSlotId, True)
                     print("[DEBUG]{} : {}".format(baubleSlotId, baubleItem["newItemName"] if baubleItem else None))
+            # 移除未注册的饰品栏信息
+            removeInfoDict = BaubleDataController.checkUnRegisterSlot()
+            for baubleId, baubleInfo in (removeInfoDict or {}).items():
+                logging.error("铂: 由于玩家饰品信息出现未注册的饰品栏 {}, 已取消穿戴对应栏位的饰品: {}"
+                              .format(baubleId, baubleInfo["newItemName"]))
+                Call("GivePlayerItem", baubleInfo, playerId)
+
+    @BaseService.REG_API("platinum/changeUiPosition")
+    def changeUiPosition(self, position):
+        BaubleDataController.setUiPosition(position)
 
 
 class InventoryClassicProxy(CustomUIScreenProxy):
     def __init__(self, screenName, screenNode):
         CustomUIScreenProxy.__init__(self, screenName, screenNode)
         self.basePath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel"
+        self.entryBtnPath = self.basePath + "/content_stack_panel/player_inventory/inventory_panel_top_half/player_armor_panel/player_bg/bauble_button"
         self.survivalPaddingPath = self.basePath + "/content_stack_panel/survival_padding"
         self.hotbarSlotPathBase = self.basePath + "/content_stack_panel/player_inventory/hotbar_grid/grid_item_for_hotbar{index}"
         self.inventorySlotPathBase = self.basePath + "/content_stack_panel/player_inventory/inventory_panel_bottom_half/inventory_panel/inventory_grid/grid_item_for_inventory{index}"
@@ -201,6 +214,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
 
         self.isShowBaublePanel = False
         self.pureBagPage = False
+        self.entryPosition = BaubleDataController.getUiPosition()
 
         self.baubleSelectedIndex = -1
         self.baubleSelectedPath = ""
@@ -212,11 +226,12 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.flyingItemController = FlyingItemRenderer(self.screen, self.flyingPanelPath)
         self.tipsLabel = ""
 
-        self.ListenEvent()
-        self.isDestroy = False
-
     def ListenEvent(self):
         ListenForEvent("OnItemSlotButtonClickedEvent", self, self.onItemSlotButtonClickedEvent)
+
+    def OnCreate(self):
+        self.ListenEvent()
+        self.setEntryPosition()
 
     def OnTick(self):
         self.pureBagPage = self.screen.GetBaseUIControl(self.survivalPaddingPath).GetVisible()
@@ -225,6 +240,21 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     def OnDestroy(self):
         # self.flyingItemController.OnDestroy()
         UnListenForEvent("OnItemSlotButtonClickedEvent", self, self.onItemSlotButtonClickedEvent)
+
+    def setEntryPosition(self):
+        btn = self.screen.GetBaseUIControl(self.entryBtnPath)
+        if self.entryPosition == "left_top":
+            btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": -0.35})
+            btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": -0.4})
+        elif self.entryPosition == "right_top":
+            btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": 0.35})
+            btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": -0.4})
+        elif self.entryPosition == "left_bottom":
+            btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": -0.35})
+            btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": 0.4})
+        elif self.entryPosition == "right_bottom":
+            btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": 0.35})
+            btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": 0.4})
 
     @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.bauble_button")
     def onBaubleButtonClick(self, args):
@@ -252,22 +282,27 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     @Binding.binding(Binding.BF_BindInt, "#bauble_reborn.vertical_grid.max_items_count")
     def bindingPanelMaxItemsCount(self):
         # logging.error("铂: 饰品栏个数 {}".format(BaubleSlotRegister().getBaubleSlotList()))
-        return len(BaubleSlotRegister().getBaubleSlotList())
+        return len(BaubleSlotManager().getBaubleSlotList())
 
     # 饰品栏图标
     @Binding.binding_collection(Binding.BF_BindString, "platinum_bauble_collection", "#bauble_reborn.slot.image_holder")
     def bindingSlotImageHolder(self, index):
-        return BaubleSlotRegister().getBaubleSlotList()[index]["placeholderPath"]
+        baubleList = BaubleSlotManager().getBaubleSlotList()
+        if index < len(baubleList):
+            return baubleList[index]["placeholderPath"]
+        return ""
 
     # 饰品栏图标显示
     @Binding.binding_collection(Binding.BF_BindBool, "platinum_bauble_collection",
                                 "#bauble_reborn.slot.image_holder.visible")
     def bindingSlotImageHolderVisible(self, index):
-        baubleIdentifier = BaubleSlotRegister().getBaubleSlotList()[index]["baubleSlotIdentifier"]
-        baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
-        if baubleInfo:
-            return False
-        return True
+        baubleList = BaubleSlotManager().getBaubleSlotList()
+        if index < len(baubleList):
+            baubleIdentifier = baubleList[index]["baubleSlotIdentifier"]
+            baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
+            if baubleInfo:
+                return False
+            return True
 
     # 饰品栏选择框
     @Binding.binding_collection(Binding.BF_BindBool, "platinum_bauble_collection", "#bauble_reborn.is_selected")
@@ -278,22 +313,26 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     @Binding.binding_collection(Binding.BF_BindInt, "platinum_bauble_collection",
                                 "#bauble_reborn.item_renderer.item_id_aux")
     def bindingSlotItemIdAux(self, index):
-        baubleIdentifier = BaubleSlotRegister().getBaubleSlotList()[index]["baubleSlotIdentifier"]
-        baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
-        if baubleInfo:
-            itemInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
-            idAux = itemInfo["id_aux"]
-            return idAux if idAux else 0
+        baubleList = BaubleSlotManager().getBaubleSlotList()
+        if index < len(baubleList):
+            baubleIdentifier = baubleList[index]["baubleSlotIdentifier"]
+            baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
+            if baubleInfo:
+                itemInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
+                idAux = itemInfo["id_aux"]
+                return idAux if idAux else 0
         return 0
 
     # 饰品栏物品显示
     @Binding.binding_collection(Binding.BF_BindBool, "platinum_bauble_collection",
                                 "#bauble_reborn.item_renderer.visible")
     def bindingSlotItemVisible(self, index):
-        baubleIdentifier = BaubleSlotRegister().getBaubleSlotList()[index]["baubleSlotIdentifier"]
-        baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
-        if baubleInfo:
-            return True
+        baubleList = BaubleSlotManager().getBaubleSlotList()
+        if index < len(baubleList):
+            baubleIdentifier = baubleList[index]["baubleSlotIdentifier"]
+            baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
+            if baubleInfo:
+                return True
         return False
 
     # 饰品栏点击
@@ -313,7 +352,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             self.baubleSelectedPath = buttonPath if self.baubleSelectedIndex != -1 else ""
 
         baubleItem = BaubleDataController.getBaubleInfo(
-            BaubleSlotRegister().getBaubleSlotList()[index]["baubleSlotIdentifier"])
+            BaubleSlotManager().getBaubleSlotList()[index]["baubleSlotIdentifier"])
         if baubleItem:
             baseInfo = self.itemComp.GetItemBasicInfo(baubleItem["newItemName"], baubleItem["newAuxValue"])
             name = baseInfo["itemName"]
@@ -325,44 +364,50 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             customTips = ItemFactory(baubleItem).getCustomTips() or ""
             customTips = customTips.replace("%name%", "").replace("%category%", "").replace("%enchanting%", "").replace(
                 "%attack_damage%", "")
-            self.setToolTips("{name}§9{category}§r{customTips}".format(name=name, category=categoryName,
-                                                                       customTips=customTips))
+            self.setToolTips("{name}\n§9{category}§r{customTips}".format(name=name, category=categoryName,
+                                                                         customTips=customTips))
 
     # 绑定耐久度数值
     @Binding.binding_collection(Binding.BF_BindFloat, "platinum_bauble_collection",
                                 "#bauble_reborn.durability_bar.clip_ratio")
     def bindingSlotClipRatio(self, index):
-        baubleIdentifier = BaubleSlotRegister().getBaubleSlotList()[index]["baubleSlotIdentifier"]
-        baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
-        if baubleInfo:
-            baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
-            if baseInfo["maxDurability"]:
-                return 1 - float(baubleInfo["durability"]) / baseInfo["maxDurability"]
+        baubleList = BaubleSlotManager().getBaubleSlotList()
+        if index < len(baubleList):
+            baubleIdentifier = baubleList[index]["baubleSlotIdentifier"]
+            baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
+            if baubleInfo:
+                baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
+                if baseInfo["maxDurability"]:
+                    return 1 - float(baubleInfo["durability"]) / baseInfo["maxDurability"]
         return 0.0
 
     # 绑定耐久度显示
     @Binding.binding_collection(Binding.BF_BindBool, "platinum_bauble_collection",
                                 "#bauble_reborn.durability_bar.visible")
     def bindingSlotDurabilityVisible(self, index):
-        baubleIdentifier = BaubleSlotRegister().getBaubleSlotList()[index]["baubleSlotIdentifier"]
-        baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
-        if baubleInfo:
-            baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
-            if baseInfo["maxDurability"] and baubleInfo["durability"] < baseInfo["maxDurability"]:
-                return True
+        baubleList = BaubleSlotManager().getBaubleSlotList()
+        if index < len(baubleList):
+            baubleIdentifier = baubleList[index]["baubleSlotIdentifier"]
+            baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
+            if baubleInfo:
+                baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
+                if baseInfo["maxDurability"] and baubleInfo["durability"] < baseInfo["maxDurability"]:
+                    return True
         return False
 
     # 绑定耐久度颜色
     @Binding.binding_collection(Binding.BF_BindColor, "platinum_bauble_collection",
                                 "#bauble_reborn.durability_bar.color")
     def bindingSlotClipColor(self, index):
-        baubleIdentifier = BaubleSlotRegister().getBaubleSlotList()[index]["baubleSlotIdentifier"]
-        baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
-        if baubleInfo:
-            baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
-            if baseInfo["maxDurability"]:
-                color = ratioToColor(float(baubleInfo["durability"]) / baseInfo["maxDurability"])
-                return color
+        baubleList = BaubleSlotManager().getBaubleSlotList()
+        if index < len(baubleList):
+            baubleIdentifier = baubleList[index]["baubleSlotIdentifier"]
+            baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
+            if baubleInfo:
+                baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
+                if baseInfo["maxDurability"]:
+                    color = ratioToColor(float(baubleInfo["durability"]) / baseInfo["maxDurability"])
+                    return color
         return 0.0, 1.0, 0.0, 1.0
 
     # 背包点击
@@ -370,7 +415,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         inventorySelectedIndex = data.get("slotIndex", -1)
         if 0 <= inventorySelectedIndex < 36:
             itemDict = self.itemComp.GetPlayerItem(minecraftEnum.ItemPosType.INVENTORY, inventorySelectedIndex, True)
-            baubleSlotList = BaubleSlotRegister().getBaubleSlotList()
+            baubleSlotList = BaubleSlotManager().getBaubleSlotList()
             baubleSlotType = baubleSlotList[self.baubleSelectedIndex]["baubleSlotType"]
             baubleSlotId = baubleSlotList[self.baubleSelectedIndex]["baubleSlotIdentifier"]
             if self.baubleSelectedIndex != -1:
