@@ -26,14 +26,17 @@
                             "property_bag": {
                                 "#visible": false
                             },
+                            "$slot_size": [20, 20],
+                            "$item_renderer_size": [16, 16],
+                            "$durability_bar_size": [12, 1.5],
+                            "$durability_bar_offset": [0, 5],
                             "anchor_to": "top_left",
                             "anchor_from": "top_left",
                             "offset": [-5, 0],
                             "bindings": [
                                 {
                                     "binding_name": "#bauble_reborn.vertical_grid.right_visible",
-                                    "binding_name_override": "#visible",
-                                    "binding_condition": "always"
+                                    "binding_name_override": "#visible"
                                 }
                             ]
                         }
@@ -53,14 +56,17 @@
                             "property_bag": {
                                 "#visible": false
                             },
+                            "$slot_size": [20, 20],
+                            "$item_renderer_size": [16, 16],
+                            "$durability_bar_size": [12, 1.5],
+                            "$durability_bar_offset": [0, 5],
                             "anchor_to": "top_right",
                             "anchor_from": "top_right",
                             "offset": [6, 0],
                             "bindings": [
                                 {
                                     "binding_name": "#bauble_reborn.vertical_grid.left_visible",
-                                    "binding_name_override": "#visible",
-                                    "binding_condition": "always"
+                                    "binding_name_override": "#visible"
                                 }
                             ]
                         }
@@ -79,7 +85,7 @@
                         "bauble_tool_tips@bauble_reborn.hud_tip_text": {}
                     }
                 ]
-            }  
+            }
         ]
     }
 }

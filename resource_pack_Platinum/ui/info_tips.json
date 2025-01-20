@@ -1,283 +1,373 @@
 {
-   "info_panel" : {
-      "controls" : [
-         {
-            "image" : {
-               "alpha" : 0.60,
-               "clip_direction" : "left",
-               "clip_ratio" : 0.0,
-               "layer" : 1,
-               "texture" : "textures/ui/screen_background",
-               "type" : "image"
+    "info_panel": {
+        "controls": [
+            {
+                "image": {
+                    "alpha": 0.6,
+                    "clip_direction": "left",
+                    "clip_ratio": 0,
+                    "layer": 1,
+                    "texture": "textures/ui/screen_background",
+                    "type": "image"
+                }
+            },
+            {
+                "input_panel": {
+                    "button_mappings": [
+                        {
+                            "from_button_id": "button.menu_select",
+                            "mapping_type": "pressed",
+                            "to_button_id": "#netease_to_button_id"
+                        }
+                    ],
+                    "controls": [
+                        {
+                            "bg1": {
+                                "clip_direction": "left",
+                                "clip_ratio": 0,
+                                "layer": 1,
+                                "texture": "textures/ui/tooltip_default_background",
+                                "type": "image"
+                            }
+                        },
+                        {
+                            "bg2": {
+                                "clip_direction": "left",
+                                "clip_ratio": 0,
+                                "layer": 2,
+                                "texture": "textures/ui/dialog_background_hollow_5",
+                                "type": "image"
+                            }
+                        },
+                        {
+                            "label": {
+                                "anchor_from": "top_middle",
+                                "anchor_to": "top_middle",
+                                "color": [
+                                    0.3725,
+                                    0.3882,
+                                    0.4
+                                ],
+                                "font_type": "default",
+                                "layer": 3,
+                                "offset": [
+                                    0,
+                                    4
+                                ],
+                                "text": "使  用  须  知",
+                                "text_alignment": "center",
+                                "type": "label"
+                            }
+                        },
+                        {
+                            "content_panel": {
+                                "anchor_from": "top_middle",
+                                "anchor_to": "top_middle",
+                                "controls": [
+                                    {
+                                        "logo": {
+                                            "anchor_from": "top_left",
+                                            "anchor_to": "top_left",
+                                            "clip_direction": "left",
+                                            "clip_ratio": 0,
+                                            "layer": 1,
+                                            "size": [
+                                                30,
+                                                30
+                                            ],
+                                            "texture": "textures/ui/platinum_logo",
+                                            "type": "image"
+                                        }
+                                    },
+                                    {
+                                        "position": {
+                                            "anchor_from": "bottom_right",
+                                            "anchor_to": "bottom_right",
+                                            "clip_direction": "left",
+                                            "clip_ratio": 0,
+                                            "layer": 2,
+                                            "size": [
+                                                80,
+                                                80
+                                            ],
+                                            "texture": "textures/ui/item_position",
+                                            "type": "image"
+                                        }
+                                    },
+                                    {
+                                        "first_panel": {
+                                            "anchor_from": "top_left",
+                                            "anchor_to": "top_left",
+                                            "controls": [
+                                                {
+                                                    "first_text": {
+                                                        "anchor_from": "left_middle",
+                                                        "anchor_to": "left_middle",
+                                                        "font_type": "default",
+                                                        "layer": 1,
+                                                        "max_size": [
+                                                            "100.0%+0.0px",
+                                                            30
+                                                        ],
+                                                        "text": "非常感谢使用《铂-Platinum》饰品栏框架，本组件是一个开源的饰品栏框架模组。也就是说所有开发者都可以自由的基于本模组开发属于自己的饰品",
+                                                        "type": "label"
+                                                    }
+                                                }
+                                            ],
+                                            "layer": 3,
+                                            "offset": [
+                                                32,
+                                                0
+                                            ],
+                                            "size": [
+                                                "100.0%+-32.0px",
+                                                30
+                                            ],
+                                            "type": "panel"
+                                        }
+                                    },
+                                    {
+                                        "second_panel": {
+                                            "anchor_from": "top_left",
+                                            "anchor_to": "top_left",
+                                            "controls": [
+                                                {
+                                                    "label": {
+                                                        "anchor_from": "top_left",
+                                                        "anchor_to": "top_left",
+                                                        "font_type": "default",
+                                                        "layer": 1,
+                                                        "max_size": [
+                                                            "100.0%+0.0px",
+                                                            "100.0%+0.0px"
+                                                        ],
+                                                        "text": "所以理论上铂能够支持所有使用这个框架开发的饰品模组",
+                                                        "text_alignment": "center",
+                                                        "type": "label"
+                                                    }
+                                                },
+                                                {
+                                                    "label(0)": {
+                                                        "color": [
+                                                            0.7922,
+                                                            0.3608,
+                                                            0.3686
+                                                        ],
+                                                        "font_type": "default",
+                                                        "layer": 2,
+                                                        "text": "但这并不意味着《铂》能够兼容目前市场上的所有饰品模组",
+                                                        "text_alignment": "center",
+                                                        "type": "label"
+                                                    }
+                                                },
+                                                {
+                                                    "label(1)": {
+                                                        "font_type": "default",
+                                                        "layer": 3,
+                                                        "max_size": [
+                                                            "100.0%+0.0px",
+                                                            "default"
+                                                        ],
+                                                        "text": "请到饰品模组的简介详情处检查所装载的饰品模组是否是基于《铂》进行开发的",
+                                                        "type": "label"
+                                                    }
+                                                }
+                                            ],
+                                            "layer": 5,
+                                            "offset": [
+                                                0,
+                                                32
+                                            ],
+                                            "size": [
+                                                "100.0%+0.0px",
+                                                "100.0%+-114.0px"
+                                            ],
+                                            "type": "stack_panel"
+                                        }
+                                    },
+                                    {
+                                        "third_panel": {
+                                            "anchor_from": "bottom_left",
+                                            "anchor_to": "bottom_left",
+                                            "controls": [
+                                                {
+                                                    "label": {
+                                                        "font_type": "default",
+                                                        "layer": 1,
+                                                        "max_size": [
+                                                            "100.0%+0.0px",
+                                                            "default"
+                                                        ],
+                                                        "text": "《铂-Platinum》目前没有无法安装饰品的bug出现",
+                                                        "type": "label"
+                                                    }
+                                                },
+                                                {
+                                                    "label(0)": {
+                                                        "color": [
+                                                            0.7922,
+                                                            0.3608,
+                                                            0.3686
+                                                        ],
+                                                        "font_type": "default",
+                                                        "layer": 2,
+                                                        "max_size": [
+                                                            "100.0%+0.0px",
+                                                            "default"
+                                                        ],
+                                                        "text": "如发现饰品无法安装，请先到饰品模组简介处检查是否支持使用《铂》作为饰品栏框架",
+                                                        "type": "label"
+                                                    }
+                                                },
+                                                {
+                                                    "label(1)": {
+                                                        "font_type": "default",
+                                                        "layer": 3,
+                                                        "max_size": [
+                                                            "100.0%+0.0px",
+                                                            "default"
+                                                        ],
+                                                        "text": "如旅行者腰带(物品位置在右图)能够正常装备就意味着铂不存在任何问题",
+                                                        "type": "label"
+                                                    }
+                                                },
+                                                {
+                                                    "label(2)": {
+                                                        "font_type": "default",
+                                                        "layer": 4,
+                                                        "max_size": [
+                                                            "100.0%+0.0px",
+                                                            "default"
+                                                        ],
+                                                        "text": "请不要以\"无法安装饰品\"等问题对模组进行差评以及进行反馈\n最后再次感谢你的支持!",
+                                                        "type": "label"
+                                                    }
+                                                }
+                                            ],
+                                            "layer": 9,
+                                            "size": [
+                                                "100.0%+-82.0px",
+                                                78
+                                            ],
+                                            "type": "stack_panel"
+                                        }
+                                    }
+                                ],
+                                "layer": 4,
+                                "offset": [
+                                    0,
+                                    20
+                                ],
+                                "size": [
+                                    "100.0%+-22.0px",
+                                    "100.0%+-64.0px"
+                                ],
+                                "type": "panel"
+                            }
+                        },
+                        {
+                            "button_panel": {
+                                "anchor_from": "bottom_middle",
+                                "anchor_to": "bottom_middle",
+                                "controls": [
+                                    {
+                                        "button@common.button": {
+                                            "$control_alpha": 1,
+                                            "$default_texture": "textures/gui/newgui/buttons/border/base",
+                                            "$hover_texture": "textures/gui/newgui/buttons/border/hover",
+                                            "$is_new_nine_slice": false,
+                                            "$label_color": [
+                                                0.3647,
+                                                0.3647,
+                                                0.3647
+                                            ],
+                                            "$label_font_scale_factor": 1,
+                                            "$label_font_size": "normal",
+                                            "$label_layer": 3,
+                                            "$label_offset": [
+                                                0,
+                                                0
+                                            ],
+                                            "$label_text": "我已知晓，不再提示",
+                                            "$nine_slice_buttom": 0,
+                                            "$nine_slice_left": 0,
+                                            "$nine_slice_right": 0,
+                                            "$nine_slice_top": 0,
+                                            "$nineslice_size": [
+                                                2,
+                                                2,
+                                                2,
+                                                2
+                                            ],
+                                            "$pressed_button_name": "%netease_editor_template_namespace.click",
+                                            "$pressed_texture": "textures/gui/newgui/buttons/border/basePress",
+                                            "$texture_layer": 2,
+                                            "bindings": [
+                                                {
+                                                    "binding_collection_name": "",
+                                                    "binding_condition": "always_when_visible",
+                                                    "binding_type": "collection_details"
+                                                }
+                                            ],
+                                            "button_mappings": [],
+                                            "controls": [
+                                                {
+                                                    "default@netease_editor_template_namespace.default": {}
+                                                },
+                                                {
+                                                    "hover@netease_editor_template_namespace.hover": {}
+                                                },
+                                                {
+                                                    "pressed@netease_editor_template_namespace.pressed": {}
+                                                },
+                                                {
+                                                    "button_label@netease_editor_template_namespace.button_label": {}
+                                                }
+                                            ],
+                                            "default_control": "default",
+                                            "hover_control": "hover",
+                                            "is_handle_button_move_event": true,
+                                            "offset": [
+                                                "0.0%+0.0px",
+                                                0
+                                            ],
+                                            "pressed_control": "pressed",
+                                            "size": [
+                                                "50.0%+0.0px",
+                                                "0.0%+30.0px"
+                                            ],
+                                            "type": "button"
+                                        }
+                                    }
+                                ],
+                                "layer": 18,
+                                "offset": [
+                                    0,
+                                    -5
+                                ],
+                                "size": [
+                                    "100.0%+-16.0px",
+                                    34
+                                ],
+                                "type": "panel"
+                            }
+                        }
+                    ],
+                    "layer": 2,
+                    "modal": true,
+                    "size": [
+                        "80.0%+0.0px",
+                        "90.0%+0.0px"
+                    ],
+                    "type": "input_panel"
+                }
             }
-         },
-         {
-            "input_panel" : {
-               "button_mappings" : [
-                  {
-                     "from_button_id" : "button.menu_select",
-                     "mapping_type" : "pressed",
-                     "to_button_id" : "#netease_to_button_id"
-                  }
-               ],
-               "controls" : [
-                  {
-                     "bg1" : {
-                        "clip_direction" : "left",
-                        "clip_ratio" : 0.0,
-                        "layer" : 1,
-                        "texture" : "textures/ui/tooltip_default_background",
-                        "type" : "image"
-                     }
-                  },
-                  {
-                     "bg2" : {
-                        "clip_direction" : "left",
-                        "clip_ratio" : 0.0,
-                        "layer" : 2,
-                        "texture" : "textures/ui/dialog_background_hollow_5",
-                        "type" : "image"
-                     }
-                  },
-                  {
-                     "label" : {
-                        "anchor_from" : "top_middle",
-                        "anchor_to" : "top_middle",
-                        "color" : [ 0.3725490196078431, 0.3882352941176471, 0.40 ],
-                        "font_type" : "default",
-                        "layer" : 3,
-                        "offset" : [ 0.0, 4.0 ],
-                        "text" : "使  用  须  知",
-                        "text_alignment" : "center",
-                        "type" : "label"
-                     }
-                  },
-                  {
-                     "content_panel" : {
-                        "anchor_from" : "top_middle",
-                        "anchor_to" : "top_middle",
-                        "controls" : [
-                           {
-                              "logo" : {
-                                 "anchor_from" : "top_left",
-                                 "anchor_to" : "top_left",
-                                 "clip_direction" : "left",
-                                 "clip_ratio" : 0.0,
-                                 "layer" : 1,
-                                 "size" : [ 30.0, 30.0 ],
-                                 "texture" : "textures/ui/platinum_logo",
-                                 "type" : "image"
-                              }
-                           },
-                           {
-                              "position" : {
-                                 "anchor_from" : "bottom_right",
-                                 "anchor_to" : "bottom_right",
-                                 "clip_direction" : "left",
-                                 "clip_ratio" : 0.0,
-                                 "layer" : 2,
-                                 "size" : [ 80.0, 80.0 ],
-                                 "texture" : "textures/ui/item_position",
-                                 "type" : "image"
-                              }
-                           },
-                           {
-                              "first_panel" : {
-                                 "anchor_from" : "top_left",
-                                 "anchor_to" : "top_left",
-                                 "controls" : [
-                                    {
-                                       "first_text" : {
-                                          "anchor_from" : "left_middle",
-                                          "anchor_to" : "left_middle",
-                                          "font_type" : "default",
-                                          "layer" : 1,
-                                          "max_size" : [ "100.0%+0.0px", 30.0 ],
-                                          "text" : "非常感谢使用《铂-Platinum》饰品栏框架，本组件是一个开源的饰品栏框架模组。也就是说所有开发者都可以自由的基于本模组开发属于自己的饰品",
-                                          "type" : "label"
-                                       }
-                                    }
-                                 ],
-                                 "layer" : 3,
-                                 "offset" : [ 32.0, 0.0 ],
-                                 "size" : [ "100.0%+-32.0px", 30.0 ],
-                                 "type" : "panel"
-                              }
-                           },
-                           {
-                              "second_panel" : {
-                                 "anchor_from" : "top_left",
-                                 "anchor_to" : "top_left",
-                                 "controls" : [
-                                    {
-                                       "label" : {
-                                          "anchor_from" : "top_left",
-                                          "anchor_to" : "top_left",
-                                          "font_type" : "default",
-                                          "layer" : 1,
-                                          "max_size" : [ "100.0%+0.0px", "100.0%+0.0px" ],
-                                          "text" : "所以理论上铂能够支持所有使用这个框架开发的饰品模组",
-                                          "text_alignment" : "center",
-                                          "type" : "label"
-                                       }
-                                    },
-                                    {
-                                       "label(0)" : {
-                                          "color" : [ 0.7921568627450980, 0.3607843137254902, 0.3686274509803922 ],
-                                          "font_type" : "default",
-                                          "layer" : 2,
-                                          "text" : "但这并不意味着《铂》能够兼容目前市场上的所有饰品模组",
-                                          "text_alignment" : "center",
-                                          "type" : "label"
-                                       }
-                                    },
-                                    {
-                                       "label(1)" : {
-                                          "font_type" : "default",
-                                          "layer" : 3,
-                                          "max_size" : [ "100.0%+0.0px", "default" ],
-                                          "text" : "请到饰品模组的简介详情处检查所装载的饰品模组是否是基于《铂》进行开发的",
-                                          "type" : "label"
-                                       }
-                                    }
-                                 ],
-                                 "layer" : 5,
-                                 "offset" : [ 0.0, 32.0 ],
-                                 "size" : [ "100.0%+0.0px", "100.0%+-114.0px" ],
-                                 "type" : "stack_panel"
-                              }
-                           },
-                           {
-                              "third_panel" : {
-                                 "anchor_from" : "bottom_left",
-                                 "anchor_to" : "bottom_left",
-                                 "controls" : [
-                                    {
-                                       "label" : {
-                                          "font_type" : "default",
-                                          "layer" : 1,
-                                          "max_size" : [ "100.0%+0.0px", "default" ],
-                                          "text" : "《铂-Platinum》目前没有无法安装饰品的bug出现",
-                                          "type" : "label"
-                                       }
-                                    },
-                                    {
-                                       "label(0)" : {
-                                          "color" : [ 0.7921568627450980, 0.3607843137254902, 0.3686274509803922 ],
-                                          "font_type" : "default",
-                                          "layer" : 2,
-                                          "max_size" : [ "100.0%+0.0px", "default" ],
-                                          "text" : "如发现饰品无法安装，请先到饰品模组简介处检查是否支持使用《铂》作为饰品栏框架",
-                                          "type" : "label"
-                                       }
-                                    },
-                                    {
-                                       "label(1)" : {
-                                          "font_type" : "default",
-                                          "layer" : 3,
-                                          "max_size" : [ "100.0%+0.0px", "default" ],
-                                          "text" : "如旅行者腰带(物品位置在右图)能够正常装备就意味着铂不存在任何问题",
-                                          "type" : "label"
-                                       }
-                                    },
-                                    {
-                                       "label(2)" : {
-                                          "font_type" : "default",
-                                          "layer" : 4,
-                                          "max_size" : [ "100.0%+0.0px", "default" ],
-                                          "text" : "请不要以\"无法安装饰品\"等问题对模组进行差评以及进行反馈\n最后再次感谢你的支持!",
-                                          "type" : "label"
-                                       }
-                                    }
-                                 ],
-                                 "layer" : 9,
-                                 "size" : [ "100.0%+-82.0px", 78.0 ],
-                                 "type" : "stack_panel"
-                              }
-                           }
-                        ],
-                        "layer" : 4,
-                        "offset" : [ 0.0, 20.0 ],
-                        "size" : [ "100.0%+-22.0px", "100.0%+-64.0px" ],
-                        "type" : "panel"
-                     }
-                  },
-                  {
-                     "button_panel" : {
-                        "anchor_from" : "bottom_middle",
-                        "anchor_to" : "bottom_middle",
-                        "controls" : [
-                           {
-                              "button@common.button" : {
-                                 "$control_alpha" : 1.0,
-                                 "$default_texture" : "textures/gui/newgui/buttons/border/base",
-                                 "$hover_texture" : "textures/gui/newgui/buttons/border/hover",
-                                 "$is_new_nine_slice" : false,
-                                 "$label_color" : [ 0.3647058823529412, 0.3647058823529412, 0.3647058823529412 ],
-                                 "$label_font_scale_factor" : 1.0,
-                                 "$label_font_size" : "normal",
-                                 "$label_layer" : 3,
-                                 "$label_offset" : [ 0, 0 ],
-                                 "$label_text" : "我已知晓，不再提示",
-                                 "$nine_slice_buttom" : 0,
-                                 "$nine_slice_left" : 0,
-                                 "$nine_slice_right" : 0,
-                                 "$nine_slice_top" : 0,
-                                 "$nineslice_size" : [ 2.0, 2.0, 2.0, 2.0 ],
-                                 "$pressed_button_name" : "%netease_editor_template_namespace.click",
-                                 "$pressed_texture" : "textures/gui/newgui/buttons/border/basePress",
-                                 "$texture_layer" : 2,
-                                 "bindings" : [
-                                    {
-                                       "binding_collection_name" : "",
-                                       "binding_condition" : "always_when_visible",
-                                       "binding_type" : "collection_details"
-                                    }
-                                 ],
-                                 "button_mappings" : [],
-                                 "controls" : [
-                                    {
-                                       "default@netease_editor_template_namespace.default" : {}
-                                    },
-                                    {
-                                       "hover@netease_editor_template_namespace.hover" : {}
-                                    },
-                                    {
-                                       "pressed@netease_editor_template_namespace.pressed" : {}
-                                    },
-                                    {
-                                       "button_label@netease_editor_template_namespace.button_label" : {}
-                                    }
-                                 ],
-                                 "default_control" : "default",
-                                 "hover_control" : "hover",
-                                 "is_handle_button_move_event" : true,
-                                 "offset" : [ "0.0%+0.0px", 0.0 ],
-                                 "pressed_control" : "pressed",
-                                 "size" : [ "50.0%+0.0px", "0.0%+30.0px" ],
-                                 "type" : "button"
-                              }
-                           }
-                        ],
-                        "layer" : 18,
-                        "offset" : [ 0.0, -5.0 ],
-                        "size" : [ "100.0%+-16.0px", 34.0 ],
-                        "type" : "panel"
-                     }
-                  }
-               ],
-               "layer" : 2,
-               "modal" : true,
-               "size" : [ "80.0%+0.0px", "90.0%+0.0px" ],
-               "type" : "input_panel"
-            }
-         }
-      ],
-      "layer" : 1,
-      "type" : "panel"
-   },
-   "namespace" : "info_tips",
-   "screen@common.base_screen" : {
-      "$screen_content" : "info_tips.info_panel"
-   }
+        ],
+        "layer": 1,
+        "type": "panel"
+    },
+    "namespace": "info_tips",
+    "screen@common.base_screen": {
+        "$screen_content": "info_tips.info_panel"
+    }
 }

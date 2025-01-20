@@ -1,6 +1,7 @@
 # coding=utf-8
 import logging
 
+from ..QuModLibs.QuClientApi.ui.controls.baseUIControl import BaseUIControl
 from ..QuModLibs.Client import *
 from ..QuModLibs.Modules.Services.Client import BaseService, QRequests
 from ..QuModLibs.QuClientApi.ui.screenNode import ScreenNode
@@ -168,6 +169,9 @@ class BaubleClientService(BaseService):
         # 注册经典背包界面代理
         NativeScreenManager.instance().RegisterScreenProxy("crafting.inventory_screen",
                                                            "Script_Platinum.Script_UI.baubleClient.InventoryClassicProxy")
+        # 注册口袋背包界面代理
+        NativeScreenManager.instance().RegisterScreenProxy("crafting_pocket.inventory_screen_pocket",
+                                                           "Script_Platinum.Script_UI.baubleClient.InventoryPocketProxy")
 
     @BaseService.Listen("AddPlayerCreatedClientEvent")
     def onAddPlayerCreatedClientEvent(self, data):
@@ -203,9 +207,10 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         CustomUIScreenProxy.__init__(self, screenName, screenNode)
         self.basePath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel"
         self.entryBtnPath = self.basePath + "/content_stack_panel/player_inventory/inventory_panel_top_half/player_armor_panel/player_bg/bauble_button"
-        self.survivalPaddingPath = self.basePath + "/content_stack_panel/survival_padding"
+        self.recipeBtnTogglePath = self.basePath + "/content_stack_panel/toolbar_anchor/toolbar_panel/toolbar_background/toolbar_stack_panel/recipe_book_layout_toggle_panel_creative/recipe_book_layout_toggle"
         self.hotbarSlotPathBase = self.basePath + "/content_stack_panel/player_inventory/hotbar_grid/grid_item_for_hotbar{index}"
         self.inventorySlotPathBase = self.basePath + "/content_stack_panel/player_inventory/inventory_panel_bottom_half/inventory_panel/inventory_grid/grid_item_for_inventory{index}"
+        self.creativeBagScrollPath = self.basePath + "/content_stack_panel/recipe_book/tab_content_panel/tab_content_search_bar_panel/scroll_pane"
         self.cursorSlotPath = self.basePath + "/inventory_selected_icon_button/default/selected_item_icon"
         self.flyingPanelPath = self.basePath + "/flying_item_renderer"
         self.toolTipsImgPath = self.basePath + "/bauble_tool_tips"
@@ -213,7 +218,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.screen = self.GetScreenNode()  # type: ScreenNode
 
         self.isShowBaublePanel = False
-        self.pureBagPage = False
+        self.recipeBagPage = False
         self.entryPosition = BaubleDataController.getUiPosition()
 
         self.baubleSelectedIndex = -1
@@ -234,11 +239,13 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.setEntryPosition()
 
     def OnTick(self):
-        self.pureBagPage = self.screen.GetBaseUIControl(self.survivalPaddingPath).GetVisible()
+        recipeBagPage = self.screen.GetBaseUIControl(self.recipeBtnTogglePath).asSwitchToggle().GetToggleState()
+        if recipeBagPage != self.recipeBagPage:
+            self.recipeBagPage = recipeBagPage
+            self.screen.UpdateScreen()
         self.inputMode = self.optionComp.GetToggleOption(minecraftEnum.OptionId.INPUT_MODE)
 
     def OnDestroy(self):
-        # self.flyingItemController.OnDestroy()
         UnListenForEvent("OnItemSlotButtonClickedEvent", self, self.onItemSlotButtonClickedEvent)
 
     def setEntryPosition(self):
@@ -259,14 +266,18 @@ class InventoryClassicProxy(CustomUIScreenProxy):
     @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.bauble_button")
     def onBaubleButtonClick(self, args):
         self.isShowBaublePanel = not self.isShowBaublePanel
+        playerMode = clientApi.GetEngineCompFactory().CreateGame(levelId).GetPlayerGameType(playerId)
+        if self.isShowBaublePanel and playerMode == minecraftEnum.GameType.Creative:
+            self.setToolTips("§c========注意========\n暂不支持直接从创造物品栏装备饰品\n请先获取到背包当中§r")
+        self.screen.UpdateScreen()
 
     @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.vertical_grid.left_visible")
     def bindingPanelLeftVisible(self):
-        return self.isShowBaublePanel
+        return self.isShowBaublePanel and not self.recipeBagPage
 
     @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.vertical_grid.right_visible")
     def bindingPanelRightVisible(self):
-        return self.isShowBaublePanel and not self.pureBagPage
+        return self.isShowBaublePanel and self.recipeBagPage
 
     # 提示框信息
     @Binding.binding(Binding.BF_BindString, "#bauble_reborn.tip_text")
@@ -347,9 +358,17 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             cursorItem = self.screen.GetBaseUIControl(self.cursorSlotPath).asItemRenderer()
             if cursorItem.GetUiItem().get("itemName"):
                 isSelectedInventory = True
-        if not isSelectedInventory:
+        if not isSelectedInventory and not isSelectedCreativeBag:
             self.baubleSelectedIndex = index if self.baubleSelectedIndex != index else -1
             self.baubleSelectedPath = buttonPath if self.baubleSelectedIndex != -1 else ""
+        elif isSelectedInventory:
+            self.baubleSelectedIndex = -1
+            self.baubleSelectedPath = ""
+            self.setToolTips("§c请先点击饰品栏\n再点击需要装备的饰品§r")
+        elif isSelectedCreativeBag:
+            self.baubleSelectedIndex = -1
+            self.baubleSelectedPath = ""
+            self.setToolTips("§c暂不支持直接从创造物品中装备\n请先获取到背包中§r")
 
         baubleItem = BaubleDataController.getBaubleInfo(
             BaubleSlotManager().getBaubleSlotList()[index]["baubleSlotIdentifier"])
@@ -432,8 +451,8 @@ class InventoryClassicProxy(CustomUIScreenProxy):
 
                     Call("GivePlayerItem", baubleDict, playerId, inventorySelectedIndex)
                     # 播放飞行物品动画
-                    self.flyingItemController.FlyingItem(baubleDict, self.getBaubleSlotPos(self.baubleSelectedPath),
-                                                         self.getInventorySlotPos(inventorySelectedIndex))
+                    self.flyingItem(baubleDict, self.getBaubleSlotPos(self.baubleSelectedPath),
+                                    self.getInventorySlotPos(inventorySelectedIndex))
                     # 广播卸下饰品事件
                     BaubleBroadcastService.access().onBaubleTakeOff(baubleDict, baubleSlotId)
                     self.baubleSelectedIndex = -1
@@ -458,15 +477,15 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             if oldBaubleItem:
                 Call("GivePlayerItem", oldBaubleItem, playerId, inventoryIndex)
                 # 播放飞行物品动画
-                self.flyingItemController.FlyingItem(oldBaubleItem, self.getBaubleSlotPos(self.baubleSelectedPath),
-                                                     self.getInventorySlotPos(inventoryIndex))
+                self.flyingItem(oldBaubleItem, self.getBaubleSlotPos(self.baubleSelectedPath),
+                                self.getInventorySlotPos(inventoryIndex))
                 BaubleBroadcastService.access().onBaubleTakeOff(oldBaubleItem, baubleSlotId)
             # 装备新物品
             BaubleDataController.addBaubleInfo(baubleSlotId, baubleItem)
             BaubleBroadcastService.access().onBaublePutOn(baubleItem, baubleSlotId)
             # 播放飞行物品动画
-            self.flyingItemController.FlyingItem(baubleItem, self.getInventorySlotPos(inventoryIndex),
-                                                 self.getBaubleSlotPos(self.baubleSelectedPath))
+            self.flyingItem(baubleItem, self.getInventorySlotPos(inventoryIndex),
+                            self.getBaubleSlotPos(self.baubleSelectedPath))
         self.baubleSelectedIndex = -1
         self.baubleSelectedPath = ""
 
@@ -506,6 +525,95 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             text.StopAnimation()
             text.PlayAnimation()
 
+    def flyingItem(self, itemDict, startPos, endPos):
+        self.flyingItemController.FlyingItem(itemDict, startPos, endPos)
+
+
+class InventoryPocketProxy(InventoryClassicProxy):
+    __instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls.__instance:
+            cls.__instance = super(InventoryPocketProxy, cls).__new__(cls)
+        return cls.__instance
+
+    def __init__(self, screenName, screenNode):
+        InventoryClassicProxy.__init__(self, screenName, screenNode)
+        self.isLockControl = False
+        self.lockTime = 0
+
+        self.basePath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel"
+        self.cursorSlotPath = self.basePath + "/base_panel/inventory_selected_icon_button/default/selected_item_icon"
+        self.entryPosition = self.basePath + "/base_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg/bauble_button"
+        self.inventorySlotPathBase = self.basePath + "/base_panel/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane/scroll_touch/scroll_view/panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{index}"
+        self.hotbarSlotPathBase = self.basePath + "/base_panel/hotbar_and_panels/hotbar_section_panel/hotbar/hotbar_grid/hotbar_grid_item{index}"
+
+        self.armorBasePath = self.basePath + "/base_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/label_and_renderer"
+        self.armorRenderPath = self.armorBasePath + "/label_panel"
+        self.armorRenderPath2 = self.armorBasePath + "/renderer_panel"
+
+    def OnDestroy(self):
+        super(InventoryPocketProxy, self).OnDestroy()
+        logging.debug("铂: 口袋背包界面代理销毁")
+
+    def OnCreate(self):
+        super(InventoryPocketProxy, self).OnCreate()
+        logging.debug("铂: 口袋背包界面代理创建")
+
+    def OnTick(self):
+        self.inputMode = self.optionComp.GetToggleOption(minecraftEnum.OptionId.INPUT_MODE)
+        # 锁定控制
+        if self.isLockControl:
+            self.lockTime += 1
+            if self.lockTime > 3 * 2:
+                self.isLockControl = False
+                self.lockTime = 0
+
+    @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.bauble_button")
+    def onBaubleButtonClick(self, args):
+        if not self.isLockControl:
+            self.isLockControl = True
+            super(InventoryPocketProxy, self).onBaubleButtonClick(args)
+
+    @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.pocket_grid.visible")
+    def bindingPocketGridVisible(self):
+        self.screen.GetBaseUIControl(self.armorRenderPath).SetVisible(not self.isShowBaublePanel)
+        self.screen.GetBaseUIControl(self.armorRenderPath2).SetVisible(not self.isShowBaublePanel)
+        return self.isShowBaublePanel
+
+    # 背包点击
+    def onItemSlotButtonClickedEvent(self, data):
+        if not self.isLockControl:
+            self.isLockControl = True
+            super(InventoryPocketProxy, self).onItemSlotButtonClickedEvent(data)
+
+    # 饰品栏点击
+    @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.slot_button")
+    def onSlotButtonClick(self, args):
+        if not self.isLockControl:
+            self.isLockControl = True
+            super(InventoryPocketProxy, self).onSlotButtonClick(args)
+
+    def getIsTouchInventorySelected(self):
+        for i in range(9):
+            index = i + 1
+            path = self.hotbarSlotPathBase.format(index=index) + "/item_selected_image"
+            if self.screen.GetBaseUIControl(path).GetVisible():
+                return True
+        for i in range(27):
+            try:
+                index = i + 1
+                path = self.inventorySlotPathBase.format(index=index) + "/item_selected_image"
+                if self.screen.GetBaseUIControl(path).GetVisible():
+                    return True
+            except:
+                pass
+        return False
+
+    def flyingItem(self, itemDict, startPos, endPos):
+        self.flyingItemController.FlyingItem(itemDict, startPos, endPos, (24.0, 24.0))
+
 
 def ratioToColor(ratio):
-    return 1 - ratio, ratio, 0.0, 1.0
+    # 稍微偏灰色
+    return (1 - ratio) * 0.9, ratio * 0.9, 0.0, 1.0

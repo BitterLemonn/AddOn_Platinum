@@ -13,5 +13,42 @@
                 ]
             }
         ]
+    },
+    "pocket_armor_tab_content/label_and_renderer": {
+        "modifications": [
+            {
+                "array_name": "controls",
+                "operation": "insert_front",
+                "value": [
+                    {
+                        "bauble_pocket_panel@bauble_reborn.bauble_pocket_panel": {
+                            "$button_size": [28, 28],
+                            "$item_renderer_size": [24, 24],
+                            "$durability_bar_size": [20, 1.5],
+                            "$durability_bar_offset": [0, 8],
+                            "bindings": [
+                                {
+                                    "binding_name": "#bauble_reborn.pocket_grid.visible",
+                                    "binding_name_override": "#visible"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "recipe_inventory_screen_content_pocket": {
+        "modifications": [
+            {
+                "array_name": "controls",
+                "operation": "insert_back",
+                "value": [
+                    {
+                        "bauble_tool_tips@bauble_reborn.hud_tip_text": {}
+                    }
+                ]
+            }
+        ]
     }
 }
