@@ -15,7 +15,7 @@ class BroadcasterClient(clientApi.GetClientSystemCls()):
         """
         获取玩家饰品信息
         """
-        BroadcasterClientService.access().onGetBaubleInfo(BaubleBroadcastService.access().getBaubleInfo())
+        BroadcasterClientService.access().onGetBaubleInfo(BaubleBroadcastService.access().getPlayerBaubleInfo())
 
     @staticmethod
     def SetBaubleInfo(baubleDict):
@@ -32,7 +32,7 @@ class BroadcasterClient(clientApi.GetClientSystemCls()):
         :param baubleInfo: dict
         :param slotName: str
         """
-        BaubleBroadcastService.access().setPlayerBaubleInfoWithSlot(baubleInfo, slotName)
+        BaubleBroadcastService.access().setPlayerBaubleInfoWithSlot(slotName, baubleInfo)
 
     @staticmethod
     def DecreaseBaubleDurability(slotName, decrease=1):

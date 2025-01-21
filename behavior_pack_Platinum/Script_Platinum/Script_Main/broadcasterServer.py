@@ -1,6 +1,7 @@
 # coding=utf-8
 import logging
 
+from ..BroadcastEvent.getBaubleSlotInfoEvent import GetGlobalBaubleSlotInfoEvent, GetTargetBaubleSlotInfoEvent
 from ..BroadcastEvent.getPlayerBaubleInfoEvent import GetPlayerBaubleInfoServerEvent
 from ..QuModLibs.Server import *
 from ..QuModLibs.Modules.Services.Server import BaseService
@@ -170,3 +171,19 @@ class BroadcasterServerService(BaseService):
         baubleDict = data.baubleDict
         server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
         server.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, {"playerId": playerId, "baubleDict": baubleDict})
+
+    @BaseService.ServiceListen(GetGlobalBaubleSlotInfoEvent)
+    def onGetGlobalBaubleSlotInfo(self, data):
+        data = GetGlobalBaubleSlotInfoEvent.getData(data)
+        baubleSlotList = data.baubleSlotList
+        server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        server.BroadcastEvent(commonConfig.BAUBLE_GET_GLOBAL_INFO_EVENT, {"baubleSlotList": baubleSlotList})
+
+    @BaseService.ServiceListen(GetTargetBaubleSlotInfoEvent)
+    def onGetPlayerBaubleInfo(self, data):
+        data = GetTargetBaubleSlotInfoEvent.getData(data)
+        playerId = data.playerId
+        baubleSlotList = data.baubleSlotList
+        server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        server.BroadcastEvent(commonConfig.BAUBLE_GET_TARGET_INFO_EVENT,
+                              {"playerId": playerId, "baubleSlotList": baubleSlotList})

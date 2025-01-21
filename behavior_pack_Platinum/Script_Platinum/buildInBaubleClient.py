@@ -9,6 +9,7 @@ class BuildInBaubleClient(clientApi.GetClientSystemCls()):
 
     def __init__(self, namespace, name):
         super(BuildInBaubleClient, self).__init__(namespace, name)
+        logging.debug("BuildInBaubleClient init")
         self.listenEvent()
 
     def listenEvent(self):
@@ -22,20 +23,25 @@ class BuildInBaubleClient(clientApi.GetClientSystemCls()):
     def onBaubleEquipped(self, data):
         """
         饰品装备事件
-        :param data: {playerId: str, itemDict: dict, baubleSlot: str, slotIndex: int}
+        :param data: {"slotIndex": Int, "playerId": str, "isFirstLoad": bool, "baubleSlot": str, "baubleSlotId": str "itemDict": dict}
         """
         playerId = data["playerId"]
         bauble = data["itemDict"]
+        isFirstLoad = data["isFirstLoad"]
         slot = data["baubleSlot"]
+        slotId = data["baubleSlotId"]
         slotIndex = data["slotIndex"]
 
     def onBaubleUnequipped(self, data):
         """
         饰品卸下事件
-        :param data: {playerId: str, itemDict: dict, baubleSlot: str, slotIndex: int}
+        :param data: {"slotIndex": Int, "playerId": str, "isFirstLoad": bool, "baubleSlot": str, "baubleSlotId": str "itemDict": dict}
         :return:
         """
+        logging.error(data)
         playerId = data["playerId"]
         bauble = data["itemDict"]
+        isFirstLoad = data["isFirstLoad"]
         slot = data["baubleSlot"]
+        slotId = data["baubleSlotId"]
         slotIndex = data["slotIndex"]

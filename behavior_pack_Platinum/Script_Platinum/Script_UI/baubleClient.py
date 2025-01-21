@@ -22,6 +22,7 @@ class BaubleBroadcastService(BaseService):
 
     def __init__(self):
         BaseService.__init__(self)
+        self.alreadySyncSlot = False
 
     def onBaublePutOn(self, baubleItem, baubleSlotId, isFirstLoad=False):
         slotIndex = BaubleSlotManager().getSlotIndex(baubleSlotId) + 1
@@ -114,6 +115,23 @@ class BaubleBroadcastService(BaseService):
         addSlotList = BaubleSlotManager().syncDefaultSlot(defaultSlot)
         for slotId in addSlotList:
             BaubleDataController.addBaubleSlot(slotId)
+        if not self.alreadySyncSlot:
+            self.alreadySyncSlot = True
+            # 获取玩家饰品栏信息
+            baubleInfoDict = BaubleDataController.getAllBaubleInfo()
+            print (
+                "[DEBUG]铂: 玩家: {} 饰品栏信息".format(
+                    clientApi.GetEngineCompFactory().CreateName(playerId).GetName()))
+            for baubleSlotId, baubleItem in baubleInfoDict.items():
+                if baubleItem:
+                    BaubleBroadcastService.access().onBaublePutOn(baubleItem, baubleSlotId, True)
+                    print("[DEBUG]{} : {}".format(baubleSlotId, baubleItem["newItemName"] if baubleItem else None))
+            # 移除未注册的饰品栏信息
+            removeInfoDict = BaubleDataController.checkUnRegisterSlot()
+            for baubleId, baubleInfo in (removeInfoDict or {}).items():
+                logging.error("铂: 由于玩家饰品信息出现未注册的饰品栏 {}, 已取消穿戴对应栏位的饰品: {}"
+                              .format(baubleId, baubleInfo["newItemName"]))
+                Call("GivePlayerItem", baubleInfo, playerId)
 
     @BaseService.REG_API("platinum/addBaubleSlot")
     def addBaubleSlot(self, slotId, slotType, slotName, slotPlaceHolderPath, isDefault=False):
@@ -156,6 +174,10 @@ class BaubleBroadcastService(BaseService):
             if baubleItem:
                 Call("GivePlayerItem", baubleItem, playerId)
 
+    @BaseService.REG_API("platinum/getBaubleSlotInfo")
+    def getBaubleSlotInfo(self):
+        return {"playerId": playerId, "baubleSlotList": BaubleSlotManager().getBaubleSlotList()}
+
 
 @BaseService.Init
 class BaubleClientService(BaseService):
@@ -172,30 +194,6 @@ class BaubleClientService(BaseService):
         # 注册口袋背包界面代理
         NativeScreenManager.instance().RegisterScreenProxy("crafting_pocket.inventory_screen_pocket",
                                                            "Script_Platinum.Script_UI.baubleClient.InventoryPocketProxy")
-
-    @BaseService.Listen("AddPlayerCreatedClientEvent")
-    def onAddPlayerCreatedClientEvent(self, data):
-        targetId = data.get("playerId")
-        if targetId == playerId:
-            # 添加已注册默认的饰品栏信息
-            baubleIdList = BaubleSlotManager().getBaubleSlotIdentifierList(True)
-            for baubleId in baubleIdList:
-                BaubleDataController.addBaubleSlot(baubleId)
-            # 获取玩家饰品栏信息
-            baubleInfoDict = BaubleDataController.getAllBaubleInfo()
-            print (
-                "[DEBUG]铂: 玩家: {} 饰品栏信息".format(
-                    clientApi.GetEngineCompFactory().CreateName(playerId).GetName()))
-            for baubleSlotId, baubleItem in baubleInfoDict.items():
-                if baubleItem:
-                    BaubleBroadcastService.access().onBaublePutOn(baubleItem, baubleSlotId, True)
-                    print("[DEBUG]{} : {}".format(baubleSlotId, baubleItem["newItemName"] if baubleItem else None))
-            # 移除未注册的饰品栏信息
-            removeInfoDict = BaubleDataController.checkUnRegisterSlot()
-            for baubleId, baubleInfo in (removeInfoDict or {}).items():
-                logging.error("铂: 由于玩家饰品信息出现未注册的饰品栏 {}, 已取消穿戴对应栏位的饰品: {}"
-                              .format(baubleId, baubleInfo["newItemName"]))
-                Call("GivePlayerItem", baubleInfo, playerId)
 
     @BaseService.REG_API("platinum/changeUiPosition")
     def changeUiPosition(self, position):
@@ -358,17 +356,13 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             cursorItem = self.screen.GetBaseUIControl(self.cursorSlotPath).asItemRenderer()
             if cursorItem.GetUiItem().get("itemName"):
                 isSelectedInventory = True
-        if not isSelectedInventory and not isSelectedCreativeBag:
+        if not isSelectedInventory:
             self.baubleSelectedIndex = index if self.baubleSelectedIndex != index else -1
             self.baubleSelectedPath = buttonPath if self.baubleSelectedIndex != -1 else ""
         elif isSelectedInventory:
             self.baubleSelectedIndex = -1
             self.baubleSelectedPath = ""
             self.setToolTips("§c请先点击饰品栏\n再点击需要装备的饰品§r")
-        elif isSelectedCreativeBag:
-            self.baubleSelectedIndex = -1
-            self.baubleSelectedPath = ""
-            self.setToolTips("§c暂不支持直接从创造物品中装备\n请先获取到背包中§r")
 
         baubleItem = BaubleDataController.getBaubleInfo(
             BaubleSlotManager().getBaubleSlotList()[index]["baubleSlotIdentifier"])

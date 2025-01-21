@@ -1,4 +1,5 @@
 # coding=utf-8
+from ..BroadcastEvent.getBaubleSlotInfoEvent import GetGlobalBaubleSlotInfoEvent, GetTargetBaubleSlotInfoEvent
 from ..DataManager.baubleInfoManager import BaubleInfoManager
 from ..DataManager.baubleSlotManager import BaubleSlotManager
 from ..BroadcastEvent.getPlayerBaubleInfoEvent import GetPlayerBaubleInfoServerEvent
@@ -34,16 +35,22 @@ class BaubleServerService(BaseService):
         playerId = data["playerId"]
         msg = data["message"]
         if msg.startswith("#platinum_"):
+            comp = serverApi.GetEngineCompFactory().CreateMsg(playerId)
+            data["cancel"] = True
             msg = msg.replace("#platinum_", "")
             if msg in ["left_top", "right_top", "left_bottom", "right_bottom"]:
                 self.syncRequest(playerId, "platinum/changeUiPosition", QRequests.Args(msg))
-                data["cancel"] = True
-                comp = serverApi.GetEngineCompFactory().CreateMsg(playerId)
 
                 position = "左上角" if msg == "left_top" else "右上角" \
                     if msg == "right_top" else "左下角" if msg == "left_bottom" else "右下角"
 
                 comp.NotifyOneMessage(playerId, "铂: 饰品栏按钮已切换至{}".format(position))
+            elif msg in ["get_gs"]:
+                self.getGlobalBaubleSlotInfo()
+            elif msg in ["get_ts"]:
+                self.getTargetBaubleSlotInfo(playerId)
+            else:
+                comp.NotifyOneMessage(playerId, "§c铂: 未知指令§r")
 
     # 右键穿戴饰品
     @BaseService.Listen(Events.ServerItemTryUseEvent)
@@ -173,6 +180,27 @@ class BaubleServerService(BaseService):
     # 删除全部玩家的饰品栏槽位
     def removeGlobalBaubleSlot(self, slotId):
         self.syncRequest("*", "platinum/removeBaubleSlot", QRequests.Args(slotId))
+
+    # 获取已注册槽位信息
+    def getGlobalBaubleSlotInfo(self):
+        baubleSlotList = BaubleSlotServerService.access().getBaubleSlotList()
+        # 移除placeholderPath key
+        for slot in baubleSlotList:
+            slot.pop("placeholderPath")
+        self.broadcast(GetGlobalBaubleSlotInfoEvent(baubleSlotList))
+
+    # 获取玩家拥有的饰品槽位信息
+    def getTargetBaubleSlotInfo(self, playerId):
+        self.syncRequest(playerId, "platinum/getBaubleSlotInfo", QRequests.Args().setCallBack(self.onGetBaubleSlotInfo))
+
+    def onGetBaubleSlotInfo(self, data):
+        data = data.data
+        playerId = data["playerId"]
+        baubleSlotList = data["baubleSlotList"]
+        # 移除placeholderPath key
+        for slot in baubleSlotList:
+            slot.pop("placeholderPath")
+        self.broadcast(GetTargetBaubleSlotInfoEvent(playerId, baubleSlotList))
 
 
 @AllowCall

@@ -13,6 +13,8 @@ import logging
 BAUBLE_EQUIPPED_EVENT = "BaubleEquipped"
 BAUBLE_UNEQUIPPED_EVENT = "BaubleUnequipped"
 BAUBLE_GET_INFO_EVENT = "BaubleGetInfo"
+BAUBLE_GET_GLOBAL_INFO_EVENT = "BaubleGetGlobalInfo"
+BAUBLE_GET_TARGET_INFO_EVENT = "BaubleGetTargetInfo"
 # 当不使用内容库内容时,也可通过服务端发送BaubleRegister事件注册饰品
 # 需要服务端namespace为platinum, systemName为broadcasterServer
 BAUBLE_REGISTER_EVENT = "BaubleRegister"

@@ -26,61 +26,77 @@ class BuildInBaubleServer(serverApi.GetServerSystemCls()):
         self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
                             commonConfig.BAUBLE_GET_INFO_EVENT, self, self.onBaubleInfoEvent)
 
+        # 监听全局饰品槽位信息回调
+        self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
+                            commonConfig.BAUBLE_GET_GLOBAL_INFO_EVENT, self, self.onGlobalBaubleSlotInfoEvent)
+        # 监听目标饰品槽位信息回调
+        self.ListenForEvent(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER,
+                            commonConfig.BAUBLE_GET_TARGET_INFO_EVENT, self, self.onTargetBaubleSlotInfoEvent)
+
     def onBaubleInfoEvent(self, data):
-        pass
+        logging.error(data)
 
     def onClientLoadAddonsFinish(self, data):
         """
         客户端加载模组完毕事件
         """
-        serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
-                            commonConfig.PLATINUM_BROADCAST_SERVER).AddGlobalBaubleSlot(
-            "test_helmet", "test_helmet", "测试头盔", "textures/ui/bauble_helmet_slot", True
-        )
+        # serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
+        #                     commonConfig.PLATINUM_BROADCAST_SERVER).AddGlobalBaubleSlot(
+        #     "test_helmet", "test_helmet", "测试头盔", "textures/ui/bauble_helmet_slot", True
+        # )
         travelerBelt = {
             "baubleName": "lemon_platinum:traveler_belt",
             "baubleSlot": BaubleEnum.BELT
         }
-        testHelmet = {
-            "baubleName": "minecraft:diamond_helmet",
-            "baubleSlot": "test_helmet"
-        }
+        # testHelmet = {
+        #     "baubleName": "minecraft:diamond_helmet",
+        #     "baubleSlot": "test_helmet"
+        # }
         serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
                             commonConfig.PLATINUM_BROADCAST_SERVER).BaubleRegister(travelerBelt)
-        serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
-                            commonConfig.PLATINUM_BROADCAST_SERVER).BaubleRegister(testHelmet)
+        # serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE,
+        #                     commonConfig.PLATINUM_BROADCAST_SERVER).BaubleRegister(testHelmet)
 
     def onBaubleEquipped(self, data):
         """
         饰品装备事件
-        :param data: {playerId: str, itemDict: dict, baubleSlot: str, slotIndex: int}
+        :param data: {"slotIndex": Int, "playerId": str, "isFirstLoad": bool, "baubleSlot": str, "baubleSlotId": str "itemDict": dict}
         """
-        playerId = data["playerId"]
-        bauble = data["itemDict"]
-        slot = data["baubleSlot"]
-        slotIndex = data["slotIndex"]
+        playerId = data["playerId"]  # 玩家ID
+        bauble = data["itemDict"]  # 饰品信息
+        isFirstLoad = data["isFirstLoad"]  # 是否是第一次加载
+        slot = data["baubleSlot"]  # 饰品槽名称(旧版)
+        slotId = data["baubleSlotId"]  # 饰品槽ID
+        slotIndex = data["slotIndex"]  # 饰品槽索引
 
         if bauble["newItemName"] == "lemon_platinum:traveler_belt":
             comp = serverApi.GetEngineCompFactory().CreateAttr(playerId)
             comp.SetStepHeight(1.0625)
-        elif bauble["newItemName"] == "minecraft:diamond_helmet":
-            system = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
-            system.AddTargetBaubleSlot(playerId, "test_helmet2", "test_helmet")
+        # elif bauble["newItemName"] == "minecraft:diamond_helmet":
+        #     system = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        #     system.AddTargetBaubleSlot(playerId, "test_helmet2", "test_helmet")
 
     def onBaubleUnequipped(self, data):
         """
         饰品卸下事件
-        :param data: {playerId: str, itemDict: dict, baubleSlot: str, slotIndex: int}
-        :return:
+        :param data: {"slotIndex": Int, "playerId": str, "isFirstLoad": bool, "baubleSlot": str, "baubleSlotId": str "itemDict": dict}
         """
-        playerId = data["playerId"]
-        bauble = data["itemDict"]
-        slot = data["baubleSlot"]
-        slotIndex = data["slotIndex"]
+        playerId = data["playerId"]  # 玩家ID
+        bauble = data["itemDict"]  # 饰品信息
+        isFirstLoad = data["isFirstLoad"]  # 是否是第一次加载
+        slot = data["baubleSlot"]  # 饰品槽名称(旧版)
+        slotId = data["baubleSlotId"]  # 饰品槽ID
+        slotIndex = data["slotIndex"]  # 饰品槽索引
 
         if bauble["newItemName"] == "lemon_platinum:traveler_belt":
             comp = serverApi.GetEngineCompFactory().CreateAttr(playerId)
             comp.SetStepHeight(0.5626)
-        elif bauble["newItemName"] == "minecraft:diamond_helmet":
-            system = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
-            system.DeleteTargetBaubleSlot(playerId, "test_helmet2")
+        # elif bauble["newItemName"] == "minecraft:diamond_helmet":
+        #     system = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        #     system.DeleteTargetBaubleSlot(playerId, "test_helmet2")
+
+    def onGlobalBaubleSlotInfoEvent(self, data):
+        logging.debug(data)
+
+    def onTargetBaubleSlotInfoEvent(self, data):
+        logging.debug(data)
