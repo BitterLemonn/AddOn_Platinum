@@ -1,8 +1,9 @@
 # coding=utf-8
-import logging
+from .. import developLogging as logging
+from ..DataManager.baubleSlotServerService import BaubleSlotServerService
 
 from ..ItemFactory import ItemFactory
-from ..QuModLibs.Modules.Services.Globals import BaseTimer
+from ..QuModLibs.Modules.Services.Globals import BaseTimer, QRequests
 from ..QuModLibs.Server import *
 from ..QuModLibs.Modules.Services.Server import BaseService
 from ..DataManager.baubleInfoManager import BaubleInfoManager
@@ -122,9 +123,59 @@ class PlatinumServerService(BaseService):
                 return
 
             if isGlobal:
-                BaubleServerService.access().addGlobalBaubleSlot(slotId=slotName, slotType=slotType)
+                BaubleServerService.access().addGlobalBaubleSlot(slotId=slotName, slotType=slotType,
+                                                                 isCommandModify=True)
                 data["return_msg_key"] = "铂: 已执行全局注册槽位 {}".format(slotName)
             else:
                 for playerId in playerList:
-                    BaubleServerService.access().addTargetBaubleSlot(playerId, slotName, slotType)
+                    BaubleServerService.access().addTargetBaubleSlot(playerId, slotName, slotType, isCommandModify=True)
                 data["return_msg_key"] = "铂: 已执行为特定玩家注册槽位 {}".format(slotName)
+        elif command == "platinum_del":
+            if not entityId:
+                data["return_failed"] = False
+                data["return_msg_key"] = "铂: 仅允许玩家执行该指令"
+            targetTuple = ()
+            slotName = ""
+            for argDict in args:
+                name = argDict.get("name")
+                value = argDict.get("value")
+                if name == "目标":
+                    targetTuple = value
+                elif name == "槽位id":
+                    slotName = value
+
+            if not targetTuple or not slotName:
+                data["return_failed"] = False
+                data["return_msg_key"] = "§c铂: 参数异常 请检查指令是否输入正确§r"
+                return
+
+            playerList = [player for player in targetTuple if Entity(player).IsPlayer]
+            if not playerList:
+                data["return_failed"] = False
+                data["return_msg_key"] = "§c铂: 未找到目标玩家 请检查目标是否正确§r"
+                return
+            if slotName not in BaubleSlotManager().getBaubleSlotIdentifierList(True):
+                for playerId in playerList:
+                    self.syncRequest(playerId, "platinum/removeBaubleSlot",
+                                     QRequests.Args(slotName, isCommandModify=True))
+                data["return_msg_key"] = "铂: 已执行删除槽位 {}".format(slotName)
+            else:
+                data["return_failed"] = False
+                data["return_msg_key"] = "§c铂: 槽位id {} 为默认槽位，无法删除".format(slotName)
+        elif command == "platinum_help":
+            control = ""
+            for argDict in args:
+                name = argDict.get("name")
+                value = argDict.get("value")
+                if name == "操作":
+                    control = value
+            if control == "help":
+                data["return_msg_key"] = "铂: 查看帮助\n" \
+                                         "§6/platinum_help slot_type - 查看已注册的槽位类型列表\n" \
+                                         "§6/platinum_help slot_id - 查看已注册的槽位id列表"
+            elif control == "slot_type":
+                allSlotType = BaubleSlotServerService.access().getBaubleSlotTypeList()
+                data["return_msg_key"] = "铂: 已注册的槽位类型列表:\n{}".format(", ".join(allSlotType))
+            elif control == "slot_id":
+                allSlotId = BaubleSlotServerService.access().getBaubleSlotIdentifierList()
+                data["return_msg_key"] = "铂: 已注册的槽位id列表:\n{}".format(", ".join(allSlotId))

@@ -1,5 +1,5 @@
 # coding=utf-8
-import logging
+from .. import developLogging as logging
 from ..QuModLibs.Client import *
 
 if 0 > 1:

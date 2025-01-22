@@ -1,5 +1,5 @@
 # coding=utf-8
-import logging
+import developLogging as logging
 
 import commonConfig
 import mod.client.extraClientApi as clientApi
@@ -38,7 +38,6 @@ class BuildInBaubleClient(clientApi.GetClientSystemCls()):
         :param data: {"slotIndex": Int, "playerId": str, "isFirstLoad": bool, "baubleSlot": str, "baubleSlotId": str "itemDict": dict}
         :return:
         """
-        logging.error(data)
         playerId = data["playerId"]
         bauble = data["itemDict"]
         isFirstLoad = data["isFirstLoad"]

@@ -1,5 +1,5 @@
 # coding=utf-8
-import logging
+import developLogging as logging
 
 from QuModLibs.Server import *
 import commonUtils

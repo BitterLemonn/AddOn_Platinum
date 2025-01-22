@@ -1,5 +1,5 @@
 # coding=utf-8
-import logging
+from .. import developLogging as logging
 
 from ..QuModLibs.Client import *
 from ..QuModLibs.Modules.Services.Client import BaseService

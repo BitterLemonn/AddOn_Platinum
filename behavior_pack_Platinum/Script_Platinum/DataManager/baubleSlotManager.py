@@ -1,5 +1,5 @@
 # coding=utf-8
-import logging
+from .. import developLogging as logging
 
 
 # 槽位字典(客户端各自拥有 记录客户端拥有的槽位信息 注意维护)

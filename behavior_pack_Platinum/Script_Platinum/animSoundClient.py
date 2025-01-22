@@ -1,4 +1,4 @@
-import logging
+import developLogging as logging
 
 from QuModLibs.Client import *
 

@@ -1,7 +1,7 @@
 # coding=utf-8
 # 计算向量长度
 import math
-import logging
+import developLogging as logging
 from math import *
 from mod.common import minecraftEnum
 

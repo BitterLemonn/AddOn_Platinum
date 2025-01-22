@@ -1,5 +1,5 @@
 # coding=utf-8
-import logging
+from .. import developLogging as logging
 
 from ..BroadcastEvent.getBaubleSlotInfoEvent import GetGlobalBaubleSlotInfoEvent, GetTargetBaubleSlotInfoEvent
 from ..BroadcastEvent.getPlayerBaubleInfoEvent import GetPlayerBaubleInfoServerEvent

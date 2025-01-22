@@ -1,6 +1,6 @@
 # coding=utf-8
 import json
-import logging
+from .. import developLogging as logging
 import re
 
 from .baubleSlotManager import BaubleSlotManager
@@ -13,18 +13,24 @@ class DataAlias(object):
     BAUBLE_SLOT_INFO = "bauble_slot_info"
     BAUBLE_BTN_POSITION = "bauble_btn_position"
     BAUBLE_FORMAT_VERSION = "bauble_format_version"
+    BAUBLE_COMMAND_MODIFY = "bauble_command_modify"
 
 
 class BaubleDatabase(object):
     formatVersion = 1
     playerBaubleInfo = {}
     uiPosition = "left_top"
+    baubleCommandModifyAdding = []
 
 
 class BaubleDataController(object):
     @classmethod
     def getUiPosition(cls):
         return BaubleDatabase.uiPosition
+
+    @classmethod
+    def getBaubleCommandModifyAdding(cls):
+        return BaubleDatabase.baubleCommandModifyAdding
 
     @classmethod
     def setUiPosition(cls, position):
@@ -103,6 +109,24 @@ class BaubleDatabaseService(BaseService):
     def onServiceStop(self):
         self.__savingData()
 
+    @staticmethod
+    def addingCommandSlot(slotIdentifier, slotType, isDefault=False):
+        logging.debug(
+            "铂: 添加指令槽位: slotIdentifier: {}, slotType: {}, isDefault: {}".format(slotIdentifier, slotType,
+                                                                                       isDefault))
+        BaubleDatabase.baubleCommandModifyAdding.append({
+            "slotIdentifier": slotIdentifier,
+            "slotType": slotType,
+            "isDefault": isDefault
+        })
+
+    @staticmethod
+    def removeCommandSlot(slotIdentifier):
+        for index, slotInfo in enumerate(BaubleDatabase.baubleCommandModifyAdding):
+            if slotInfo.get("slotIdentifier") == slotIdentifier:
+                BaubleDatabase.baubleCommandModifyAdding.pop(index)
+                break
+
     def manualSaving(self):
         self.__savingData()
 
@@ -116,6 +140,9 @@ class BaubleDatabaseService(BaseService):
             BaubleDatabase.uiPosition = data.get(DataAlias.BAUBLE_BTN_POSITION, "left_top")
             BaubleDatabase.playerBaubleInfo = self.migrateData(formatVersion,
                                                                data.get(DataAlias.BAUBLE_SLOT_INFO, {}))
+            BaubleDatabase.baubleCommandModifyAdding = data.get(DataAlias.BAUBLE_COMMAND_MODIFY, [])
+            logging.info(
+                "铂: 数据加载成功: baubleCommandModifyAdding: {}".format(BaubleDatabase.baubleCommandModifyAdding))
 
     def __savingData(self):
         playerComp = clientApi.GetEngineCompFactory().CreatePlayer(playerId)
@@ -124,8 +151,11 @@ class BaubleDatabaseService(BaseService):
         dataDict = {
             DataAlias.BAUBLE_SLOT_INFO: BaubleDatabase.playerBaubleInfo,
             DataAlias.BAUBLE_FORMAT_VERSION: BaubleDatabase.formatVersion,
-            DataAlias.BAUBLE_BTN_POSITION: BaubleDatabase.uiPosition
+            DataAlias.BAUBLE_BTN_POSITION: BaubleDatabase.uiPosition,
+            DataAlias.BAUBLE_COMMAND_MODIFY: BaubleDatabase.baubleCommandModifyAdding
         }
+        logging.error(
+            "铂: 数据保存成功: baubleCommandModifyAdding: {}".format(BaubleDatabase.baubleCommandModifyAdding))
         comp.SetConfigData(DataAlias.PLATINUM_LOCAL_DATA + "_{}".format(uid), dataDict)
 
     def migrateData(self, formatVersion, data):

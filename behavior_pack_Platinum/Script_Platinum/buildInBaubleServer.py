@@ -1,5 +1,5 @@
 # coding=utf-8
-import logging
+import developLogging as logging
 
 import commonConfig
 import mod.server.extraServerApi as serverApi
@@ -34,7 +34,7 @@ class BuildInBaubleServer(serverApi.GetServerSystemCls()):
                             commonConfig.BAUBLE_GET_TARGET_INFO_EVENT, self, self.onTargetBaubleSlotInfoEvent)
 
     def onBaubleInfoEvent(self, data):
-        logging.error(data)
+        pass
 
     def onClientLoadAddonsFinish(self, data):
         """

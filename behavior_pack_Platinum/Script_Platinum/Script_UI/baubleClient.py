@@ -1,12 +1,12 @@
 # coding=utf-8
-import logging
+from .. import developLogging as logging
 
 from ..QuModLibs.QuClientApi.ui.controls.baseUIControl import BaseUIControl
 from ..QuModLibs.Client import *
 from ..QuModLibs.Modules.Services.Client import BaseService, QRequests
 from ..QuModLibs.QuClientApi.ui.screenNode import ScreenNode
 
-from ..DataManager.baubleDatabase import BaubleDataController
+from ..DataManager.baubleDatabase import BaubleDataController, BaubleDatabaseService
 from ..DataManager.baubleSlotManager import BaubleSlotManager
 from .flyingItemRenderer import FlyingItemRenderer
 from ..ItemFactory import ItemFactory
@@ -117,6 +117,16 @@ class BaubleBroadcastService(BaseService):
             BaubleDataController.addBaubleSlot(slotId)
         if not self.alreadySyncSlot:
             self.alreadySyncSlot = True
+            # 注册指令添加的槽位
+            modifyList = BaubleDataController.getBaubleCommandModifyAdding()
+            for slotInfo in modifyList:
+                slotId = slotInfo["slotIdentifier"]
+                slotType = slotInfo["slotType"]
+                isDefault = slotInfo["isDefault"]
+                BaubleSlotManager().addSlot(slotType, slotId, isDefault)
+                # 通知服务端注册槽位
+                self.syncRequest("platinum/addBaubleSlotCommand", QRequests.Args(slotId, slotType, isDefault))
+
             # 获取玩家饰品栏信息
             baubleInfoDict = BaubleDataController.getAllBaubleInfo()
             print (
@@ -134,7 +144,7 @@ class BaubleBroadcastService(BaseService):
                 Call("GivePlayerItem", baubleInfo, playerId)
 
     @BaseService.REG_API("platinum/addBaubleSlot")
-    def addBaubleSlot(self, slotId, slotType, slotName, slotPlaceHolderPath, isDefault=False):
+    def addBaubleSlot(self, slotId, slotType, slotName, slotPlaceHolderPath, isDefault=False, isCommandModify=False):
         if slotId in BaubleSlotManager().getBaubleSlotIdentifierList():
             logging.error("铂: 添加槽位失败, 重复的槽位标识符")
             return
@@ -146,10 +156,12 @@ class BaubleBroadcastService(BaseService):
             else:
                 # 注册槽位
                 if BaubleSlotManager().addSlot(slotType, slotId):
+                    if isCommandModify:
+                        BaubleDatabaseService.access().addingCommandSlot(slotId, slotType)
                     # 添加玩家槽位信息
                     BaubleDataController.addBaubleSlot(slotId)
-                    logging.debug("铂:玩家 {} 添加饰品栏槽位 {}".format(
-                        clientApi.GetEngineCompFactory().CreateName(playerId).GetName(), slotId)
+                    logging.debug("铂:玩家 {} 添加饰品栏槽位 {} 是否指令添加 {}".format(
+                        clientApi.GetEngineCompFactory().CreateName(playerId).GetName(), slotId, isCommandModify)
                     )
 
         else:
@@ -161,6 +173,8 @@ class BaubleBroadcastService(BaseService):
                      "baubleSlotType": slotType,
                      "isDefault": isDefault}
             ):
+                if isCommandModify:
+                    BaubleDatabaseService.access().addingCommandSlot(slotId, slotType)
                 # 添加玩家槽位信息
                 BaubleDataController.addBaubleSlot(slotId)
                 logging.debug("铂:玩家 {} 添加饰品栏槽位 {}".format(
@@ -168,8 +182,10 @@ class BaubleBroadcastService(BaseService):
                 )
 
     @BaseService.REG_API("platinum/removeBaubleSlot")
-    def removeBaubleSlot(self, slotId):
+    def removeBaubleSlot(self, slotId, isCommandModify=False):
         if BaubleSlotManager().deleteSlot(slotId):
+            if isCommandModify:
+                BaubleDatabaseService.access().removeCommandSlot(slotId)
             baubleItem = BaubleDataController.removeBaubleSlot(slotId)
             if baubleItem:
                 Call("GivePlayerItem", baubleItem, playerId)
@@ -390,7 +406,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
             if baubleInfo:
                 baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
-                if baseInfo["maxDurability"]:
+                if baseInfo and baseInfo["maxDurability"]:
                     return 1 - float(baubleInfo["durability"]) / baseInfo["maxDurability"]
         return 0.0
 
@@ -404,7 +420,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
             if baubleInfo:
                 baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
-                if baseInfo["maxDurability"] and baubleInfo["durability"] < baseInfo["maxDurability"]:
+                if baseInfo and baseInfo["maxDurability"] and baubleInfo["durability"] < baseInfo["maxDurability"]:
                     return True
         return False
 
@@ -418,7 +434,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
             if baubleInfo:
                 baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo["newItemName"], baubleInfo["newAuxValue"])
-                if baseInfo["maxDurability"]:
+                if baseInfo and baseInfo["maxDurability"]:
                     color = ratioToColor(float(baubleInfo["durability"]) / baseInfo["maxDurability"])
                     return color
         return 0.0, 1.0, 0.0, 1.0

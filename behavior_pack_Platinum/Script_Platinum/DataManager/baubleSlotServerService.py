@@ -1,7 +1,7 @@
 # coding=utf-8
 from ..QuModLibs.Modules.Services.Server import BaseService, QRequests
 from ..QuModLibs.Server import Events
-import logging
+from .. import developLogging as logging
 
 
 # 服务端已注册槽位管理

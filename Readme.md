@@ -6,19 +6,19 @@
 
 ### 二、UI展示
 
-<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202311201724656.png" style="zoom:65%;"></center>
 
-<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202311201724476.png" style="zoom:65%;"></center>
 
-<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202312011152292.png" style="zoom:65%"></center>
+<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/20250121151025698.png" style="zoom:65%;"></center>
 
-<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/202312011154787.png" style="zoom:65%"></center>
+<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/20250121151113113.png" style="zoom:65%;"></center>
+
+<center><img src="https://raw.githubusercontent.com/BitterLemonn/BlogPicBed/master/otherPic/20250121151517324.png" style="zoom:55%"></center>
 
 ### 三、基础配置文件介绍
 
 [配置文件](behavior_pack_Platinum/Script_Platinum/commonConfig.py)内存储了所有使用到的变量以及常量，理论上开发者只需要了解其中的变量的作用即可轻松使用本组件。
 
-其中定义了组件所使用到的事件名称以及所使用到的SystemName和NameSpace。BaubleEnum类中定义了饰品栏的槽位以及对应的信息。BaubleDict字典中定义了组件将会使用到的饰品信息。
+其中定义了组件所使用到的事件名称以及所使用到的SystemName和NameSpace。
 
 ### 四、饰品定义的限制
 
@@ -355,7 +355,6 @@ baubleSlotInfo = {
                 "slotId": "槽位id",
                 "slotType": "槽位类型",
                 "slotName": "槽位名称",
-                "slotTexture": "槽位贴图路径",
                 "isDefaultSlot": bool
             }
         }
@@ -366,5 +365,5 @@ baubleSlotInfo = {
 
 ### 九、许可证
 
-在遵循最终用户许可协议([EULA](behavior_pack_Platinum/Script_Platinum/EULA.txt))
-的前提下，本组件遵循[MIT](behavior_pack_Platinum/Script_Platinum/LICENSE)开源协议，请开发者们随意使用。
+在遵循最终用户许可协议([EULA](EULA.txt))
+的前提下，本组件遵循[MIT](LICENSE)开源协议，请开发者们随意使用。
