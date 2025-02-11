@@ -220,7 +220,7 @@ def GetSnapFloorPos(pos, dimensionId, limit=10):
     :param limit: 最大垂直搜索距离
     :return: 地面坐标
     """
-    lastBlock = None
+    lastBlock = {"name": "minecraft:stone"}
     comp = serverApi.GetEngineCompFactory().CreateBlockInfo(levelId)
     for i in range(0, limit):
         blockInfo = comp.GetBlockNew((pos[0], pos[1] - i, pos[2]), dimensionId)

@@ -71,11 +71,20 @@
         "type": "image"
     },
     "slot_panel": {
-        "$button_size|default": [18, 18],
-        "$item_renderer_size|default": [16, 16],
+        "$button_size|default": [
+            18,
+            18
+        ],
+        "$item_renderer_size|default": [
+            16,
+            16
+        ],
         "size": "$button_size",
         "type": "panel",
-        "$durability_bar_offset|default": [0, 4],
+        "$durability_bar_offset|default": [
+            0,
+            4
+        ],
         "controls": [
             {
                 "slot_bg": {
@@ -315,7 +324,10 @@
         "type": "panel"
     },
     "durability_bar": {
-        "$durability_bar_size|default": [13, 1.5],
+        "$durability_bar_size|default": [
+            13,
+            1.5
+        ],
         "controls": [
             {
                 "shadow": {
@@ -469,7 +481,10 @@
             "100%",
             "default"
         ],
-        "offset": [0, 5],
+        "offset": [
+            0,
+            5
+        ],
         "type": "grid",
         "bindings": [
             {
@@ -491,12 +506,27 @@
                     "$scroll_box_mouse_image_control": "common-classic.button_state_default",
                     "$scrolling_content": "bauble_reborn.bauble_grid_pocket",
                     "$show_background": false,
-                    "$background_size": [0, 0],
-                    "$background_size_touch": [0, 0],
+                    "$background_size": [
+                        0,
+                        0
+                    ],
+                    "$background_size_touch": [
+                        0,
+                        0
+                    ],
                     "$scroll_bar_contained_touch": true,
-                    "$scroll_size_touch|default": [4, "100%"],
-                    "$scroll_view_port_size": ["100%", "100%c+10px"],
-                    "$scroll_view_port_size_touch": ["100%", "100%c+10px"],
+                    "$scroll_size_touch|default": [
+                        4,
+                        "100%"
+                    ],
+                    "$scroll_view_port_size": [
+                        "100%",
+                        "100%c+10px"
+                    ],
+                    "$scroll_view_port_size_touch": [
+                        "100%",
+                        "100%c+10px"
+                    ],
                     "$wider_scroll_area": true,
                     "layer": 9,
                     "size": [

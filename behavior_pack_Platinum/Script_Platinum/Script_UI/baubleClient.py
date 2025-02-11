@@ -1,10 +1,11 @@
 # coding=utf-8
+if 1 > 2:
+    from ..QuModLibs.QuClientApi.ui.screenNode import ScreenNode
 from .. import developLogging as logging
 
 from ..QuModLibs.QuClientApi.ui.controls.baseUIControl import BaseUIControl
 from ..QuModLibs.Client import *
 from ..QuModLibs.Modules.Services.Client import BaseService, QRequests
-from ..QuModLibs.QuClientApi.ui.screenNode import ScreenNode
 
 from ..DataManager.baubleDatabase import BaubleDataController, BaubleDatabaseService
 from ..DataManager.baubleSlotManager import BaubleSlotManager

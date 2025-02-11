@@ -1,6 +1,6 @@
 import logging
 
-isDebug = True
+isDebug = False
 
 
 def info(msg):

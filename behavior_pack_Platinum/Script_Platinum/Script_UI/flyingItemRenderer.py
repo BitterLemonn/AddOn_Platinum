@@ -2,10 +2,6 @@
 from .. import developLogging as logging
 from ..QuModLibs.Client import *
 
-if 0 > 1:
-    from mod.client.ui.screenNode import ScreenNode
-    from mod.client.ui.controls.baseUIControl import BaseUIControl
-
 
 # coding=utf-8
 class FlyingItemRenderer:
@@ -21,8 +17,6 @@ class FlyingItemRenderer:
 
         self.flyingPool = []  # type: list[BaseUIControl]
         self.flyingUsing = []  # type: list[BaseUIControl]
-
-
 
     def OnDestroy(self):
         for flyingRender in self.flyingPool:
