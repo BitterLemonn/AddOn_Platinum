@@ -79,6 +79,8 @@ class BaubleDataController(object):
 
     @classmethod
     def setBaubleInfo(cls, slotIdentifier, baubleInfo):
+        if baubleInfo == {} or baubleInfo is None:
+            baubleInfo = None
         if slotIdentifier in BaubleDatabase.playerBaubleInfo.keys():
             BaubleDatabase.playerBaubleInfo[slotIdentifier] = baubleInfo
         else:

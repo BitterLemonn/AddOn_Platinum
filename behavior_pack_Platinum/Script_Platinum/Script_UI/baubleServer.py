@@ -21,6 +21,8 @@ class BaubleServerService(BaseService):
     # 检查饰品是否可用安装至指定槽位
     @staticmethod
     def checkBaubleAvailable(baubleSlotType, baubleName):
+        if not baubleName:
+            return True
         baubleInfoDict = BaubleInfoManager.getBaubleInfoDict()
         baubleInfo = baubleInfoDict.get(baubleName)
         if baubleInfo and baubleSlotType:
@@ -77,6 +79,8 @@ class BaubleServerService(BaseService):
         gameRule = comp.GetGameRulesInfoServer()
         keepInv = gameRule["cheat_info"]["keep_inventory"]
         if not keepInv:
+            logging.error(
+                "铂: 玩家 {} 死亡掉落物品".format(serverApi.GetEngineCompFactory().CreateName(playerId).GetName()))
             self.syncRequest(playerId, "platinum/onPlayerDie", QRequests.Args(pos, dimensionId))
 
     # 生成物品
@@ -125,7 +129,7 @@ class BaubleServerService(BaseService):
     # 设置特定饰品栏信息
     def setBaubleSlotInfoBySlotId(self, playerId, slotId, baubleSlotInfo):
         baubleSlotType = BaubleSlotServerService.access().getBaubleSlotTypeBySlotIdentifier(slotId)
-        success = BaubleServerService.access().checkBaubleAvailable(baubleSlotType, baubleSlotInfo["newItemName"])
+        success = BaubleServerService.access().checkBaubleAvailable(baubleSlotType, baubleSlotInfo.get("newItemName"))
         if success:
             self.syncRequest(playerId, "platinum/setBaubleSlotInfoBySlotId", QRequests.Args(slotId, baubleSlotInfo))
         else:

@@ -29,6 +29,8 @@ class BaubleBroadcastService(BaseService):
         slotIndex = BaubleSlotManager().getSlotIndex(baubleSlotId) + 1
         baubleSlotType = BaubleSlotManager().getBaubleSlotTypeBySlotIdentifier(baubleSlotId)
         baubleSlotType = oldVersionFixer.oldVersionFixer(baubleSlotType)
+        logging.debug("铂: 玩家 {} 穿戴饰品 {} 槽位 {}".format(
+            clientApi.GetEngineCompFactory().CreateName(playerId).GetName(), baubleItem["newItemName"], slotIndex))
         self.localRequest("platinum/onBaublePutOn",
                           {"baubleSlotId": baubleSlotId, "baubleSlot": baubleSlotType, "slotIndex": slotIndex,
                            "itemDict": baubleItem, "isFirstLoad": isFirstLoad, "playerId": playerId})
@@ -41,6 +43,8 @@ class BaubleBroadcastService(BaseService):
         slotIndex = BaubleSlotManager().getSlotIndex(baubleSlotId) + 1
         baubleSlotType = BaubleSlotManager().getBaubleSlotTypeBySlotIdentifier(baubleSlotId)
         baubleSlotType = oldVersionFixer.oldVersionFixer(baubleSlotType)
+        logging.debug("铂: 玩家 {} 卸下饰品 {} 槽位 {}".format(
+            clientApi.GetEngineCompFactory().CreateName(playerId).GetName(), baubleItem["newItemName"], slotIndex))
         self.localRequest("platinum/onBaubleTakeOff",
                           {"baubleSlotId": baubleSlotId, "baubleSlot": baubleSlotType, "slotIndex": slotIndex,
                            "itemDict": baubleItem, "isFirstLoad": isFirstLoad, "playerId": playerId})
@@ -73,7 +77,11 @@ class BaubleBroadcastService(BaseService):
 
     @BaseService.REG_API("platinum/onPlayerDie")
     def onPlayerDie(self, pos, dimensionId):
-        playerBaubleInfoList = [item for item in BaubleDataController.getAllBaubleInfo().values() if item]
+        playerBaubleInfo = BaubleDataController.getAllBaubleInfo()
+        playerBaubleInfoList = [item for item in playerBaubleInfo.values() if item]
+        for slotId, baubleInfo in playerBaubleInfo.items():
+            if baubleInfo:
+                self.onBaubleTakeOff(baubleInfo, slotId)
         BaubleDataController.clearBaubleInfo()
         self.syncRequest("platinum/spawnItem", QRequests.Args(playerBaubleInfoList, pos, dimensionId))
 
@@ -87,6 +95,11 @@ class BaubleBroadcastService(BaseService):
 
     @BaseService.REG_API("platinum/setBaubleSlotInfoBySlotId")
     def setBaubleSlotInfoBySlotId(self, slotId, baubleSlotInfo):
+        oldBaubleInfo = BaubleDataController.getBaubleInfo(slotId)
+        if oldBaubleInfo:
+            self.onBaubleTakeOff(oldBaubleInfo, slotId)
+        if baubleSlotInfo:
+            self.onBaublePutOn(baubleSlotInfo, slotId)
         BaubleDataController.setBaubleInfo(slotId, baubleSlotInfo)
 
     @BaseService.REG_API("platinum/decreaseBaubleDurability")
@@ -242,6 +255,8 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.optionComp = clientApi.GetEngineCompFactory().CreatePlayerView(levelId)
         self.itemComp = clientApi.GetEngineCompFactory().CreateItem(levelId)
         self.inputMode = 0
+        self.gameMode = ""
+        self.gameComp = clientApi.GetEngineCompFactory().CreateGame(levelId)
 
         self.flyingItemController = FlyingItemRenderer(self.screen, self.flyingPanelPath)
         self.tipsLabel = ""
@@ -254,6 +269,12 @@ class InventoryClassicProxy(CustomUIScreenProxy):
         self.setEntryPosition()
 
     def OnTick(self):
+        gameMode = self.gameComp.GetPlayerGameType(playerId)
+        if gameMode != self.gameMode:
+            self.gameMode = gameMode
+            self.recipeBtnTogglePath = self.basePath + "/content_stack_panel/toolbar_anchor/toolbar_panel/toolbar_background/toolbar_stack_panel/recipe_book_layout_toggle_panel_{}/recipe_book_layout_toggle".format(
+                "creative" if gameMode == minecraftEnum.GameType.Creative else "survival"
+            )
         recipeBagPage = self.screen.GetBaseUIControl(self.recipeBtnTogglePath).asSwitchToggle().GetToggleState()
         if recipeBagPage != self.recipeBagPage:
             self.recipeBagPage = recipeBagPage
