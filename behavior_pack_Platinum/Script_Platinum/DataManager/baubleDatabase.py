@@ -6,6 +6,8 @@ import re
 from .baubleSlotManager import BaubleSlotManager
 from ..QuModLibs.Client import *
 from ..QuModLibs.Modules.Services.Client import BaseService
+from .. import oldVersionFixer
+from ..oldVersionFixer import oldSlotIdFixer
 
 
 class DataAlias(object):
@@ -83,8 +85,10 @@ class BaubleDataController(object):
             baubleInfo = None
         if slotIdentifier in BaubleDatabase.playerBaubleInfo.keys():
             BaubleDatabase.playerBaubleInfo[slotIdentifier] = baubleInfo
+            return True
         else:
             logging.error("铂: 未找到槽位标识符 {}".format(slotIdentifier))
+            return False
 
     @classmethod
     def checkUnRegisterSlot(cls):
@@ -166,17 +170,8 @@ class BaubleDatabaseService(BaseService):
             if formatVersion == 0:
                 formatVersion = 1
                 for baubleName, value in data.items():
-                    newId = self.oldNameToNewId(baubleName)
+                    newId = oldVersionFixer.oldSlotIdFixer(baubleName)
                     data[newId] = value
                     data.pop(baubleName)
             self.migrateData(formatVersion, data)
         return data
-
-    @staticmethod
-    def oldNameToNewId(oldName):
-        # 判断原字符串是否存在数字
-        num = re.search(r"\d", oldName)
-        if num:
-            return "bauble_" + oldName.replace("_", "").replace(num.group(), "") + str(int(num.group()) - 1)
-        else:
-            return "bauble_" + oldName.replace("_", "")

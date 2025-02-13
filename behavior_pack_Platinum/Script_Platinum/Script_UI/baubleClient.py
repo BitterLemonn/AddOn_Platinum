@@ -28,9 +28,7 @@ class BaubleBroadcastService(BaseService):
     def onBaublePutOn(self, baubleItem, baubleSlotId, isFirstLoad=False):
         slotIndex = BaubleSlotManager().getSlotIndex(baubleSlotId) + 1
         baubleSlotType = BaubleSlotManager().getBaubleSlotTypeBySlotIdentifier(baubleSlotId)
-        baubleSlotType = oldVersionFixer.oldVersionFixer(baubleSlotType)
-        logging.debug("铂: 玩家 {} 穿戴饰品 {} 槽位 {}".format(
-            clientApi.GetEngineCompFactory().CreateName(playerId).GetName(), baubleItem["newItemName"], slotIndex))
+        baubleSlotType = oldVersionFixer.newSlotTypeToOld(baubleSlotType)
         self.localRequest("platinum/onBaublePutOn",
                           {"baubleSlotId": baubleSlotId, "baubleSlot": baubleSlotType, "slotIndex": slotIndex,
                            "itemDict": baubleItem, "isFirstLoad": isFirstLoad, "playerId": playerId})
@@ -42,9 +40,7 @@ class BaubleBroadcastService(BaseService):
     def onBaubleTakeOff(self, baubleItem, baubleSlotId, isFirstLoad=False):
         slotIndex = BaubleSlotManager().getSlotIndex(baubleSlotId) + 1
         baubleSlotType = BaubleSlotManager().getBaubleSlotTypeBySlotIdentifier(baubleSlotId)
-        baubleSlotType = oldVersionFixer.oldVersionFixer(baubleSlotType)
-        logging.debug("铂: 玩家 {} 卸下饰品 {} 槽位 {}".format(
-            clientApi.GetEngineCompFactory().CreateName(playerId).GetName(), baubleItem["newItemName"], slotIndex))
+        baubleSlotType = oldVersionFixer.newSlotTypeToOld(baubleSlotType)
         self.localRequest("platinum/onBaubleTakeOff",
                           {"baubleSlotId": baubleSlotId, "baubleSlot": baubleSlotType, "slotIndex": slotIndex,
                            "itemDict": baubleItem, "isFirstLoad": isFirstLoad, "playerId": playerId})
@@ -96,11 +92,11 @@ class BaubleBroadcastService(BaseService):
     @BaseService.REG_API("platinum/setBaubleSlotInfoBySlotId")
     def setBaubleSlotInfoBySlotId(self, slotId, baubleSlotInfo):
         oldBaubleInfo = BaubleDataController.getBaubleInfo(slotId)
-        if oldBaubleInfo:
-            self.onBaubleTakeOff(oldBaubleInfo, slotId)
-        if baubleSlotInfo:
-            self.onBaublePutOn(baubleSlotInfo, slotId)
-        BaubleDataController.setBaubleInfo(slotId, baubleSlotInfo)
+        if BaubleDataController.setBaubleInfo(slotId, baubleSlotInfo):
+            if oldBaubleInfo:
+                self.onBaubleTakeOff(oldBaubleInfo, slotId)
+            if baubleSlotInfo:
+                self.onBaublePutOn(baubleSlotInfo, slotId)
 
     @BaseService.REG_API("platinum/decreaseBaubleDurability")
     def decreaseBaubleDurability(self, slotId, decrease=1):

@@ -1,46 +1,68 @@
+# coding=utf-8
+import logging
+
 import commonConfig
+import re
 
 
-def oldSlotTypeChanger(baubleSlotList):
+def oldSlotTypeListToNew(slotTypeList):
     newBaubleList = []
-    for baubleSlot in baubleSlotList:
-        if baubleSlot == commonConfig.BaubleEnum.BELT:
-            newBaubleList.append("belt")
-        elif baubleSlot == commonConfig.BaubleEnum.HELMET:
-            newBaubleList.append("helmet")
-        elif baubleSlot == commonConfig.BaubleEnum.HAND:
-            newBaubleList.append("hand")
-        elif baubleSlot == commonConfig.BaubleEnum.NECKLACE:
-            newBaubleList.append("necklace")
-        elif baubleSlot == commonConfig.BaubleEnum.ARMOR:
-            newBaubleList.append("armor")
-        elif baubleSlot == commonConfig.BaubleEnum.BACK:
-            newBaubleList.append("back")
-        elif baubleSlot == commonConfig.BaubleEnum.SHOES:
-            newBaubleList.append("shoes")
-        elif baubleSlot == commonConfig.BaubleEnum.OTHER:
-            newBaubleList.append("other")
-        else:
-            newBaubleList.append(baubleSlot)
+    for baubleSlot in slotTypeList:
+        newBaubleList.append(oldSlotTypeToNew(baubleSlot))
     return newBaubleList
 
 
-def oldVersionFixer(baubleSlot):
-    if baubleSlot == "helmet":
+def oldSlotTypeToNew(slotType):
+    if slotType == commonConfig.BaubleEnum.BELT:
+        return "belt"
+    elif slotType == commonConfig.BaubleEnum.BACK:
+        return "back"
+    elif slotType == commonConfig.BaubleEnum.HELMET:
+        return "helmet"
+    elif slotType == commonConfig.BaubleEnum.NECKLACE:
+        return "necklace"
+    elif slotType == commonConfig.BaubleEnum.ARMOR:
+        return "armor"
+    elif slotType == commonConfig.BaubleEnum.HAND:
+        return "hand"
+    elif slotType == commonConfig.BaubleEnum.SHOES:
+        return "shoes"
+    elif slotType == commonConfig.BaubleEnum.OTHER:
+        return "other"
+    else:
+        return slotType
+
+
+def newSlotTypeToOld(slotType):
+    if slotType == "helmet":
         return commonConfig.BaubleEnum.HELMET
-    elif baubleSlot == "necklace":
+    elif slotType == "necklace":
         return commonConfig.BaubleEnum.NECKLACE
-    elif baubleSlot == "back":
+    elif slotType == "back":
         return commonConfig.BaubleEnum.BACK
-    elif baubleSlot == "armor":
+    elif slotType == "armor":
         return commonConfig.BaubleEnum.ARMOR
-    elif baubleSlot == "hand":
+    elif slotType == "hand":
         return commonConfig.BaubleEnum.HAND
-    elif baubleSlot == "belt":
+    elif slotType == "belt":
         return commonConfig.BaubleEnum.BELT
-    elif baubleSlot == "shoes":
+    elif slotType == "shoes":
         return commonConfig.BaubleEnum.SHOES
-    elif baubleSlot == "other":
+    elif slotType == "other":
         return commonConfig.BaubleEnum.OTHER
     else:
-        return baubleSlot
+        return slotType
+
+
+def oldSlotIdFixer(oldName):
+    oldNameList = ["helmet", "necklace", "back", "armor", "hand_1", "hand_2", "belt", "shoes", "other_1", "other_2",
+                   "other_3", "other_4"]
+    if oldName in oldNameList:
+        # 判断原字符串是否存在数字
+        num = re.search(r"\d", oldName)
+        if num:
+            return "bauble_" + oldName.replace("_", "").replace(num.group(), "") + str(int(num.group()) - 1)
+        else:
+            return "bauble_" + oldName.replace("_", "")
+    else:
+        return oldName

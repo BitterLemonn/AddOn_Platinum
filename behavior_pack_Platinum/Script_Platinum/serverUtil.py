@@ -212,18 +212,53 @@ def ShakeCamera(playerList, intensity, duration, shakeType="positional"):
         ))
 
 
-def GetSnapFloorPos(pos, dimensionId, limit=10):
+def SearchNearByGround(pos, dimensionId, threshold=5, exceptBlockList=None):
     """
-    获取指定位置最近的地面坐标
-    :param pos: 位置
+    搜索最近的地面
+    :param pos: 搜索起始位置
     :param dimensionId: 维度id
-    :param limit: 最大垂直搜索距离
+    :param threshold: 垂直高度阈值
+    :param exceptBlockList: 要排除的方块列表
     :return: 地面坐标
     """
-    lastBlock = {"name": "minecraft:stone"}
-    comp = serverApi.GetEngineCompFactory().CreateBlockInfo(levelId)
-    for i in range(0, limit):
-        blockInfo = comp.GetBlockNew((pos[0], pos[1] - i, pos[2]), dimensionId)
-        if blockInfo and blockInfo["name"] != "minecraft:air" and lastBlock and lastBlock["name"] == "minecraft:air":
-            return pos[0], pos[1] - i + 1, pos[2]
-        lastBlock = blockInfo
+
+    def getMinContinueYList(yList):
+        result = []
+        start = yList[0]
+        prev = yList[0]
+
+        for py in yList[1:]:
+            if py == prev + 1:
+                prev = py
+            else:
+                if prev != start:
+                    result.append(start)
+                start = py
+                prev = py
+
+        if prev != start:
+            result.append(start)
+
+        return result
+
+    exceptBlockList = exceptBlockList if exceptBlockList else []
+    exceptBlockList.append("minecraft:air")
+
+    x, y, z = commonUtils.getIntPos(pos)
+    comp = serverApi.GetEngineCompFactory().CreateBlock(levelId)
+    palette = comp.GetBlockPaletteBetweenPos(dimensionId, (x, y - threshold, z),
+                                             (x, y + threshold, z), False)
+    posList = palette.GetLocalPosListOfBlocks("minecraft:air")
+    if len(posList) >= 2:
+        # 转为纯y偏移值
+        posList = [pos[1] for pos in posList]
+        minYList = getMinContinueYList(posList)
+        for yp in minYList:
+            realPos = (x, y - threshold + yp, z)
+            footPos = (x, y - threshold + yp - 1, z)
+            # 获取脚下方块
+            blockComp = serverApi.GetEngineCompFactory().CreateBlockInfo(levelId)
+            blockName = blockComp.GetBlockNew(footPos, dimensionId)["name"]
+            if blockName not in exceptBlockList:
+                return realPos
+    return None

@@ -10,6 +10,7 @@ from .. import oldVersionFixer
 from ..DataManager.baubleInfoManager import BaubleInfoManager
 from ..DataManager.baubleSlotServerService import BaubleSlotServerService
 from ..Script_UI.baubleServer import BaubleServerService
+from ..oldVersionFixer import oldSlotIdFixer
 
 
 class BroadcasterServer(serverApi.GetServerSystemCls()):
@@ -42,7 +43,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
     def __BaubleRegister(self, baubleName, baubleSlot, customTips):
         baubleSlot = [slot for slot in baubleSlot] if isinstance(baubleSlot, tuple) else baubleSlot if isinstance(
             baubleSlot, list) else [baubleSlot]
-        baubleSlot = oldVersionFixer.oldSlotTypeChanger(baubleSlot)
+        baubleSlot = oldVersionFixer.oldSlotTypeListToNew(baubleSlot)
 
         for slot in baubleSlot:
             if slot not in BaubleSlotServerService.access().getBaubleSlotTypeList():
@@ -76,7 +77,11 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :type playerId: str
         :return:
         """
-        BaubleServerService.access().setBaubleSlotInfo(playerId, baubleDict)
+        newBaubleDict = {}
+        for slotId, baubleInfo in baubleDict.items():
+            slotId = oldSlotIdFixer(slotId)
+            newBaubleDict[slotId] = baubleInfo
+        BaubleServerService.access().setBaubleSlotInfo(playerId, newBaubleDict)
 
     @staticmethod
     def SetPlayerBaubleInfoWithSlot(playerId, baubleInfo, slotName):
@@ -90,6 +95,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :type slotName: str
         :return:
         """
+        slotName = oldSlotIdFixer(slotName)
         BaubleServerService.access().setBaubleSlotInfoBySlotId(playerId, slotName, baubleInfo)
 
     @staticmethod
@@ -101,6 +107,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :param slotName: 饰品槽位
         :return:
         """
+        slotName = oldSlotIdFixer(slotName)
         BaubleServerService.access().decreaseBaubleDurability(playerId, slotName, num)
 
     @staticmethod
