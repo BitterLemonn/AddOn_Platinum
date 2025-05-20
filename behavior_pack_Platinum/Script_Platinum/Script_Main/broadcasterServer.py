@@ -161,6 +161,16 @@ class BroadcasterServerService(BaseService):
     def __init__(self):
         BaseService.__init__(self)
 
+    @BaseService.Listen(Events.ServerChatEvent)
+    def onServerChatEvent(self, data):
+        """
+        服务器聊天事件
+        :param data: {"playerId": str, "message": str}
+        """
+        playerId = data["playerId"]
+        message = data["message"]
+        BaubleServerService.access().getPlayerBaubleInfo(playerId)
+
     @BaseService.REG_API("platinum/onBaublePutOn")
     def onBaublePutOn(self, data):
         server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
@@ -173,6 +183,7 @@ class BroadcasterServerService(BaseService):
 
     @BaseService.ServiceListen(GetPlayerBaubleInfoServerEvent)
     def onGetPlayerBaubleInfo(self, data):
+        logging.debug("abc: {}".format(data))
         data = GetPlayerBaubleInfoServerEvent.getData(data)
         playerId = data.playerId
         baubleDict = data.baubleDict
@@ -187,7 +198,7 @@ class BroadcasterServerService(BaseService):
         server.BroadcastEvent(commonConfig.BAUBLE_GET_GLOBAL_INFO_EVENT, {"baubleSlotList": baubleSlotList})
 
     @BaseService.ServiceListen(GetTargetBaubleSlotInfoEvent)
-    def onGetPlayerBaubleInfo(self, data):
+    def onGetTagetBaubleInfo(self, data):
         data = GetTargetBaubleSlotInfoEvent.getData(data)
         playerId = data.playerId
         baubleSlotList = data.baubleSlotList
