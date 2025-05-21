@@ -90,9 +90,11 @@ class BaubleBroadcastService(BaseService):
         BaubleDataController.setAllBaubleInfo(baubleSlotInfo)
 
     @BaseService.REG_API("platinum/setBaubleSlotInfoBySlotId")
-    def setBaubleSlotInfoBySlotId(self, slotId, baubleSlotInfo):
+    def setBaubleSlotInfoBySlotId(self, slotId, baubleSlotInfo, autoRefresh=True):
         oldBaubleInfo = BaubleDataController.getBaubleInfo(slotId)
         if BaubleDataController.setBaubleInfo(slotId, baubleSlotInfo):
+            if not autoRefresh:
+                return
             if oldBaubleInfo:
                 self.onBaubleTakeOff(oldBaubleInfo, slotId)
             if baubleSlotInfo:

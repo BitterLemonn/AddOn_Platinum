@@ -84,7 +84,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         BaubleServerService.access().setBaubleSlotInfo(playerId, newBaubleDict)
 
     @staticmethod
-    def SetPlayerBaubleInfoWithSlot(playerId, baubleInfo, slotName):
+    def SetPlayerBaubleInfoWithSlot(playerId, baubleInfo, slotName, autoRefresh=True):
         """
         设置玩家饰品信息
         :param playerId: 玩家ID
@@ -93,10 +93,11 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :type baubleInfo: dict
         :type playerId: str
         :type slotName: str
+        :type autoRefresh: bool
         :return:
         """
         slotName = oldSlotIdFixer(slotName)
-        BaubleServerService.access().setBaubleSlotInfoBySlotId(playerId, slotName, baubleInfo)
+        BaubleServerService.access().setBaubleSlotInfoBySlotId(playerId, slotName, baubleInfo, autoRefresh)
 
     @staticmethod
     def DecreaseBaubleDurability(playerId, slotName, num=1):
