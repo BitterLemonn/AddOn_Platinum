@@ -127,11 +127,11 @@ class BaubleServerService(BaseService):
             self.syncRequest(playerId, "platinum/setBaubleSlotInfo", QRequests.Args(baubleSlotInfo))
 
     # 设置特定饰品栏信息
-    def setBaubleSlotInfoBySlotId(self, playerId, slotId, baubleSlotInfo, autoRefresh=True):
+    def setBaubleSlotInfoBySlotId(self, playerId, slotId, baubleSlotInfo):
         baubleSlotType = BaubleSlotServerService.access().getBaubleSlotTypeBySlotIdentifier(slotId)
         success = BaubleServerService.access().checkBaubleAvailable(baubleSlotType, baubleSlotInfo.get("newItemName"))
         if success:
-            self.syncRequest(playerId, "platinum/setBaubleSlotInfoBySlotId", QRequests.Args(slotId, baubleSlotInfo, autoRefresh))
+            self.syncRequest(playerId, "platinum/setBaubleSlotInfoBySlotId", QRequests.Args(slotId, baubleSlotInfo))
         else:
             logging.error("铂: 饰品 {} 无法安装至槽位 {} 请检查饰品注册".format(baubleSlotInfo["newItemName"], slotId))
 
