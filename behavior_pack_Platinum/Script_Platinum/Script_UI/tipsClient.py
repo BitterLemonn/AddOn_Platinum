@@ -1,22 +1,31 @@
 # coding=utf-8
-import logging
+from .. import developLogging as logging
 
 from ..QuModLibs.Client import *
+from ..QuModLibs.Modules.Services.Client import BaseService
 
 ScreenNode = clientApi.GetScreenNodeCls()
 
 
-@Listen(Events.UiInitFinished)
-def OnTipsUiInitFinished(args):
-    clientApi.RegisterUI("platinum", "info_tips", "Script_Platinum.Script_UI.tipsClient.TipsUI", "info_tips.screen")
-    comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-    data = comp.GetConfigData("platinumTips", True)
-    isSet = data.get("isSet", 0)
-    if isinstance(isSet, bool):
-        isSet = 0
+@BaseService.Init
+class TipsClientService(BaseService):
 
-    if isSet % 20 == 0:
-        clientApi.PushScreen("platinum", "info_tips")
+    def __init__(self):
+        BaseService.__init__(self)
+
+    @BaseService.Listen(Events.UiInitFinished)
+    def OnTipsUiInitFinished(self, args):
+        clientApi.RegisterUI("platinum", "info_tips", "Script_Platinum.Script_UI.tipsClient.TipsUI", "info_tips.screen")
+        comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
+        data = comp.GetConfigData("platinumTips", True)
+        isSet = data.get("isSet", 0)
+        if isinstance(isSet, bool):
+            isSet = 0
+        isSet += 1
+        logging.debug("铂: 已进入游戏{}次".format(isSet))
+        if isSet % 10 == 0:
+            clientApi.PushScreen("platinum", "info_tips")
+        comp.SetConfigData("platinumTips", {"isSet": isSet}, True)
 
 
 class TipsUI(ScreenNode):
@@ -47,8 +56,4 @@ class TipsUI(ScreenNode):
         ListenForEvent("OnScriptTickClient", self, self.Tick)
 
     def OnConfirmBtnTouchUp(self, _):
-        comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-        data = comp.GetConfigData("platinumTips", True)
-        data["isSet"] = data.get("isSet", 0) + 1
-        comp.SetConfigData("platinumTips", data, True)
         clientApi.PopScreen()

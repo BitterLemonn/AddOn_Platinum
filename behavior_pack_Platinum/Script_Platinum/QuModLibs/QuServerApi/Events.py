@@ -1,6 +1,48 @@
 # -*- coding: utf-8 -*-
 class Events:
     ''' 服务端事件类 '''
+    class InventoryItemChangedServerEvent:
+        ''' 玩家背包物品变化时服务端抛出的事件。 '''
+        def __init__(self, dic):
+            self.playerId = dic.get("playerId")  # type: str
+            ''' 玩家实体id '''
+            self.slot = dic.get("slot")  # type: int
+            ''' 背包槽位 '''
+            self.oldItemDict = dic.get("oldItemDict")  # type: dict
+            ''' 变化前槽位中的物品，格式参考物品信息字典 '''
+            self.newItemDict = dic.get("newItemDict")  # type: dict
+            ''' 变化后槽位中的物品，格式参考物品信息字典 '''
+
+    class OnStandOnBlockServerEvent:
+        ''' 触发时机：当实体站立到方块上时服务端持续触发'''
+        def __init__(self, dic):
+            self.entityId = dic.get("entityId")  # type: str
+            ''' 实体id '''
+            self.dimensionId = dic.get("dimensionId")  # type: int
+            ''' 实体所在维度id '''
+            self.posX = dic.get("posX")  # type: float
+            ''' 实体位置x '''
+            self.posY = dic.get("posY")  # type: float
+            ''' 实体位置y '''
+            self.posZ = dic.get("posZ")  # type: float
+            ''' 实体位置z '''
+            self.motionX = dic.get("motionX")  # type: float
+            ''' 瞬时移动X方向的力 '''
+            self.motionY = dic.get("motionY")  # type: float
+            ''' 瞬时移动Y方向的力 '''
+            self.motionZ = dic.get("motionZ")  # type: float
+            ''' 瞬时移动Z方向的力 '''
+            self.blockX = dic.get("blockX")  # type: int
+            ''' 方块位置x '''
+            self.blockY = dic.get("blockY")  # type: int
+            ''' 方块位置y '''
+            self.blockZ = dic.get("blockZ")  # type: int
+            ''' 方块位置z '''
+            self.blockName = dic.get("blockName")  # type: str
+            ''' 方块的identifier，包含命名空间及名称 '''
+            self.cancel = dic.get("cancel")  # type: bool
+            ''' 可由脚本层回传True给引擎，阻止触发后续原版逻辑 '''
+
     class BlockNeighborChangedServerEvent:
         ''' 触发时机：自定义方块周围的方块发生变化时，需要配置netease:neighborchanged_sendto_script，详情请查阅《自定义农作物》文档 '''
         def __init__(self, dic):

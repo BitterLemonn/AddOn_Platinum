@@ -6,12 +6,6 @@ class Events:
         def __init__(self, dic):
             pass
 
-    class AddPlayerCreatedClientEvent:
-        '''玩家进入当前玩家所在的区块AOI后，玩家皮肤数据异步加载完成后触发的事件'''
-
-        def __init__(self, dic):
-            self.playerId = dic.get("playerId")
-
     class ClientBlockUseEvent:
         ''' 触发时机：玩家右键点击新版自定义方块（或者通过接口AddBlockItemListenForUseEvent增加监听的MC原生游戏方块）时客户端抛出该事件（该事件tick执行，需要注意效率问题）。 '''
         def __init__(self, dic):

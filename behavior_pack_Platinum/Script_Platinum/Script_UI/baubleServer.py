@@ -1,120 +1,227 @@
 # coding=utf-8
+from ..BroadcastEvent.getBaubleSlotInfoEvent import GetGlobalBaubleSlotInfoEvent, GetTargetBaubleSlotInfoEvent
+from ..DataManager.baubleInfoManager import BaubleInfoManager
+from ..DataManager.baubleSlotManager import BaubleSlotManager
+from ..BroadcastEvent.getPlayerBaubleInfoEvent import GetPlayerBaubleInfoServerEvent
+from ..DataManager.baubleSlotServerService import BaubleSlotServerService
+from ..QuModLibs.Modules.Services.Globals import QRequests
 from ..QuModLibs.Server import *
-from ..commonConfig import BaubleDict
-from .. import loggingUtils as logging
+from ..QuModLibs.Modules.Services.Server import BaseService
+from .. import serverUtil
+from .. import developLogging as logging
 
 
-@AllowCall
-def SwapItem(data):
-    playerId = data["playerId"]
-    fromSlot = data["fromSlot"]
-    toSlot = data["toSlot"]
+@BaseService.Init
+class BaubleServerService(BaseService):
+    def __init__(self):
+        BaseService.__init__(self)
+        self.itemComp = serverApi.GetEngineCompFactory().CreateItem(levelId)
+        self.itemComp.GetUserDataInEvent("ServerItemTryUseEvent")
 
-    comp = serverApi.GetEngineCompFactory().CreateItem(playerId)
-    comp.SetInvItemExchange(fromSlot, toSlot)
-
-
-@AllowCall
-def AddItem(data):
-    playerId = data["playerId"]
-    itemDict = data["itemDict"]
-    slot = data.get("slot", -1)
-    comp = serverApi.GetEngineCompFactory().CreateItem(playerId)
-    if slot != -1:
-        comp.SpawnItemToPlayerInv(itemDict, playerId, slot)
-    else:
-        comp.SpawnItemToPlayerCarried(itemDict, playerId)
-
-
-@AllowCall
-def RemoveItem(data):
-    playerId = data["playerId"]
-    slot = data.get("slot", None)
-    itemDict = {"newItemName": "minecraft:air", "newAuxValue": 0, "count": 0}
-
-    comp = serverApi.GetEngineCompFactory().CreateItem(playerId)
-    if slot is not None:
-        comp.SpawnItemToPlayerInv(itemDict, playerId, slot)
-    else:
-        comp.SpawnItemToPlayerCarried(itemDict, playerId)
-
-
-@Listen(Events.ServerItemTryUseEvent)
-def OnServerItemTryUseEvent(data):
-    itemUsed = data["itemDict"]
-    playerId = data["playerId"]
-    if itemUsed["newItemName"] in BaubleDict.keys():
-        comp = serverApi.GetEngineCompFactory().CreateItem(playerId)
-        itemInfo = comp.GetItemBasicInfo(itemUsed["newItemName"])
-        # 不为盔甲时判断穿戴饰品
-        if itemInfo["itemType"] != "armor" and itemInfo["itemType"] != "food":
-            baubleSlot = ItemName2BaubleSlot(itemUsed)
-            if CheckBauble(itemUsed, baubleSlot):
-                Call(playerId, "EquipBauble", itemUsed, baubleSlot)
-
-
-def ItemName2BaubleSlot(itemDict):
-    itemName = itemDict["newItemName"]
-    if itemName in BaubleDict.keys():
-        return BaubleDict[itemName]["baubleSlot"][0]
-
-
-@AllowCall
-def CheckBauble(itemDict, baubleSlot):
-    comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
-    baseInfo = comp.GetItemBasicInfo(itemDict["newItemName"], itemDict["newAuxValue"])
-    if baseInfo["maxStackSize"] > 1:
-        logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(itemDict["newItemName"]))
+    # 检查饰品是否可用安装至指定槽位
+    @staticmethod
+    def checkBaubleAvailable(baubleSlotType, baubleName):
+        if not baubleName:
+            return True
+        baubleInfoDict = BaubleInfoManager.getBaubleInfoDict()
+        baubleInfo = baubleInfoDict.get(baubleName)
+        if baubleInfo and baubleSlotType:
+            baubleSlotList = baubleInfo.get("baubleSlot")
+            if baubleSlotType in baubleSlotList:
+                return True
         return False
 
-    if itemDict["newItemName"] in BaubleDict.keys():
-        baubleValue = BaubleDict[itemDict["newItemName"]]
-        targetSlot = baubleValue.get("baubleSlot", [])
-        if len(baubleSlot) == 0:
-            logging.error("铂: 饰品 {} 配置错误, 请检查饰品注册信息".format(itemDict["newItemName"]))
-            return False
-        if baubleSlot in targetSlot:
-            logging.info("baubleName: {} in baubleSlot: {}".format(itemDict["newItemName"], baubleSlot))
+    # 改变饰品栏入口位置
+    @BaseService.Listen(Events.ServerChatEvent)
+    def onServerChatEvent(self, data):
+        playerId = data["playerId"]
+        msg = data["message"]
+        if msg.startswith("#platinum_"):
+            comp = serverApi.GetEngineCompFactory().CreateMsg(playerId)
+            data["cancel"] = True
+            msg = msg.replace("#platinum_", "")
+            if msg in ["left_top", "right_top", "left_bottom", "right_bottom"]:
+                self.syncRequest(playerId, "platinum/changeUiPosition", QRequests.Args(msg))
+
+                position = "左上角" if msg == "left_top" else "右上角" \
+                    if msg == "right_top" else "左下角" if msg == "left_bottom" else "右下角"
+
+                comp.NotifyOneMessage(playerId, "铂: 饰品栏按钮已切换至{}".format(position))
+            elif msg in ["get_gs"]:
+                self.getGlobalBaubleSlotInfo()
+            elif msg in ["get_ts"]:
+                self.getTargetBaubleSlotInfo(playerId)
+            else:
+                comp.NotifyOneMessage(playerId, "§c铂: 未知指令§r")
+
+    # 右键穿戴饰品
+    @BaseService.Listen(Events.ServerItemTryUseEvent)
+    def onServerItemTryUseEvent(self, data):
+        itemUsed = data["itemDict"]
+        playerId = data["playerId"]
+        itemInfo = self.itemComp.GetItemBasicInfo(itemUsed["newItemName"])
+        if itemInfo["itemType"] != "armor" and itemInfo["itemType"] != "food":
+            baubleRegDict = BaubleInfoManager.getBaubleInfoDict()
+            if itemUsed["newItemName"] in baubleRegDict.keys():
+                baubleSlotTypeList = baubleRegDict[itemUsed["newItemName"]]["baubleSlot"]
+                itemComp = serverApi.GetEngineCompFactory().CreateItem(playerId)
+                selectedSlotId = itemComp.GetSelectSlotId()
+                self.syncRequest(playerId, "platinum/tryEquipBauble",
+                                 QRequests.Args(itemUsed, selectedSlotId, baubleSlotTypeList))
+
+    # 死亡掉落物品
+    @BaseService.Listen(Events.PlayerDieEvent)
+    def onPlayerDieEvent(self, data):
+        playerId = data["id"]
+        pos = Entity(playerId).FootPos
+        dimensionId = Entity(playerId).Dm
+        comp = serverApi.GetEngineCompFactory().CreateGame(levelId)
+        gameRule = comp.GetGameRulesInfoServer()
+        keepInv = gameRule["cheat_info"]["keep_inventory"]
+        if not keepInv:
+            logging.error(
+                "铂: 玩家 {} 死亡掉落物品".format(serverApi.GetEngineCompFactory().CreateName(playerId).GetName()))
+            self.syncRequest(playerId, "platinum/onPlayerDie", QRequests.Args(pos, dimensionId))
+
+    # 生成物品
+    @BaseService.REG_API("platinum/spawnItem")
+    def spawnItem(self, itemDictList, pos, dimensionId):
+        for itemDict in itemDictList:
+            self.itemComp.SpawnItemToLevel(itemDict, dimensionId, pos)
+
+    # 玩家客户端通知指令添加槽位
+    @BaseService.REG_API("platinum/addBaubleSlotCommand")
+    def addBaubleSlotCommand(self, slotId, slotType, isDefault):
+        if slotId not in BaubleSlotServerService.access().getBaubleSlotIdentifierList():
+            BaubleSlotServerService.access().addSlot(slotType, slotId, isDefault=isDefault)
+
+    # 检测玩家加入游戏
+    @BaseService.Listen(Events.PlayerJoinMessageEvent)
+    def onPlayerJoinMessageEvent(self, data):
+        playerId = data["id"]
+        logging.debug("铂: 玩家 {} 加入游戏 开始同步默认槽位".format(
+            serverApi.GetEngineCompFactory().CreateName(playerId).GetName()))
+        BaubleSlotServerService.access().syncToClient(playerId)
+
+    # 获取玩家饰品信息
+    def getPlayerBaubleInfo(self, playerId):
+        self.syncRequest(playerId, "platinum/getPlayerBaubleInfo",
+                         QRequests.Args().setCallBack(self.onGetPlayerBaubleInfo))
+
+    def onGetPlayerBaubleInfo(self, data):
+        data = data.data
+        playerId = data["playerId"]
+        baubleDict = data["baubleInfo"]
+        self.broadcast(GetPlayerBaubleInfoServerEvent(playerId, baubleDict))
+
+    # 设置饰品栏信息
+    def setBaubleSlotInfo(self, playerId, baubleSlotInfo):
+        isAllAvailable = True
+        for slotId, baubleInfo in baubleSlotInfo.items():
+            baubleSlotType = BaubleSlotServerService.access().getBaubleSlotTypeBySlotIdentifier(slotId)
+            success = BaubleServerService.access().checkBaubleAvailable(baubleSlotType, baubleInfo["newItemName"])
+            if not success:
+                logging.error("铂: 饰品 {} 无法安装至槽位 {} 请检查饰品注册".format(baubleInfo["newItemName"], slotId))
+                isAllAvailable = False
+        if isAllAvailable:
+            self.syncRequest(playerId, "platinum/setBaubleSlotInfo", QRequests.Args(baubleSlotInfo))
+
+    # 设置特定饰品栏信息
+    def setBaubleSlotInfoBySlotId(self, playerId, slotId, baubleSlotInfo):
+        baubleSlotType = BaubleSlotServerService.access().getBaubleSlotTypeBySlotIdentifier(slotId)
+        success = BaubleServerService.access().checkBaubleAvailable(baubleSlotType, baubleSlotInfo.get("newItemName"))
+        if success:
+            self.syncRequest(playerId, "platinum/setBaubleSlotInfoBySlotId", QRequests.Args(slotId, baubleSlotInfo))
+        else:
+            logging.error("铂: 饰品 {} 无法安装至槽位 {} 请检查饰品注册".format(baubleSlotInfo["newItemName"], slotId))
+
+    # 减少特定饰品耐久值
+    def decreaseBaubleDurability(self, playerId, slotId, decrease=1):
+        self.syncRequest(playerId, "platinum/decreaseBaubleDurability", QRequests.Args(slotId, decrease))
+
+    # 同步已注册的饰品信息
+    def syncBaubleSlotInfo(self, baubleSlotInfoList):
+        self.syncRequest("*", "platinum/syncBaubleSlotInfo", QRequests.Args(baubleSlotInfoList))
+
+    # 添加某个玩家的饰品栏槽位
+    def addTargetBaubleSlot(self, playerId, slotId, slotType, slotName=None, slotPlaceHolderPath=None,
+                            isCommandModify=False):
+        if self.addBaubleSlot(slotId, slotType, slotName, slotPlaceHolderPath):
+            self.syncRequest(playerId, "platinum/addBaubleSlot",
+                             QRequests.Args(slotId, slotType, slotName, slotPlaceHolderPath, False, isCommandModify))
+
+    # 添加全部玩家的饰品栏槽位
+    def addGlobalBaubleSlot(self, slotId, slotType, slotName=None, slotPlaceHolderPath=None, isDefault=False,
+                            isCommandModify=False):
+        if self.addBaubleSlot(slotId, slotType, slotName, slotPlaceHolderPath, isDefault):
+            self.syncRequest("*", "platinum/addBaubleSlot",
+                             QRequests.Args(slotId, slotType, slotName, slotPlaceHolderPath, isDefault,
+                                            isCommandModify))
+
+    # 添加槽位到服务端注册列表
+    @staticmethod
+    def addBaubleSlot(slotId, slotType, slotName, placeholderPath, isDefault=False):
+        if slotId in BaubleSlotServerService.access().getBaubleSlotIdentifierList():
             return True
 
-    return False
+        if not slotName or not placeholderPath:
+            # 检查是否是继承槽位类型
+            if slotType not in BaubleSlotServerService.access().getBaubleSlotTypeList():
+                logging.error("铂: 添加槽位失败, 未注册的槽位类型, 请使用registerSlot方法注册槽位")
+                return False
+            else:
+                # 注册槽位
+                if BaubleSlotServerService.access().addSlot(slotType, slotId):
+                    return True
 
+        else:
+            # 注册槽位
+            if BaubleSlotServerService.access().registerSlot(
+                    {"baubleSlotName": slotName,
+                     "placeholderPath": placeholderPath,
+                     "baubleSlotIdentifier": slotId,
+                     "baubleSlotType": slotType,
+                     "isDefault": isDefault}
+            ):
+                return True
+        return False
 
-@Listen(Events.PlayerDieEvent)
-def OnPlayerDieEvent(data):
-    playerId = data["id"]
-    pos = Entity(playerId).FootPos
-    dimensionId = Entity(playerId).Dm
-    comp = serverApi.GetEngineCompFactory().CreateGame(levelId)
-    gameRule = comp.GetGameRulesInfoServer()
-    keepInv = gameRule["cheat_info"]["keep_inventory"]
-    Call(playerId, "OnPlayerDie", keepInv, pos, dimensionId)
+    # 删除某个玩家的饰品栏槽位
+    def removeTargetBaubleSlot(self, playerId, slotId, isCommandModify=False):
+        self.syncRequest(playerId, "platinum/removeBaubleSlot", QRequests.Args(slotId, isCommandModify))
+
+    # 删除全部玩家的饰品栏槽位
+    def removeGlobalBaubleSlot(self, slotId, isCommandModify=False):
+        self.syncRequest("*", "platinum/removeBaubleSlot", QRequests.Args(slotId, isCommandModify))
+
+    # 获取已注册槽位信息
+    def getGlobalBaubleSlotInfo(self):
+        baubleSlotList = BaubleSlotServerService.access().getBaubleSlotList()
+        # 移除placeholderPath key
+        for slot in baubleSlotList:
+            slot.pop("placeholderPath")
+        self.broadcast(GetGlobalBaubleSlotInfoEvent(baubleSlotList))
+
+    # 获取玩家拥有的饰品槽位信息
+    def getTargetBaubleSlotInfo(self, playerId):
+        self.syncRequest(playerId, "platinum/getBaubleSlotInfo", QRequests.Args().setCallBack(self.onGetBaubleSlotInfo))
+
+    def onGetBaubleSlotInfo(self, data):
+        data = data.data
+        playerId = data["playerId"]
+        baubleSlotList = data["baubleSlotList"]
+        # 移除placeholderPath key
+        for slot in baubleSlotList:
+            slot.pop("placeholderPath")
+        self.broadcast(GetTargetBaubleSlotInfoEvent(playerId, baubleSlotList))
 
 
 @AllowCall
-def SpawnItem(itemDict, pos, dimensionId):
-    comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
-    comp.SpawnItemToLevel(itemDict, dimensionId, pos)
-
-
-@Listen(Events.ServerChatEvent)
-def OnServerChatEvent(data):
-    playerId = data["playerId"]
-    msg = data["message"]
-    if msg.startswith("#platinum_"):
-        msg = msg.replace("#platinum_", "")
-        if msg in ["left_top", "right_top", "left_bottom", "right_bottom"]:
-            Call(playerId, "ChangeUiPosition", msg)
-            data["cancel"] = True
-            comp = serverApi.GetEngineCompFactory().CreateMsg(playerId)
-
-            position = "左上角" if msg == "left_top" else "右上角" \
-                if msg == "right_top" else "左下角" if msg == "left_bottom" else "右下角"
-
-            comp.NotifyOneMessage(playerId, "铂: 饰品栏按钮已切换至{}".format(position))
-
-
-@AllowCall
-def SendMsg(playerId, msg):
-    comp = serverApi.GetEngineCompFactory().CreateGame(playerId)
-    # comp.SetTipMessage(msg, serverApi.GenerateColor('RED'))
+@CallBackKey("CheckBaubleAvailable")
+def onCheckBaubleAvailable(baubleSlotType, baubleSlotId, baubleItem, playerId, inventoryIndex):
+    baubleName = baubleItem["newItemName"]
+    success = BaubleServerService.access().checkBaubleAvailable(baubleSlotType, baubleName)
+    if success:
+        serverUtil.DecreaseItem(playerId, 1, inventoryIndex, True)
+    return {"success": success, "baubleItem": baubleItem, "baubleSlotId": baubleSlotId,
+            "inventoryIndex": inventoryIndex}

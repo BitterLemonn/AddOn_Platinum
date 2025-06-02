@@ -1,9 +1,16 @@
 # coding=utf-8
-import re
+from .. import developLogging as logging
 
+from ..BroadcastEvent.getBaubleSlotInfoEvent import GetGlobalBaubleSlotInfoEvent, GetTargetBaubleSlotInfoEvent
+from ..BroadcastEvent.getPlayerBaubleInfoEvent import GetPlayerBaubleInfoServerEvent
 from ..QuModLibs.Server import *
+from ..QuModLibs.Modules.Services.Server import BaseService
 from .. import commonConfig
-from .. import loggingUtils as logging
+from .. import oldVersionFixer
+from ..DataManager.baubleInfoManager import BaubleInfoManager
+from ..DataManager.baubleSlotServerService import BaubleSlotServerService
+from ..Script_UI.baubleServer import BaubleServerService
+from ..oldVersionFixer import oldSlotIdFixer
 
 
 class BroadcasterServer(serverApi.GetServerSystemCls()):
@@ -20,36 +27,27 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
 
         baubleName = data["baubleName"]
         baubleSlot = data["baubleSlot"]
-        customTips = data.get("customTips", "")
+        customTips = data.get("customTips", None)
         # 直接设置的自定义提示优先级更高
-        if customTips == "":
+        if not customTips:
             comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
             info = comp.GetItemBasicInfo(baubleName, 0)
-            customTips = info.get("customTips", "")
-        comp = serverApi.GetEngineCompFactory().CreateGame(levelId)
-        exist = comp.LookupItemByName(baubleName)
+            customTips = info.get("customTips", None)
 
-        if not exist:
+        if not serverApi.GetEngineCompFactory().CreateGame(levelId).LookupItemByName(baubleName):
             logging.error("铂: 物品 {} 不存在,请检查标识符是否正确".format(baubleName))
             return
 
-        if isinstance(baubleSlot, list):
-            baubleSlot = tuple(baubleSlot)
-            self.__BaubleRegister(baubleName, baubleSlot, customTips)
-        else:
-            self.__BaubleRegister(baubleName, baubleSlot, customTips)
+        self.__BaubleRegister(baubleName, baubleSlot, customTips)
 
-    @staticmethod
-    def __BaubleRegister(baubleName, baubleSlot, customTips):
+    def __BaubleRegister(self, baubleName, baubleSlot, customTips):
+        baubleSlot = [slot for slot in baubleSlot] if isinstance(baubleSlot, tuple) else baubleSlot if isinstance(
+            baubleSlot, list) else [baubleSlot]
+        baubleSlot = oldVersionFixer.oldSlotTypeListToNew(baubleSlot)
 
-        if isinstance(baubleSlot, tuple):
-            for slot in baubleSlot:
-                if slot not in commonConfig.BaubleEnum.__dict__.values():
-                    logging.error("铂: 饰品 {} 插槽 {} 不存在,请检查饰品槽位是否正确".format(baubleName, slot))
-                    return
-        else:
-            if baubleSlot not in commonConfig.BaubleEnum.__dict__.values():
-                logging.error("铂: 饰品 {} 插槽 {} 不存在,请检查饰品槽位是否正确".format(baubleName, baubleSlot))
+        for slot in baubleSlot:
+            if slot not in BaubleSlotServerService.access().getBaubleSlotTypeList():
+                logging.error("铂: 饰品 {} 插槽 {} 不存在,请检查饰品槽位是否正确".format(baubleName, slot))
                 return
 
         comp = serverApi.GetEngineCompFactory().CreateItem(levelId)
@@ -58,32 +56,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
             logging.error("铂: 饰品 {} 最大堆叠数量大于1".format(baubleName))
             return
 
-        if baubleName in commonConfig.BaubleDict:
-            logging.error("铂: 饰品 {} 已存在,请勿重复注册".format(baubleName))
-            return
-
-        if len(customTips) > 0:
-            if isinstance(baubleSlot, tuple):
-                commonConfig.BaubleDict[baubleName] = {
-                    "baubleSlot": [slot for slot in baubleSlot],
-                    "customTips": customTips
-                }
-            else:
-                commonConfig.BaubleDict[baubleName] = {
-                    "baubleSlot": [baubleSlot],
-                    "customTips": customTips
-                }
-        else:
-            if isinstance(baubleSlot, tuple):
-                commonConfig.BaubleDict[baubleName] = {
-                    "baubleSlot": [slot for slot in baubleSlot]
-                }
-            else:
-                commonConfig.BaubleDict[baubleName] = {
-                    "baubleSlot": [baubleSlot]
-                }
-
-        logging.info("铂: 饰品 {} 注册成功".format(baubleName))
+        BaubleInfoManager.registerBaubleInfo(baubleName, baubleSlot, customTips)
 
     @staticmethod
     def GetPlayerBaubleInfo(playerId):
@@ -92,7 +65,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :param playerId: 玩家ID
         :return:
         """
-        Call(playerId, "GetPlayerBaubleInfo")
+        BaubleServerService.access().getPlayerBaubleInfo(playerId)
 
     @staticmethod
     def SetPlayerBaubleInfo(playerId, baubleDict):
@@ -104,7 +77,11 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :type playerId: str
         :return:
         """
-        Call(playerId, "SetPlayerBaubleInfo", baubleDict)
+        newBaubleDict = {}
+        for slotId, baubleInfo in baubleDict.items():
+            slotId = oldSlotIdFixer(slotId)
+            newBaubleDict[slotId] = baubleInfo
+        BaubleServerService.access().setBaubleSlotInfo(playerId, newBaubleDict)
 
     @staticmethod
     def SetPlayerBaubleInfoWithSlot(playerId, baubleInfo, slotName):
@@ -118,7 +95,8 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :type slotName: str
         :return:
         """
-        Call(playerId, "SetPlayerBaubleInfoWithSlot", baubleInfo, slotName)
+        slotName = oldSlotIdFixer(slotName)
+        BaubleServerService.access().setBaubleSlotInfoBySlotId(playerId, slotName, baubleInfo)
 
     @staticmethod
     def DecreaseBaubleDurability(playerId, slotName, num=1):
@@ -129,25 +107,90 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :param slotName: 饰品槽位
         :return:
         """
-        Call(playerId, "DecreaseBaubleDurability", num, slotName)
+        slotName = oldSlotIdFixer(slotName)
+        BaubleServerService.access().decreaseBaubleDurability(playerId, slotName, num)
+
+    @staticmethod
+    def AddTargetBaubleSlot(playerId, slotId, slotType, slotName=None, slotPlaceHolderPath=None):
+        """
+        添加目标饰品槽位
+        :param playerId: 玩家ID
+        :param slotId: 槽位标识符
+        :param slotType: 槽位类型
+        :param slotName: 槽位名称
+        :param slotPlaceHolderPath: 槽位占位符图片路径
+        :return:
+        """
+        BaubleServerService.access().addTargetBaubleSlot(playerId, slotId, slotType, slotName, slotPlaceHolderPath)
+
+    @staticmethod
+    def AddGlobalBaubleSlot(slotId, slotType, slotName=None, slotPlaceHolderPath=None, isDefault=False):
+        """
+        添加全局饰品槽位
+        :param slotId: 槽位标识符
+        :param slotType: 槽位类型
+        :param slotName: 槽位名称
+        :param slotPlaceHolderPath: 槽位占位符图片路径
+        :param isDefault: 是否为默认槽位
+        :return:
+        """
+        BaubleServerService.access().addGlobalBaubleSlot(slotId, slotType, slotName, slotPlaceHolderPath, isDefault)
+
+    @staticmethod
+    def DeleteTargetBaubleSlot(playerId, slotId):
+        """
+        删除目标饰品槽位
+        :param playerId: 玩家ID
+        :param slotId: 槽位标识符
+        :return:
+        """
+        BaubleServerService.access().removeTargetBaubleSlot(playerId, slotId)
+
+    @staticmethod
+    def DeleteGlobalBaubleSlot(slotId):
+        """
+        删除全局饰品槽位
+        :param slotId: 槽位标识符
+        :return:
+        """
+        BaubleServerService.access().removeGlobalBaubleSlot(slotId)
 
 
-@AllowCall
-def BaubleEquipped(data):
-    server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
-    server.BroadcastEvent(commonConfig.BAUBLE_EQUIPPED_EVENT, data)
+@BaseService.Init
+class BroadcasterServerService(BaseService):
+    def __init__(self):
+        BaseService.__init__(self)
 
+    @BaseService.REG_API("platinum/onBaublePutOn")
+    def onBaublePutOn(self, data):
+        server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        server.BroadcastEvent(commonConfig.BAUBLE_EQUIPPED_EVENT, data)
 
-@AllowCall
-def BaubleUnequipped(data):
-    server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
-    server.BroadcastEvent(commonConfig.BAUBLE_UNEQUIPPED_EVENT, data)
+    @BaseService.REG_API("platinum/onBaubleTakeOff")
+    def onBaubleTakeOff(self, data):
+        server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        server.BroadcastEvent(commonConfig.BAUBLE_UNEQUIPPED_EVENT, data)
 
+    @BaseService.ServiceListen(GetPlayerBaubleInfoServerEvent)
+    def onGetPlayerBaubleInfo(self, data):
+        data = GetPlayerBaubleInfoServerEvent.getData(data)
+        playerId = data.playerId
+        baubleDict = data.baubleDict
+        server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        server.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, {"playerId": playerId, "baubleDict": baubleDict})
 
-# 接收玩家饰品信息回调
-@AllowCall
-def OnGetPlayerBaubleInfo(data):
-    playerId = data["playerId"]
-    baubleDict = data["baubleInfo"]
-    server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
-    server.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, {"playerId": playerId, "baubleDict": baubleDict})
+    @BaseService.ServiceListen(GetGlobalBaubleSlotInfoEvent)
+    def onGetGlobalBaubleSlotInfo(self, data):
+        data = GetGlobalBaubleSlotInfoEvent.getData(data)
+        baubleSlotList = data.baubleSlotList
+        server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        server.BroadcastEvent(commonConfig.BAUBLE_GET_GLOBAL_INFO_EVENT, {"baubleSlotList": baubleSlotList})
+
+    @BaseService.ServiceListen(GetTargetBaubleSlotInfoEvent)
+    def onGetPlayerBaubleInfo(self, data):
+        data = GetTargetBaubleSlotInfoEvent.getData(data)
+        playerId = data.playerId
+        baubleSlotList = data.baubleSlotList
+        server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        server.BroadcastEvent(commonConfig.BAUBLE_GET_TARGET_INFO_EVENT,
+                              {"playerId": playerId, "baubleSlotList": baubleSlotList})
