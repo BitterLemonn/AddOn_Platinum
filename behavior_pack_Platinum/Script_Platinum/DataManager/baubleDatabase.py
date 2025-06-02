@@ -160,8 +160,6 @@ class BaubleDatabaseService(BaseService):
             DataAlias.BAUBLE_BTN_POSITION: BaubleDatabase.uiPosition,
             DataAlias.BAUBLE_COMMAND_MODIFY: BaubleDatabase.baubleCommandModifyAdding
         }
-        logging.error(
-            "铂: 数据保存成功: baubleCommandModifyAdding: {}".format(BaubleDatabase.baubleCommandModifyAdding))
         comp.SetConfigData(DataAlias.PLATINUM_LOCAL_DATA + "_{}".format(uid), dataDict)
 
     def migrateData(self, formatVersion, data):

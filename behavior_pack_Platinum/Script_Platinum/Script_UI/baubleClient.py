@@ -36,6 +36,8 @@ class BaubleBroadcastService(BaseService):
                          QRequests.Args(
                              {"baubleSlotId": baubleSlotId, "baubleSlot": baubleSlotType, "slotIndex": slotIndex,
                               "itemDict": baubleItem, "isFirstLoad": isFirstLoad, "playerId": playerId}))
+        # 保存当前饰品栏信息
+        BaubleDatabaseService.access().manualSaving()
 
     def onBaubleTakeOff(self, baubleItem, baubleSlotId, isFirstLoad=False):
         slotIndex = BaubleSlotManager().getSlotIndex(baubleSlotId) + 1
@@ -48,6 +50,8 @@ class BaubleBroadcastService(BaseService):
                          QRequests.Args(
                              {"baubleSlotId": baubleSlotId, "baubleSlot": baubleSlotType, "slotIndex": slotIndex,
                               "itemDict": baubleItem, "isFirstLoad": isFirstLoad, "playerId": playerId}))
+        # 保存当前饰品栏信息
+        BaubleDatabaseService.access().manualSaving()
 
     # 试图装备饰品(右键穿戴)
     @BaseService.REG_API("platinum/tryEquipBauble")
@@ -345,7 +349,7 @@ class InventoryClassicProxy(CustomUIScreenProxy):
             baubleInfo = BaubleDataController.getBaubleInfo(baubleIdentifier)
             if baubleInfo:
                 return False
-            return True
+        return True
 
     # 饰品栏选择框
     @Binding.binding_collection(Binding.BF_BindBool, "platinum_bauble_collection", "#bauble_reborn.is_selected")
