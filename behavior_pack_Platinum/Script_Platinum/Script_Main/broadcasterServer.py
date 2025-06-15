@@ -187,7 +187,7 @@ class BroadcasterServerService(BaseService):
         server.BroadcastEvent(commonConfig.BAUBLE_GET_GLOBAL_INFO_EVENT, {"baubleSlotList": baubleSlotList})
 
     @BaseService.ServiceListen(GetTargetBaubleSlotInfoEvent)
-    def onGetPlayerBaubleInfo(self, data):
+    def onGetTagetBaubleSlotInfo(self, data):
         data = GetTargetBaubleSlotInfoEvent.getData(data)
         playerId = data.playerId
         baubleSlotList = data.baubleSlotList
