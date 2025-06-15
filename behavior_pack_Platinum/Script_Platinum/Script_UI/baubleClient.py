@@ -576,7 +576,7 @@ class InventoryPocketProxy(InventoryClassicProxy):
 
         self.basePath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel"
         self.cursorSlotPath = self.basePath + "/base_panel/inventory_selected_icon_button/default/selected_item_icon"
-        self.entryPosition = self.basePath + "/base_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg/bauble_button"
+        self.entryBtnPath = self.basePath + "/base_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg/bauble_button"
         self.inventorySlotPathBase = self.basePath + "/base_panel/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane/scroll_touch/scroll_view/panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{index}"
         self.hotbarSlotPathBase = self.basePath + "/base_panel/hotbar_and_panels/hotbar_section_panel/hotbar/hotbar_grid/hotbar_grid_item{index}"
 
@@ -606,6 +606,11 @@ class InventoryPocketProxy(InventoryClassicProxy):
         if not self.isLockControl:
             self.isLockControl = True
             super(InventoryPocketProxy, self).onBaubleButtonClick(args)
+        if self.isShowBaublePanel:
+            basePanel = self.screen.GetBaseUIControl(self.armorBasePath)
+            x, y = basePanel.GetSize()
+            if y < 40:
+                self.setToolTips("§c检测到背包界面过小，请到\n§6设置-视频-GUI标度§r\n§c中缩小GUI标度§r")
 
     @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.pocket_grid.visible")
     def bindingPocketGridVisible(self):
