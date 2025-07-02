@@ -258,7 +258,16 @@ class BaubleSlotServerService(BaseService):
             slotTypeNameDict[slotInfoDict.get("baubleSlotType")] = slotInfoDict.get("baubleSlotName")
         return slotTypeNameDict
 
+    @BaseService.REG_API("platinum/syncBaubleDefaultSlotServer")
+    def syncBaubleDefaultSlotClient(self, playerId):
+        """
+        同步默认槽位信息到客户端
+        :param playerId: 玩家ID
+        :return:
+        """
+        self.syncToClient(playerId)
+
     # 同步默认槽位信息
     def syncToClient(self, targetPlayer=None):
         defaultSlot = self.getBaubleSlotList(True)
-        self.syncRequest(targetPlayer or "*", "platinum/syncBaubleDefaultSlot", QRequests.Args(defaultSlot))
+        self.syncRequest(targetPlayer or "*", "platinum/syncBaubleDefaultSlotClient", QRequests.Args(defaultSlot))

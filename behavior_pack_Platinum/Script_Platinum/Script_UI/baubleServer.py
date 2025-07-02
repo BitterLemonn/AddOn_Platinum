@@ -95,13 +95,13 @@ class BaubleServerService(BaseService):
         if slotId not in BaubleSlotServerService.access().getBaubleSlotIdentifierList():
             BaubleSlotServerService.access().addSlot(slotType, slotId, isDefault=isDefault)
 
-    # 检测玩家加入游戏
-    @BaseService.Listen(Events.PlayerJoinMessageEvent)
-    def onPlayerJoinMessageEvent(self, data):
-        playerId = data["id"]
-        logging.debug("铂: 玩家 {} 加入游戏 开始同步默认槽位".format(
-            serverApi.GetEngineCompFactory().CreateName(playerId).GetName()))
-        BaubleSlotServerService.access().syncToClient(playerId)
+    # # 检测玩家加入游戏
+    # @BaseService.Listen(Events.PlayerJoinMessageEvent)
+    # def onPlayerJoinMessageEvent(self, data):
+    #     playerId = data["id"]
+    #     logging.debug("铂: 玩家 {} 加入游戏 开始同步默认槽位".format(
+    #         serverApi.GetEngineCompFactory().CreateName(playerId).GetName()))
+    #     BaubleSlotServerService.access().syncToClient(playerId)
 
     # 获取玩家饰品信息
     def getPlayerBaubleInfo(self, playerId):
