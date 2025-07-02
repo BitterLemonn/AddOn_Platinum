@@ -1,5 +1,7 @@
 # coding=utf-8
 import json
+
+from .Event.platinumBaubleDataLoadOverEvent import PlatinumBaubleDataLoadOverEvent
 from .. import developLogging as logging
 import re
 
@@ -110,6 +112,9 @@ class BaubleDatabaseService(BaseService):
 
     def __init__(self):
         BaseService.__init__(self)
+
+    @BaseService.Listen(Events.OnLocalPlayerStopLoading)
+    def onLocalPlayerStopLoading(self, _):
         self.__loadingData()
 
     def onServiceStop(self):
@@ -139,6 +144,9 @@ class BaubleDatabaseService(BaseService):
     def __loadingData(self):
         playerComp = clientApi.GetEngineCompFactory().CreatePlayer(playerId)
         uid = playerComp.getUid()
+        if not uid:
+            logging.error("铂: 玩家UID获取失败, 无法加载铂数据")
+            return
         comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
         data = comp.GetConfigData(DataAlias.PLATINUM_LOCAL_DATA + "_{}".format(uid))
         if data:
@@ -149,6 +157,7 @@ class BaubleDatabaseService(BaseService):
             BaubleDatabase.baubleCommandModifyAdding = data.get(DataAlias.BAUBLE_COMMAND_MODIFY, [])
             logging.info(
                 "铂: 数据加载成功: baubleCommandModifyAdding: {}".format(BaubleDatabase.baubleCommandModifyAdding))
+        self.broadcast(PlatinumBaubleDataLoadOverEvent(playerId))
 
     def __savingData(self):
         playerComp = clientApi.GetEngineCompFactory().CreatePlayer(playerId)

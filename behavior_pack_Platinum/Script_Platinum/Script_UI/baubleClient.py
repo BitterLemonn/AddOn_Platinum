@@ -1,4 +1,6 @@
 # coding=utf-8
+from ..DataManager.Event.platinumBaubleDataLoadOverEvent import PlatinumBaubleDataLoadOverEvent
+
 if 1 > 2:
     from ..QuModLibs.QuClientApi.ui.screenNode import ScreenNode
 from .. import developLogging as logging
@@ -124,7 +126,22 @@ class BaubleBroadcastService(BaseService):
             else:
                 logging.error("铂: 饰品 {} 无耐久度".format(baubleName))
 
-    @BaseService.REG_API("platinum/syncBaubleDefaultSlot")
+    @BaseService.ServiceListen(PlatinumBaubleDataLoadOverEvent)
+    def onBaubleDataLoadOver(self, data):
+        """
+        饰品数据加载完成事件
+        :param data: PlatinumBaubleDataLoadOverEvent数据
+        :return:
+        """
+        data = PlatinumBaubleDataLoadOverEvent.getData(data)
+        targetId = data.playerId
+        if targetId == playerId:
+            logging.debug("铂: 玩家 {} 饰品数据加载完成, 开始同步默认槽位".format(
+                clientApi.GetEngineCompFactory().CreateName(playerId).GetName()))
+            # 同步默认槽位
+            self.syncRequest("platinum/syncBaubleDefaultSlotServer", QRequests.Args(playerId, ))
+
+    @BaseService.REG_API("platinum/syncBaubleDefaultSlotClient")
     def syncBaubleDefaultSlot(self, defaultSlot):
         addSlotList = BaubleSlotManager().syncDefaultSlot(defaultSlot)
         for slotId in addSlotList:

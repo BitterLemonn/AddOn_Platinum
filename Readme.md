@@ -205,7 +205,7 @@ def onBaubleGetInfo(data):
 
 获取到的baubleDict数据详情请查看 **八、数据说明**
 
-**值得注意的是，获取玩家饰品信息需在服务端事件PlayerJoinMessageEvent发生之后进行请求，否则会导致获取信息不正确**
+**值得注意的是，获取玩家饰品信息需在客户端事件onLocalPlayerStopLoading发生之后进行请求，否则会导致获取信息不正确**
 
 #### 7. 设置玩家饰品信息
 
@@ -224,7 +224,7 @@ registerSys.SetPlayerBaubleInfoWithSlot("playerId", {},
                                         "slotName")  # 这里填入playerId以及itemDict以及slotname slotname即槽位id 具体槽位id请查看 八、数据说明
 ```
 
-**需要注意的是，设置玩家饰品操作需在服务端事件PlayerJoinMessageEvent之后进行设置，否则会被客户端本地数据覆盖**
+**需要注意的是，设置玩家饰品操作需在客户端事件onLocalPlayerStopLoading之后进行设置，否则会被客户端本地数据覆盖**
 
 #### 8. 设置玩家饰品耐久度
 
@@ -241,7 +241,7 @@ registerSys.DecreaseBaubleDurability("playerId", "slotName", 1)
 # 这里填入playerId以及slotName(slotName即槽位id 具体槽位id请查看 八、数据说明)以及需要减少的耐久度(默认为1)
 ```
 
-**需要注意的是，设置玩家饰品操作需在服务端事件PlayerJoinMessageEvent之后进行设置，否则会被客户端本地数据覆盖**
+**需要注意的是，设置玩家饰品操作需在客户端事件onLocalPlayerStopLoading之后进行设置，否则会被客户端本地数据覆盖**
 
 ### 六、示例代码
 
