@@ -52,7 +52,7 @@ def BindParticleEntity(data):
     rotation = data.get("rotation", (0, 0, 0))
 
     comp = clientApi.GetEngineCompFactory().CreateParticleSystem(None)
-    comp.CreateBindEntity(particleName, entityId, boneName, offset, rotation)
+    comp.CreateBindEntityNew(particleName, entityId, boneName, offset, rotation)
 
 
 @AllowCall

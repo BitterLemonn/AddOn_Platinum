@@ -87,7 +87,7 @@ class BaubleServerService(BaseService):
     @BaseService.REG_API("platinum/spawnItem")
     def spawnItem(self, itemDictList, pos, dimensionId):
         for itemDict in itemDictList:
-            self.itemComp.SpawnItemToLevel(itemDict, dimensionId, pos)
+            System.CreateEngineItemEntity(itemDict, dimensionId, pos)
 
     # 玩家客户端通知指令添加槽位
     @BaseService.REG_API("platinum/addBaubleSlotCommand")
