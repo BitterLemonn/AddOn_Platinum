@@ -8,3 +8,4 @@
 /.qu_packages
 /.idea/
 /.vscode/
+.prettierrc

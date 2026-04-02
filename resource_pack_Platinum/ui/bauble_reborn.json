@@ -2,8 +2,8 @@
     "bauble_button@common.button": {
         "type": "button",
         "$control_alpha": 1,
-        "$default_texture": "textures/ui/bauble_btn",
-        "$hover_texture": "textures/ui/bauble_btn",
+        "$default_texture": "textures/ui/bauble_btn_default",
+        "$hover_texture": "textures/ui/bauble_btn_hover",
         "$is_new_nine_slice": false,
         "$nine_slice_buttom": 0,
         "$nine_slice_left": 0,
