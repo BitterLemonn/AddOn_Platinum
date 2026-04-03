@@ -16,6 +16,7 @@ class FlyingItemRenderer:
         self.flyingItemPanel = self.screen.GetBaseUIControl(self.basePath)
 
         self.flyingPool = []  # type: list[BaseUIControl]
+        self.flyingBigPool = []  # type: list[BaseUIControl]
         self.flyingUsing = []  # type: list[BaseUIControl]
 
     def OnDestroy(self):
