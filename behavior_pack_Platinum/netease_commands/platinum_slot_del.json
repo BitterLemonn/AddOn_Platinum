@@ -1,0 +1,10 @@
+{
+    "format_version": "0.0.1",
+    "name": "platinum_del",
+    "description": "铂: 删除饰品栏槽位",
+    "permission_level": "admin",
+    "args": [
+        {"name": "目标", "type": "target", "default": "@s"},
+        {"name": "槽位id", "type": "str"}
+    ]
+}

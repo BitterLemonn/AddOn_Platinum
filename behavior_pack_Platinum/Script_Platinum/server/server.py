@@ -1,0 +1,16 @@
+# coding=utf-8
+from Script_Platinum.data.itemStack import maxStackStore
+from Script_Platinum.QuModLibs.Server import *
+from Script_Platinum.utils.serverUtils import compFactory
+
+itemComp = compFactory.CreateItem(levelId)
+
+#6743 14:25
+# 获取全部物品基本信息
+@Listen("LoadServerAddonScriptsAfter")
+def onLoadServerAddonScriptsAfter(data):
+    allItems = itemComp.GetLoadItems()
+    for item in allItems:
+        baseInfo = itemComp.GetItemBasicInfo(item)
+        if baseInfo is not None:
+            maxStackStore[item] = baseInfo["maxStackSize"]

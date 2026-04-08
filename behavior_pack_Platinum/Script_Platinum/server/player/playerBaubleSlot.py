@@ -1,0 +1,81 @@
+# coding=utf-8
+
+from Script_Platinum.QuModLibs.Server import *
+from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
+from Script_Platinum.commonConfig import PLAYER_SLOT_DATA
+from Script_Platinum.data.slotData import BaubleSlotData
+from Script_Platinum.utils.serverUtils import compFactory
+
+playerSlotList = {}  # type: dict[int, BaubleSlotData]
+
+
+def checkSlotValid(slotId):
+    from Script_Platinum.server.registry.slotRegistry import SlotRegistry
+
+    return slotId in SlotRegistry().getBaubleSlotIdList()
+
+
+def getPlayerSlotList(playerId):
+    return playerSlotList.get(playerId, [])
+
+
+def setPlayerSlotList(playerId, slotList):
+    global playerSlotList
+    playerSlotList[playerId] = slotList
+    _syncToClient(playerId)
+
+
+def addPlayerSlot(playerId, slotData):
+    global playerSlotList
+    if playerId not in playerSlotList:
+        playerSlotList[playerId] = []
+    playerSlotList[playerId].append(slotData)
+    _syncToClient(playerId)
+
+
+def deletePlayerSlotById(playerId, slotId):
+    global playerSlotList
+    if playerId in playerSlotList and slotId in [slot.identifier for slot in playerSlotList[playerId]]:
+        playerSlotList[playerId] = [slot for slot in playerSlotList[playerId] if slot.identifier != slotId]
+        _syncToClient(playerId)
+
+
+def _syncToClient(playerId):
+    # 同步槽位数据到客户端
+    playerSlotList = getPlayerSlotList(playerId)
+    PlayerBaubleSlotServerService.access().syncRequest(
+        playerId, "client/slot/playerSlotSync", QRequests.Args([slot.__dict__ for slot in playerSlotList])
+    )
+    # 保存到世界信息
+    playerSlotInfo = compFactory.CreateExtraData(levelId).GetExtraData(PLAYER_SLOT_DATA) or {}
+    playerSlotInfo[playerId] = [slot.__dict__ for slot in playerSlotList]
+    compFactory.CreateExtraData(levelId).SetExtraData(PLAYER_SLOT_DATA, playerSlotInfo)
+
+
+@BaseService.Init
+class PlayerBaubleSlotServerService(BaseService):
+
+    def __init__(self):
+        BaseService.__init__(self)
+
+    @BaseService.Listen("AddServerPlayerEvent")
+    def onAddServerPlayer(self, data):
+        playerId = data["id"]
+        # 读取世界信息中的槽位数据
+        playerSlotInfo = compFactory.CreateExtraData(levelId).GetExtraData(PLAYER_SLOT_DATA) or {}
+        slotListData = playerSlotInfo.get(playerId, [])
+        if slotListData:
+            slotList = [BaubleSlotData(**slotData) for slotData in slotListData]
+            setPlayerSlotList(playerId, slotList)
+        else:
+            # 请求默认槽位数据
+            from Script_Platinum.server.registry.slotRegistry import SlotRegistry
+
+            defaultSlots = SlotRegistry().getBaubleSlotList(defaultFilter=True)
+            setPlayerSlotList(playerId, defaultSlots)
+
+    @BaseService.REG_API("server/slot/requestPlayerSlotList")
+    def requestPlayerSlotList(self):
+        playerId = getLoaderSystem().rpcPlayerId
+        slotList = getPlayerSlotList(playerId)
+        return [slot.__dict__ for slot in slotList]
