@@ -18,6 +18,7 @@ PLATINUM_BROADCAST_SERVER = "broadcasterServer"
 PLATINUM_BROADCAST_CLIENT = "broadcasterClient"
 
 PLAYER_SLOT_DATA = "platinum:player_slot_data"  # 玩家槽位数据存储标签 (请勿更改!!)
+PLAYER_LOCAL_DATA_VERSION = 2  # 玩家本地数据版本 (请勿更改!!)
 
 
 # 槽位名称 (请勿更改!!)

@@ -1,5 +1,5 @@
 # coding=utf-8
-import commonConfig
+from Script_Platinum import commonConfig
 import re
 
 
@@ -53,8 +53,20 @@ def newSlotTypeToOld(slotType):
 
 
 def oldSlotIdFixer(oldName):
-    oldNameList = ["helmet", "necklace", "back", "armor", "hand_1", "hand_2", "belt", "shoes", "other_1", "other_2",
-                   "other_3", "other_4"]
+    oldNameList = [
+        "helmet",
+        "necklace",
+        "back",
+        "armor",
+        "hand_1",
+        "hand_2",
+        "belt",
+        "shoes",
+        "other_1",
+        "other_2",
+        "other_3",
+        "other_4",
+    ]
     if oldName in oldNameList:
         # 判断原字符串是否存在数字
         num = re.search(r"\d", oldName)

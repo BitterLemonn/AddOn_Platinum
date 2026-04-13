@@ -1,0 +1,7 @@
+{
+    "ui_defs": [
+        "ui/bauble_reborn.json",
+        "ui/info_tips.json",
+        "ui/netease_editor_template_namespace.json"
+    ]
+}

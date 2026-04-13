@@ -12,9 +12,14 @@ class BaubleSlotData(object):
     @classmethod
     def fromDict(cls, data):
         return cls(
-            name=data.get("baubleSlotName", ""),
+            name=data.get("name", None),
             placeholderPath=data.get("placeholderPath", ""),
-            identifier=data.get("baubleSlotIdentifier", ""),
-            slotType=data.get("baubleSlotType", ""),
+            identifier=data.get("identifier", None),
+            slotType=data.get("slotType", None),
             isDefault=data.get("isDefault", False),
+        )
+
+    def __str__(self):
+        return "BaubleSlotData(name={}, placeholderPath={}, identifier={}, slotType={}, isDefault={})".format(
+            self.name, self.placeholderPath, self.identifier, self.slotType, self.isDefault
         )

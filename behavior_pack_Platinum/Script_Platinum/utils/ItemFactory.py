@@ -52,7 +52,7 @@ class NBTTransformer(object):
 
     @classmethod
     def parse(cls, nbtData):
-        # type: (dict) -> Any
+        # type: (dict) -> object
         if not isinstance(nbtData, dict):
             return nbtData
         value = nbtData["__value__"]
@@ -126,26 +126,30 @@ class ItemFactory(object):
 
             # ------- display 层 -------
             self.__display = self.__userDataDict.get("display", {}) if self.__userDataDict else {}  # type: dict
-            self.__lore = self.__display.get("Lore", None)  # type: list or None
-            self.__name = self.__display.get("Name", None)  # type: str or None
+            self.__lore = self.__display.get("Lore", None)  # type: list | None
+            self.__name = self.__display.get("Name", None)  # type: str | None
             # ---------- ench 层 ----------
-            self.__ench = self.__userDataDict.get("ench", None) if self.__userDataDict else None  # type: list or None
+            self.__ench = self.__userDataDict.get("ench", None) if self.__userDataDict else None  # type: list | None
             # ---------- trim 层 ----------
-            self.__trim = self.__userDataDict.get("Trim", None) if self.__userDataDict else None  # type: dict or None
-            self.__pattern = self.__trim.get("Pattern", None) if self.__trim else None  # type: str or None
-            self.__material = self.__trim.get("Material", None) if self.__trim else None  # type: str or None
+            self.__trim = self.__userDataDict.get("Trim", None) if self.__userDataDict else None  # type: dict | None
+            self.__pattern = self.__trim.get("Pattern", None) if self.__trim else None  # type: str | None
+            self.__material = self.__trim.get("Material", None) if self.__trim else None  # type: str | None
             # --------- repairCost 层 ---------
-            self.__repairCost = self.__userDataDict.get("RepairCost",
-                                                        None) if self.__userDataDict else None  # type: dict or None
+            self.__repairCost = (
+                self.__userDataDict.get("RepairCost", None) if self.__userDataDict else None
+            )  # type: dict | None
             # --------- extraId 层 ---------
-            self.__extraId = self.__userDataDict.get("ItemExtraID",
-                                                     None) if self.__userDataDict else None  # type: str or None
+            self.__extraId = (
+                self.__userDataDict.get("ItemExtraID", None) if self.__userDataDict else None
+            )  # type: str | None
             # --------- customTips 层 ---------
-            self.__customTips = self.__userDataDict.get("ItemCustomTips",
-                                                        None) if self.__userDataDict else None  # type: str or None
+            self.__customTips = (
+                self.__userDataDict.get("ItemCustomTips", None) if self.__userDataDict else None
+            )  # type: str | None
             # ---------- customData 层 ----------
-            self.__customData = self.__userDataDict.get("LemonCustomData", None) \
-                if self.__userDataDict else None  # type: dict
+            self.__customData = (
+                self.__userDataDict.get("LemonCustomData", None) if self.__userDataDict else None
+            )  # type: dict
 
         @staticmethod
         def __enchToNBTdata(enchData):
@@ -153,12 +157,16 @@ class ItemFactory(object):
             enchId = enchData.id
             level = enchData.level
             if isinstance(enchId, int):
-                return {"id": NBTTransformer.transform(enchId, NBTTransformer.DataType.SHORT),
-                        "lvl": NBTTransformer.transform(level, NBTTransformer.DataType.SHORT)}
+                return {
+                    "id": NBTTransformer.transform(enchId, NBTTransformer.DataType.SHORT),
+                    "lvl": NBTTransformer.transform(level, NBTTransformer.DataType.SHORT),
+                }
             else:
-                return {"modEnchant": NBTTransformer.transform(enchId),
-                        "id": NBTTransformer.transform(255, NBTTransformer.DataType.SHORT),
-                        "lvl": NBTTransformer.transform(level, NBTTransformer.DataType.SHORT)}
+                return {
+                    "modEnchant": NBTTransformer.transform(enchId),
+                    "id": NBTTransformer.transform(255, NBTTransformer.DataType.SHORT),
+                    "lvl": NBTTransformer.transform(level, NBTTransformer.DataType.SHORT),
+                }
 
         @classmethod
         def fromDict(cls, userDataDict):
@@ -400,7 +408,7 @@ class ItemFactory(object):
             return userData
 
         def getDisplayName(self):
-            # type: () -> str or None
+            # type: () -> str | None
             name = NBTTransformer.parse(self.__name) if self.__name else None
             return name
 
@@ -446,6 +454,9 @@ class ItemFactory(object):
                 rawData = NBTTransformer.parseDict(self.__customData)
                 return {key: pickle.loads(zlib.decompress(pickle.loads(value))) for key, value in rawData.items()}
             return None
+
+        def getCustomTips(self):
+            return NBTTransformer.parse(self.__customTips) if self.__customTips else None
 
     def __init__(self, itemDict=None):
         self.__itemDict = itemDict if itemDict else {"newItemName": "minecraft:air", "newAuxValue": 0, "count": 1}
@@ -773,11 +784,7 @@ class ItemFactory(object):
         :rtype: dict
         :return: 物品字典
         """
-        itemDict = {
-            "newItemName": self.__itemName,
-            "newAuxValue": self.__auxValue or 0,
-            "count": self.__count or 1
-        }
+        itemDict = {"newItemName": self.__itemName, "newAuxValue": self.__auxValue or 0, "count": self.__count or 1}
         if self.__durability is not None:
             itemDict["durability"] = self.__durability
 
@@ -802,12 +809,12 @@ class ItemFactory(object):
         return self.__itemName
 
     def getDurability(self):
-        # type: () -> int or None
+        # type: () -> int | None
         return self.__durability
 
     def getCustomTips(self):
-        # type: () -> str or None
-        return self.__customTips
+        # type: () -> str | None
+        return self.__userData.getCustomTips()
 
     def getLores(self):
         # type: () -> list
@@ -817,7 +824,7 @@ class ItemFactory(object):
         return lores
 
     def getDisplayName(self):
-        # type: () -> str or None
+        # type: () -> str | None
         return self.__userData.getDisplayName()
 
     def getEnchantLevel(self, enchId):

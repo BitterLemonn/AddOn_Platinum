@@ -20,6 +20,11 @@ def warning(msg):
         _logging.warning(msg)
 
 
+def sucess(msg):
+    if isDebug:
+        _logging.suc(msg)
+
+
 class _logging:
 
     @classmethod
@@ -41,23 +46,3 @@ class _logging:
     @classmethod
     def suc(cls, msg):
         print("[SUC] {}".format(msg))
-
-    @classmethod
-    def i(cls, msg):
-        cls.info(msg)
-
-    @classmethod
-    def d(cls, msg):
-        cls.debug(msg)
-
-    @classmethod
-    def e(cls, msg):
-        cls.error(msg)
-
-    @classmethod
-    def w(cls, msg):
-        cls.warn(msg)
-
-    @classmethod
-    def s(cls, msg):
-        cls.suc(msg)

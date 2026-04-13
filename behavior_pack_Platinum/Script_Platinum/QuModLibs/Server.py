@@ -3,18 +3,14 @@ from .Math import Vec3, Vec2, QBox3D
 from .Util import Unknown, InitOperation, errorPrint, _eventsRedirect, Singleton, \
     ObjectConversion as __ObjectConversion
 from .Systems.Loader.Server import LoaderSystem as _LoaderSystem, CustomEngineEvent
-if 1 > 2:
-    # 阻止补全库被真正import降低运行时开销（可通过自动化剔除工具移除）
-    from .QuServerApi import extraServerApi
-    from .QuServerApi.Events import Events as _EventsPrompt
 from .IN import ModDirName
 import mod.server.extraServerApi as __extraServerApi
-serverApi = __extraServerApi                        # type: extraServerApi
+serverApi = __extraServerApi                        
 TickEvent = "OnScriptTickServer"
 levelId = serverApi.GetLevelId()
-System = serverApi.GetSystem("Minecraft", "game")    # type: extraServerApi
+System = serverApi.GetSystem("Minecraft", "game")    
 compFactory = serverApi.GetEngineCompFactory()
-Events = _eventsRedirect                            # type: type[_EventsPrompt]
+Events = _eventsRedirect                            
 
 def getOwnerPlayerId():
     # type: () -> str | None

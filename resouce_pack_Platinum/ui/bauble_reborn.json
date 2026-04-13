@@ -1,0 +1,540 @@
+{
+    "bauble_button@common.button": {
+        "type": "button",
+        "$control_alpha": 1,
+        "$default_texture": "textures/ui/bauble_btn_default",
+        "$hover_texture": "textures/ui/bauble_btn_hover",
+        "$is_new_nine_slice": false,
+        "$nine_slice_buttom": 0,
+        "$nine_slice_left": 0,
+        "$nine_slice_right": 0,
+        "$nine_slice_top": 0,
+        "$nineslice_size": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "$pressed_button_name": "#bauble_reborn.bauble_button",
+        "$pressed_texture": "textures/ui/bauble_btn_pressed",
+        "$texture_layer": 2,
+        "offset": [
+            "-35.0%+0.0px",
+            "-40.0%+0.0px"
+        ],
+        "size": [
+            15,
+            15
+        ],
+        "default_control": "default",
+        "hover_control": "hover",
+        "is_handle_button_move_event": true,
+        "pressed_control": "pressed",
+        "sound_pitch": 0,
+        "sound_volume": 0,
+        "controls": [
+            {
+                "default@netease_editor_template_namespace.default": {}
+            },
+            {
+                "hover@netease_editor_template_namespace.hover": {}
+            },
+            {
+                "pressed@netease_editor_template_namespace.pressed": {}
+            }
+        ]
+    },
+    "bauble_grid_classical": {
+        "type": "grid",
+        "$item_collection_name|default": "platinum_bauble_collection",
+        "size": [
+            "100%cm",
+            "100%c"
+        ],
+        "layer": 1,
+        "collection_name": "$item_collection_name",
+        "grid_item_template": "bauble_reborn.slot_panel",
+        "grid_rescaling_type": "horizontal",
+        "property_bag": {
+            "#bauble_reborn.vertical_grid.max_items_count": 8
+        },
+        "bindings": [
+            {
+                "binding_name_override": "#maximum_grid_items",
+                "binding_condition": "always_when_visible",
+                "binding_name": "#bauble_reborn.vertical_grid.max_items_count"
+            }
+        ]
+    },
+    "bauble_grid_pocket": {
+        "type": "grid",
+        "$item_collection_name|default": "platinum_bauble_collection",
+        "offset": [
+            0,
+            5
+        ],
+        "size": [
+            "100%",
+            "default"
+        ],
+        "layer": 1,
+        "collection_name": "$item_collection_name",
+        "grid_item_template": "bauble_reborn.slot_panel",
+        "grid_rescaling_type": "horizontal",
+        "property_bag": {
+            "#bauble_reborn.vertical_grid.max_items_count": 8
+        },
+        "bindings": [
+            {
+                "binding_name_override": "#maximum_grid_items",
+                "binding_condition": "always_when_visible",
+                "binding_name": "#bauble_reborn.vertical_grid.max_items_count"
+            }
+        ]
+    },
+    "bauble_pocket_panel": {
+        "type": "panel",
+        "size": [
+            "100%",
+            "100%-10px"
+        ],
+        "controls": [
+            {
+                "bauble_pocket_scroll@common.scrolling_panel": {
+                    "$background_size": [
+                        0,
+                        0
+                    ],
+                    "$background_size_touch": [
+                        0,
+                        0
+                    ],
+                    "$scroll_bar_contained_touch": true,
+                    "$scroll_box_mouse_image_control": "common-classic.button_state_default",
+                    "$scroll_size_touch|default": [
+                        4,
+                        "100%"
+                    ],
+                    "$scroll_view_port_size": [
+                        "100%",
+                        "100%c+10px"
+                    ],
+                    "$scroll_view_port_size_touch": [
+                        "100%",
+                        "100%c+10px"
+                    ],
+                    "$scrolling_content": "bauble_reborn.bauble_grid_pocket",
+                    "$show_background": false,
+                    "$wider_scroll_area": true,
+                    "layer": 9,
+                    "size": [
+                        "100%",
+                        "default"
+                    ]
+                }
+            }
+        ]
+    },
+    "bauble_slot@common.container_item": {
+        "$background_images": "crafting.container_cell_images",
+        "$button_ref": "crafting.inventory_container_slot_button",
+        "$cell_image_size": "$slot_size",
+        "$durability_bar_offset": "$durability_bar_offset",
+        "$durability_bar_size": "$durability_bar_size",
+        "$item_collection_name": "$collection_name",
+        "$item_renderer_panel_size": "$slot_size",
+        "$item_renderer_size": "$item_renderer_size",
+        "size": "$slot_size"
+    },
+    "bauble_vertical_panel": {
+        "type": "panel",
+        "$content_offset|default": [
+            0,
+            0
+        ],
+        "size": [
+            "100%cm-6px",
+            "100%+0px"
+        ],
+        "controls": [
+            {
+                "image": {
+                    "type": "image",
+                    "size": [
+                        "100%sm+8px",
+                        "100%+0px"
+                    ],
+                    "layer": 2,
+                    "texture": "textures/ui/dialog_background_hollow_4_thin"
+                }
+            },
+            {
+                "scroll_view@common.scrolling_panel": {
+                    "$background_nine_slice_buttom": 0,
+                    "$background_nine_slice_left": 0,
+                    "$background_nine_slice_right": 0,
+                    "$background_nine_slice_top": 0,
+                    "$background_nineslice_size": [
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    "$box_nine_slice_buttom": 0,
+                    "$box_nine_slice_left": 0,
+                    "$box_nine_slice_right": 0,
+                    "$box_nine_slice_top": 0,
+                    "$box_nineslice_size": [
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    "$is_background_nine_slice": false,
+                    "$is_box_nine_slice": false,
+                    "$is_track_nine_slice": false,
+                    "$scroll_background_image_control": "netease_editor_template_namespace.scroll_background_image",
+                    "$scroll_background_texture": "textures/ui/ScrollRail",
+                    "$scroll_bar_contained": true,
+                    "$scroll_bar_contained_touch": true,
+                    "$scroll_box_mouse_image_control": "netease_editor_template_namespace.scroll_box_image",
+                    "$scroll_box_texture": "textures/ui/newTouchScrollBox",
+                    "$scroll_box_touch_image_control": "netease_editor_template_namespace.scroll_box_image",
+                    "$scroll_size": [
+                        0,
+                        "100%"
+                    ],
+                    "$scroll_track_image_control": "netease_editor_template_namespace.scroll_track_image",
+                    "$scroll_track_texture": "textures/ui/ScrollRail",
+                    "$scrolling_content": "bauble_reborn.bauble_grid_classical",
+                    "$show_background": true,
+                    "$track_nine_slice_buttom": 0,
+                    "$track_nine_slice_left": 0,
+                    "$track_nine_slice_right": 0,
+                    "$track_nine_slice_top": 0,
+                    "$track_nineslice_size": [
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    "layer": 0,
+                    "offset": "$content_offset",
+                    "size": [
+                        24,
+                        "100%+-11px"
+                    ]
+                }
+            }
+        ]
+    },
+    "durability_bar": {
+        "type": "panel",
+        "$durability_bar_size|default": [
+            13,
+            1.5
+        ],
+        "size": [
+            "100%cm+0px",
+            "100%cm+0px"
+        ],
+        "layer": 1,
+        "bindings": [
+            {
+                "binding_name_override": "#visible",
+                "binding_collection_name": "$item_collection_name",
+                "binding_condition": "always",
+                "binding_type": "collection",
+                "binding_name": "#bauble_reborn.durability_bar.visible"
+            }
+        ],
+        "controls": [
+            {
+                "shadow": {
+                    "type": "image",
+                    "offset": [
+                        0.5,
+                        0.5
+                    ],
+                    "size": [
+                        "100%sm",
+                        "100%sm"
+                    ],
+                    "layer": 1,
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "fill": true,
+                    "texture": "textures/ui/white_background"
+                }
+            },
+            {
+                "frame": {
+                    "type": "image",
+                    "size": "$durability_bar_size",
+                    "layer": 2,
+                    "color": [
+                        0.2235,
+                        0.2235,
+                        0.2235
+                    ],
+                    "fill": true,
+                    "texture": "textures/ui/white_background"
+                }
+            },
+            {
+                "durability_bar": {
+                    "type": "image",
+                    "size": [
+                        "100%sm",
+                        "100%sm"
+                    ],
+                    "layer": 3,
+                    "clip_direction": "left",
+                    "clip_ratio": "#clip_ratio",
+                    "color": "#color",
+                    "fill": true,
+                    "keep_ratio": false,
+                    "texture": "textures/ui/white_duration",
+                    "bindings": [
+                        {
+                            "binding_name_override": "#clip_ratio",
+                            "binding_collection_name": "$item_collection_name",
+                            "binding_condition": "always_when_visible",
+                            "binding_type": "collection",
+                            "binding_name": "#bauble_reborn.durability_bar.clip_ratio"
+                        },
+                        {
+                            "binding_name_override": "#color",
+                            "binding_collection_name": "$item_collection_name",
+                            "binding_condition": "always_when_visible",
+                            "binding_type": "collection",
+                            "binding_name": "#bauble_reborn.durability_bar.color"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "flying_item": {
+        "type": "custom",
+        "renderer": "inventory_item_renderer",
+        "anchor_from": "top_left",
+        "anchor_to": "top_left",
+        "size": [
+            18,
+            18
+        ]
+    },
+    "hover_img": {
+        "type": "image",
+        "layer": 2,
+        "texture": "textures/ui/highlight_slot",
+        "controls": [
+            {
+                "image": {
+                    "type": "image",
+                    "layer": 1,
+                    "texture": "textures/ui/focus_border_white"
+                }
+            }
+        ]
+    },
+    "hud_tip_text": {
+        "type": "image",
+        "$destroy_id|default": "popup_tip_text",
+        "$wait_duration|default": 0,
+        "anchor_from": "bottom_middle",
+        "anchor_to": "bottom_middle",
+        "offset": [
+            0,
+            -22
+        ],
+        "size": [
+            "100%c + 12px",
+            "100%c + 5px"
+        ],
+        "layer": 9999,
+        "alpha": "@hud.anim_item_name_text_alpha_out",
+        "texture": "textures/ui/purpleBorder",
+        "property_bag": {
+            "#visible": false
+        },
+        "bindings": [
+            {
+                "binding_name_override": "#visible",
+                "binding_name": "#bauble_reborn.tip_visible"
+            }
+        ],
+        "controls": [
+            {
+                "item_text_label": {
+                    "type": "label",
+                    "layer": 31,
+                    "alpha": "@hud.anim_item_name_text_alpha_out",
+                    "color": "$tool_tip_text",
+                    "shadow": true,
+                    "text": "#text",
+                    "bindings": [
+                        {
+                            "binding_name_override": "#text",
+                            "binding_name": "#bauble_reborn.tip_text"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "namespace": "bauble_reborn",
+    "slot_panel": {
+        "type": "panel",
+        "$button_size|default": [
+            18,
+            18
+        ],
+        "$durability_bar_offset|default": [
+            0,
+            4
+        ],
+        "$item_renderer_size|default": [
+            16,
+            16
+        ],
+        "size": "$button_size",
+        "controls": [
+            {
+                "slot_bg": {
+                    "type": "image",
+                    "layer": 1,
+                    "texture": "textures/ui/cell_image"
+                }
+            },
+            {
+                "image_holder": {
+                    "type": "image",
+                    "size": [
+                        "100%-2px",
+                        "100%-2px"
+                    ],
+                    "layer": 13,
+                    "bindings": [
+                        {
+                            "binding_name_override": "#texture",
+                            "binding_collection_name": "$item_collection_name",
+                            "binding_condition": "always_when_visible",
+                            "binding_type": "collection",
+                            "binding_name": "#bauble_reborn.slot.image_holder"
+                        },
+                        {
+                            "binding_name_override": "#visible",
+                            "binding_collection_name": "$item_collection_name",
+                            "binding_condition": "always",
+                            "binding_type": "collection",
+                            "binding_name": "#bauble_reborn.slot.image_holder.visible"
+                        }
+                    ]
+                }
+            },
+            {
+                "item_renderer": {
+                    "type": "custom",
+                    "renderer": "inventory_item_renderer",
+                    "$item_renderer_binding_condition": "always",
+                    "size": "$item_renderer_size",
+                    "layer": 15,
+                    "bindings": [
+                        {
+                            "binding_name_override": "#visible",
+                            "binding_collection_name": "$item_collection_name",
+                            "binding_condition": "$item_renderer_binding_condition",
+                            "binding_type": "collection",
+                            "binding_name": "#bauble_reborn.item_renderer.visible"
+                        },
+                        {
+                            "binding_name_override": "#item_id_aux",
+                            "binding_collection_name": "$item_collection_name",
+                            "binding_condition": "always",
+                            "binding_type": "collection",
+                            "binding_name": "#bauble_reborn.item_renderer.item_id_aux"
+                        }
+                    ]
+                }
+            },
+            {
+                "durability_bar@bauble_reborn.durability_bar": {
+                    "layer": 20,
+                    "offset": "$durability_bar_offset"
+                }
+            },
+            {
+                "button_ref@common.button": {
+                    "type": "button",
+                    "$control_alpha": 1,
+                    "$pressed_button_name": "#bauble_reborn.slot_button",
+                    "$texture_layer": 30,
+                    "layer": 10,
+                    "button_mappings": [
+                        {
+                            "to_button_id": "$pressed_button_name",
+                            "from_button_id": "button.menu_ok",
+                            "mapping_type": "pressed"
+                        },
+                        {
+                            "to_button_id": "$pressed_button_name",
+                            "from_button_id": "button.menu_select",
+                            "mapping_type": "pressed"
+                        }
+                    ],
+                    "default_control": "default",
+                    "hover_control": "hover",
+                    "is_handle_button_move_event": true,
+                    "pressed_control": "pressed",
+                    "bindings": [
+                        {
+                            "binding_type": "collection_details",
+                            "binding_collection_name": "$item_collection_name",
+                            "binding_condition": "always_when_visible"
+                        }
+                    ],
+                    "controls": [
+                        {
+                            "default": {
+                                "type": "image"
+                            }
+                        },
+                        {
+                            "hover@bauble_reborn.hover_img": {}
+                        },
+                        {
+                            "pressed": {
+                                "type": "image"
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "selected_img": {
+                    "type": "image",
+                    "size": [
+                        "100%+6px",
+                        "100%+6px"
+                    ],
+                    "layer": 40,
+                    "texture": "textures/ui/selected_hotbar_slot",
+                    "bindings": [
+                        {
+                            "binding_name_override": "#visible",
+                            "binding_collection_name": "$item_collection_name",
+                            "binding_condition": "always",
+                            "binding_type": "collection",
+                            "binding_name": "#bauble_reborn.is_selected"
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

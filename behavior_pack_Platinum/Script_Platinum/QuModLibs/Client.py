@@ -4,22 +4,18 @@ from .Math import Vec3, Vec2, QBox3D
 from .Util import Unknown, InitOperation, errorPrint, _eventsRedirect, Singleton, \
     ObjectConversion as __ObjectConversion
 from .Systems.Loader.Client import LoaderSystem as _LoaderSystem, CustomEngineEvent
-if 1 > 2:
-    # 阻止补全库被真正import降低运行时开销（可通过自动化剔除工具移除）
-    from .QuClientApi import extraClientApi
-    from .QuClientApi.Events import Events as _EventsPrompt
 import mod.client.extraClientApi as __extraClientApi
 from . import IN as __IN
 from .IN import ModDirName
 IsServerUser = __IN.IsServerUser
 """ 客户端常量_是否为房主 """
-clientApi = __extraClientApi                        # type: extraClientApi
+clientApi = __extraClientApi                        
 TickEvent = "OnScriptTickClient"
-System = clientApi.GetSystem("Minecraft", "game")    # type: extraClientApi
+System = clientApi.GetSystem("Minecraft", "game")    
 compFactory = clientApi.GetEngineCompFactory()
 levelId = clientApi.GetLevelId()
 playerId = clientApi.GetLocalPlayerId() 
-Events = _eventsRedirect                            # type: type[_EventsPrompt]
+Events = _eventsRedirect                            
 
 def regModLoadFinishHandler(func):
     """ 注册Mod加载完毕后触发的Handler """

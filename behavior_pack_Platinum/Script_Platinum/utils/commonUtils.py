@@ -9,7 +9,7 @@ def normalizeVector(vector):
     :param vector: 向量
     :return: 归一化后的向量
     """
-    length = sqrt(sum(coord ** 2 for coord in vector))
+    length = sqrt(sum(coord**2 for coord in vector))
     return (coord / length for coord in vector)
 
 
@@ -61,7 +61,7 @@ def unitVector(fromPos, toPos):
     delta_x = toPos[0] - fromPos[0]
     delta_y = toPos[1] - fromPos[1]
     delta_z = toPos[2] - fromPos[2]
-    magnitude = sqrt(delta_x ** 2 + delta_y ** 2 + delta_z ** 2)
+    magnitude = sqrt(delta_x**2 + delta_y**2 + delta_z**2)
     return delta_x / magnitude, delta_y / magnitude, delta_z / magnitude
 
 
@@ -177,3 +177,8 @@ def getFacingFromPos(pos, targetPos):
     elif targetY < y:
         return minecraftEnum.Facing.Down
     return None
+
+
+def ratioToColor(ratio):
+    # 稍微偏灰色
+    return (1 - ratio) * 0.9, ratio * 0.9, 0.0, 1.0

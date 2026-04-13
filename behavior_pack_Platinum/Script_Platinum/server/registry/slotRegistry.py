@@ -37,22 +37,40 @@ class SlotRegistry(object):
                 return slot.slotType
         return None
 
+    # 根据类型获取名称
+    def getSlotTypeNameByType(self, slotType):
+        for slot in self._slots:
+            if slot.slotType == slotType:
+                return slot.name
+        return None
+
+    # 根据标识符获取同类型中的index
+    def getSlotIndexById(self, slotId):
+        slotType = self.getSlotTypeById(slotId)
+        if slotType is None:
+            return -1
+        sameTypeSlots = [slot for slot in self._slots if slot.slotType == slotType]
+        for index, slot in enumerate(sameTypeSlots):
+            if slot.identifier == slotId:
+                return index + 1
+        return -1
+
     # 根据类型获取标识符列表
     def getSlotIdByType(self, slotType):
         return [slot.identifier for slot in self._slots if slot.slotType == slotType]
 
     # 注册槽位
-    def registerSlot(self, baubleInfoDict):  # type: (dict[str, str]) -> bool
+    def registerSlot(self, baubleSlotData):  # type: (BaubleSlotData) -> bool
         """
         注册槽位
-        :param baubleInfoDict: 包含槽位信息的字典
+        :param baubleSlotData: 槽位数据对象
         :return: 是否注册成功
         """
-        baubleSlotName = baubleInfoDict.get("baubleSlotName", None)
-        placeholderPath = baubleInfoDict.get("placeholderPath", None)
-        baubleSlotId = baubleInfoDict.get("baubleSlotIdentifier", None)
-        baubleSlotType = baubleInfoDict.get("baubleSlotType", None)
-        isDefault = baubleInfoDict.get("isDefault", False)
+        baubleSlotName = baubleSlotData.name
+        placeholderPath = baubleSlotData.placeholderPath
+        baubleSlotId = baubleSlotData.identifier
+        baubleSlotType = baubleSlotData.slotType
+        isDefault = baubleSlotData.isDefault
         if baubleSlotId is None or baubleSlotType is None:
             logging.error("铂: 槽位({}:{})注册失败,请至少提供槽位标识符和槽位类型".format(baubleSlotName, baubleSlotId))
             return False

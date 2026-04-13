@@ -4,8 +4,9 @@ from Script_Platinum.QuModLibs.Server import *
 from Script_Platinum.utils.serverUtils import compFactory
 
 itemComp = compFactory.CreateItem(levelId)
+itemComp.GetUserDataInEvent("InventoryItemChangedServerEvent")
 
-#6743 14:25
+
 # 获取全部物品基本信息
 @Listen("LoadServerAddonScriptsAfter")
 def onLoadServerAddonScriptsAfter(data):
