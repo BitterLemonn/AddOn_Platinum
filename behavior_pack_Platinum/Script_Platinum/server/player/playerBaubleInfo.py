@@ -2,7 +2,7 @@
 from Script_Platinum import commonConfig
 from Script_Platinum.QuModLibs.Server import *
 from Script_Platinum.data.eventData import BaubleEventData
-from Script_Platinum.data.requestData import BaubleCheckRequestData
+from Script_Platinum.data.requestData import BaubleCheckRequestData, ChangeBaubleRequestData
 from Script_Platinum.data.responseData import BaubleCheckResponseData
 from Script_Platinum.data.itemStack import ItemStack
 from Script_Platinum.server.player.playerBaubleSlot import checkSlotValid
@@ -32,7 +32,9 @@ class PlayerBaubleInfo(object):
         """根据槽位ID获取玩家佩戴的饰品信息"""
         return self.baubleInfo.get(slotId, None)
 
-    def setBaubleInfoBySlotId(self, slotId, itemStack, isChange):  # type: (str, ItemStack, bool) -> None
+    def changeBaubleInfoBySlotId(
+        self, slotId, itemStack, index=-1, isChange=False
+    ):  # type: (str, ItemStack, int, bool) -> None
         """设置玩家佩戴的饰品信息"""
         if not checkSlotValid(slotId):
             logging.w("铂: 尝试设置玩家{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
@@ -40,11 +42,12 @@ class PlayerBaubleInfo(object):
         oldItemStack = self.baubleInfo.get(slotId, None)
         if isChange and oldItemStack is not None and not oldItemStack.isEmpty():
             oldItemStack = self.baubleInfo[slotId]
-            serverUtils.givePlayerItem(oldItemStack.toDict(), self.playerId)
+            serverUtils.givePlayerItem(oldItemStack.toDict(), self.playerId, index)
         self.baubleInfo[slotId] = itemStack
         self._syncToClient()
         self.boardcastTakeOffEvent(slotId, oldItemStack)
-        self.boardcastPutOnEvent(slotId, itemStack)
+        if itemStack is not None and not itemStack.isEmpty():
+            self.boardcastPutOnEvent(slotId, itemStack)
 
     def setBaubleDict(self, baubleDict, isFirstLoad=False):  # type: (dict[str, dict], bool) -> None
         """直接设置玩家佩戴的饰品信息字典, 用于初始化玩家饰品信息"""
@@ -100,15 +103,14 @@ class PlayerBaubleInfo(object):
 
     def _syncToClient(self):
         # 同步饰品信息到客户端
+        baubleDict = {
+            slotId: itemStack.toDict() if itemStack is not None else None
+            for slotId, itemStack in self.baubleInfo.items()
+        }
         BaseService().syncRequest(
             self.playerId,
-            "client/bauble/playerBaubleInfoSync",
-            QRequests.Args(
-                {
-                    slotId: itemStack.toDict() if itemStack is not None else None
-                    for slotId, itemStack in self.baubleInfo.items()
-                }
-            ),
+            "client/bauble/syncFromServer",
+            QRequests.Args(baubleDict),
         )
 
     def boardcastTakeOffEvent(self, slotId, itemStack):
@@ -145,21 +147,38 @@ class PlayerBaubleInfoServerService(BaseService):
     def __init__(self):
         BaseService.__init__(self)
 
-    @BaseService.REG_API("server/slot/baubleCheck")
+    @BaseService.REG_API("server/player/baubleCheck")
     def checkBaubleAvailable(self, data):
         """检查饰品是否可以装备"""
         from Script_Platinum.server.registry.baubleRegistry import BaubleRegistry
 
         playerId = getLoaderSystem().rpcPlayerId
         itemComp = compFactory.CreateItem(playerId)
-        data = BaubleCheckRequestData(**data)
-        baubleItem = ItemStack.fromDict(data.baubleInfo) if data.baubleInfo is not None else None
+        data = BaubleCheckRequestData.fromDict(data)
+        baubleItem = data.baubleInfo
         invItem = itemComp.GetPlayerItem(minecraftEnum.ItemPosType.INVENTORY, data.index, True)
         invItem = ItemStack.fromDict(invItem) if invItem is not None else None
         if not baubleItem or not invItem or not checkSlotValid(data.slotId):
-            return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).__dict__
+            return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).toDict()
         if not invItem.isSameItem(baubleItem):
-            return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).__dict__
+            return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).toDict()
         if not BaubleRegistry().isValidBauble(baubleItem.name, data.slotType):
-            return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).__dict__
-        return BaubleCheckResponseData(True, baubleItem, data.slotId, data.index).__dict__
+            return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).toDict()
+        return BaubleCheckResponseData(True, baubleItem, data.slotId, data.index).toDict()
+
+    @BaseService.REG_API("server/player/changeBauble")
+    def changeBauble(self, data):
+        """更换饰品"""
+        playerId = getLoaderSystem().rpcPlayerId
+        data = ChangeBaubleRequestData.fromDict(data)
+        comp = compFactory.CreateItem(playerId)
+        cursorItem = comp.GetPlayerUIItem(playerId, minecraftEnum.PlayerUISlot.CursorSelected)
+        baubleItem = data.baubleInfo
+        if baubleItem and not checkSlotValid(data.slotId):
+            return
+        if cursorItem is not None and not ItemStack.fromDict(cursorItem).isEmpty():
+            comp.SetPlayerUIItem(playerId, minecraftEnum.PlayerUISlot.CursorSelected, None, False)
+        comp.SetInvItemNum(data.index, 0)
+        playerBaubleInfo = getPlayerBaubleInfo(playerId)
+        playerBaubleInfo.changeBaubleInfoBySlotId(data.slotId, baubleItem, data.index, True)
+ 

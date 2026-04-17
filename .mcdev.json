@@ -13,7 +13,7 @@
         "./"
     ],
     "keep_inventory": true,
-    "reset_world": false,
+    "reset_world": true,
     "skin_info": {
         "skin": "d:\\Desktop\\minecraft项目\\lemon.png",
         "slim": true

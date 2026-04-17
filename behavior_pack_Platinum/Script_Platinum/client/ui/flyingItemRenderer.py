@@ -12,7 +12,7 @@ class FlyingItemRenderer:
     __FLYING_ITEM_DEF = "bauble_reborn.flying_item"
 
     def __init__(self, screen, basePath):
-        self.flyingTime = 5  # 帧
+        self.flyingTime = 2  # 帧
 
         self.screen = screen  # type: ScreenNode
         self.basePath = basePath

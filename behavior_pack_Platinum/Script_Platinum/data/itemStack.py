@@ -40,13 +40,16 @@ class ItemStack(object):
     def isFull(self):
         return self.count >= self.maxStackSize
 
-    def isSameItem(self, other):
+    def isSameItem(self, other, isIgnoreUserData=False):
         if other is None:
             return False
         selfUserData = self.userData if self.userData is not None else {}
         otherUserData = other.userData if other.userData is not None else {}
         selfAux = self.aux if self.aux is not None and self.aux != 32767 else 0
         otherAux = other.aux if other.aux is not None and other.aux != 32767 else 0
+        if isIgnoreUserData:
+            selfUserData = {}
+            otherUserData = {}
         return self.name == other.name and selfAux == otherAux and selfUserData == otherUserData
 
     def clone(self):

@@ -2,6 +2,7 @@
 from Script_Platinum.QuModLibs.Client import *
 from Script_Platinum.QuModLibs.Modules.Services.Client import BaseService, QRequests
 from Script_Platinum.data.itemStack import ItemStack
+from Script_Platinum.data.requestData import ChangeBaubleRequestData
 
 
 @BaseService.Init
@@ -14,7 +15,7 @@ class PlayerBaubleInfoClientService(BaseService):
 
     @BaseService.REG_API("client/bauble/syncFromServer")
     def syncFromServer(self, data):  # type: (dict) -> None
-        self.baubleInfo = {slotId: ItemStack.fromDict(item) for slotId, item in data.items()}
+        self.baubleInfo = {slotId: ItemStack.fromDict(item) if item else None for slotId, item in data.items()}
         self._callListener()
 
     def addBaubleInfoListener(self, callback):
@@ -39,6 +40,9 @@ class PlayerBaubleInfoClientService(BaseService):
         """根据槽位ID获取玩家饰品信息"""
         return self.baubleInfo.get(slotId, None)
 
-    def popBaubleInfoBySlot(self, slotId):  # type: (str) -> ItemStack | None
+    def popBaubleInfoBySlot(self, slotId, index):  # type: (str, int) -> ItemStack | None
         """根据槽位ID获取并移除玩家饰品信息"""
-        self.syncRequest("server/slot/popBaubleInfoBySlot", QRequests.Args(slotId))
+        self.syncRequest(
+            "server/player/changeBauble",
+            QRequests.Args(ChangeBaubleRequestData(None, slotId, index).toDict()),
+        )

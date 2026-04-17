@@ -6,8 +6,8 @@ from Script_Platinum.client.config.playerConfig import PlayerConfig, QRequests
 from Script_Platinum.client.player.playerBaubleInfo import PlayerBaubleInfoClientService
 from Script_Platinum.client.ui.flyingItemRenderer import FlyingItemRenderer
 from Script_Platinum.client.player.playerBaubleSlot import PlayerBaubleSlotClientService
-from Script_Platinum.data.requestData import BaubleCheckRequestData
-from Script_Platinum.data.responseData import BaubleCheckResponseData
+from Script_Platinum.data.requestData import BaubleCheckRequestData, ChangeBaubleRequestData
+from Script_Platinum.data.responseData import BaubleCheckResponseData, ItemStack
 from Script_Platinum.utils.ItemFactory import ItemFactory
 from Script_Platinum.utils.commonUtils import ratioToColor
 
@@ -170,7 +170,7 @@ class BaubleUIClassicProxy(ProxyCls):
         if index < len(slotList):
             slot = slotList[index]
             baubleInfo = self.baubleInfoManager.getBaubleInfoBySlot(slot.identifier)
-            if baubleInfo:
+            if baubleInfo is not None:
                 return False
         return True
 
@@ -188,7 +188,7 @@ class BaubleUIClassicProxy(ProxyCls):
         if index < len(slotList):
             slot = slotList[index]
             baubleInfo = self.baubleInfoManager.getBaubleInfoBySlot(slot.identifier)
-            if baubleInfo:
+            if baubleInfo is not None:
                 itemInfo = self.itemComp.GetItemBasicInfo(baubleInfo.name, baubleInfo.aux)
                 idAux = itemInfo["id_aux"]
                 return idAux if idAux else 0
@@ -203,7 +203,7 @@ class BaubleUIClassicProxy(ProxyCls):
         if index < len(slotList):
             slot = slotList[index]
             baubleInfo = self.baubleInfoManager.getBaubleInfoBySlot(slot.identifier)
-            if baubleInfo:
+            if baubleInfo is not None:
                 return True
         return False
 
@@ -228,14 +228,14 @@ class BaubleUIClassicProxy(ProxyCls):
             self.setToolTips("§c请先点击饰品栏\n再点击需要装备的饰品§r")
 
         baubleItem = self.baubleInfoManager.getBaubleInfoBySlot(self.slotManager.getPlayerSlotList()[index].identifier)
-        if baubleItem:
+        if baubleItem is not None:
             baseInfo = self.itemComp.GetItemBasicInfo(baubleItem.name, baubleItem.aux)
             name = baseInfo["itemName"]
             itemCategory = baseInfo["itemCategory"]
             categoryName = compFactory.CreateGame(levelId).GetChinese("craftingScreen.tab." + itemCategory)
             if categoryName == "craftingScreen.tab." + itemCategory:
                 categoryName = itemCategory
-            customTips = ItemFactory(baubleItem).getCustomTips() or ""
+            customTips = ItemFactory(baubleItem.toDict()).getCustomTips() or ""
             customTips = (
                 customTips.replace("%name%", "")
                 .replace("%category%", "")
@@ -255,7 +255,7 @@ class BaubleUIClassicProxy(ProxyCls):
         if index < len(slotList):
             slot = slotList[index]
             baubleInfo = self.baubleInfoManager.getBaubleInfoBySlot(slot.identifier)
-            if baubleInfo:
+            if baubleInfo is not None:
                 baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo.name, baubleInfo.aux)
                 if baseInfo and baseInfo["maxDurability"]:
                     return 1 - float(baubleInfo.durability) / baseInfo["maxDurability"]
@@ -270,7 +270,7 @@ class BaubleUIClassicProxy(ProxyCls):
         if index < len(slotList):
             slot = slotList[index]
             baubleInfo = self.baubleInfoManager.getBaubleInfoBySlot(slot.identifier)
-            if baubleInfo:
+            if baubleInfo is not None:
                 baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo.name, baubleInfo.aux)
                 if baseInfo and baseInfo["maxDurability"] and baubleInfo.durability < baseInfo["maxDurability"]:
                     return True
@@ -285,7 +285,7 @@ class BaubleUIClassicProxy(ProxyCls):
         if index < len(slotList):
             slot = slotList[index]
             baubleInfo = self.baubleInfoManager.getBaubleInfoBySlot(slot.identifier)
-            if baubleInfo:
+            if baubleInfo is not None:
                 baseInfo = self.itemComp.GetItemBasicInfo(baubleInfo.name, baubleInfo.aux)
                 if baseInfo and baseInfo["maxDurability"]:
                     color = ratioToColor(float(baubleInfo.durability) / baseInfo["maxDurability"])
@@ -303,19 +303,19 @@ class BaubleUIClassicProxy(ProxyCls):
                 # 装备饰品
                 if itemDict:
                     BaseService().syncRequest(
-                        "server/slot/baubleCheck",
+                        "server/player/baubleCheck",
                         QRequests.Args(
                             BaubleCheckRequestData(
-                                baubleInfo=itemDict,
+                                baubleInfo=ItemStack.fromDict(itemDict),
                                 slotType=slotInfo.slotType,
                                 slotId=slotInfo.identifier,
                                 index=inventorySelectedIndex,
-                            ).__dict__
+                            ).toDict()
                         ).setCallBack(self.onCheckBaubleAvailable),
                     )
                 elif self.baubleInfoManager.getBaubleInfoBySlot(slotInfo.identifier) and not itemDict:
                     # 卸下饰品
-                    self.baubleInfoManager.popBaubleInfoBySlot(slotInfo.identifier)
+                    self.baubleInfoManager.popBaubleInfoBySlot(slotInfo.identifier, inventorySelectedIndex)
                     # 播放飞行物品动画
                     self.flyingItem(
                         self.baubleInfoManager.getBaubleInfoBySlot(slotInfo.identifier).toDict(),
@@ -333,24 +333,26 @@ class BaubleUIClassicProxy(ProxyCls):
 
     # 检查饰品是否可用回调
     def onCheckBaubleAvailable(self, data):
-        data = BaubleCheckResponseData(**data.data)
+        data = BaubleCheckResponseData.fromDict(data.data)
         if data.suc:
-            oldBaubleItem = (
-                self.baubleInfoManager.popBaubleInfoBySlot(data.slotId)
-                if data.slotId in self.baubleInfoManager.getBaubleInfo().keys()
-                else None
+            BaseService().syncRequest(
+                "server/player/changeBauble",
+                QRequests.Args(ChangeBaubleRequestData(data.baubleInfo, data.slotId, data.index).toDict()),
             )
+            oldBaubleItem = self.baubleInfoManager.getBaubleInfoBySlot(data.slotId)
             # 脱下旧物品
             if oldBaubleItem:
                 # 播放飞行物品动画
                 self.flyingItem(
-                    oldBaubleItem,
+                    oldBaubleItem.toDict(),
                     self.getBaubleSlotPos(self.baubleSelectedPath),
                     self.getInventorySlotPos(data.index),
                 )
             # 播放飞行物品动画
             self.flyingItem(
-                data.baubleInfo, self.getInventorySlotPos(data.index), self.getBaubleSlotPos(self.baubleSelectedPath)
+                data.baubleInfo.toDict(),
+                self.getInventorySlotPos(data.index),
+                self.getBaubleSlotPos(self.baubleSelectedPath),
             )
         self.baubleSelectedIndex = -1
         self.baubleSelectedPath = ""
