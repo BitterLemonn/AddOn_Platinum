@@ -18,6 +18,16 @@ class PlayerBaubleInfoClientService(BaseService):
         self.baubleInfo = {slotId: ItemStack.fromDict(item) if item else None for slotId, item in data.items()}
         self._callListener()
 
+    @BaseService.Listen("OnLocalPlayerStopLoading")
+    def onLocalPlayerStopLoading(self, data):
+        def playerSlotSync(data):  # type: (QRequests.RequestResults) -> None
+            if isinstance(data, QRequests.RequestResults):
+                data = data.data
+                self.syncFromServer(data)
+
+        # 请求玩家饰品信息
+        self.syncRequest("server/player/requestBaubleInfo", QRequests.Args().setCallBack(playerSlotSync))
+
     def addBaubleInfoListener(self, callback):
         """添加一个监听器, 当玩家饰品信息更新时会调用这个监听器"""
         if callback not in self.listener:

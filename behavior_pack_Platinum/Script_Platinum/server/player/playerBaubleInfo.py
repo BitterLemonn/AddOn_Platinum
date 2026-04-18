@@ -13,6 +13,7 @@ from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequ
 
 minecraftEnum = serverApi.GetMinecraftEnum()
 
+isInit = False
 playerBaubleInfoDict = {}  # type: dict[str, PlayerBaubleInfo]
 
 
@@ -28,26 +29,34 @@ class PlayerBaubleInfo(object):
         self.playerId = playerId
         self.baubleInfo = {}  # type: dict[str, ItemStack]
 
+    def loadFromDataInit(self):
+        """当从存档数据中加载玩家饰品信息时调用, 用于触发饰品的穿戴事件"""
+        for slotId, itemStack in self.baubleInfo.items():
+            if itemStack is not None and not itemStack.isEmpty():
+                self.boardcastPutOnEvent(slotId, itemStack, True)
+
     def getBaubleInfoBySlotId(self, slotId):  # type: (str) -> ItemStack|None
         """根据槽位ID获取玩家佩戴的饰品信息"""
         return self.baubleInfo.get(slotId, None)
 
-    def changeBaubleInfoBySlotId(
-        self, slotId, itemStack, index=-1, isChange=False
-    ):  # type: (str, ItemStack, int, bool) -> None
+    def changeBaubleInfoBySlotId(self, slotId, itemStack, index=-1):  # type: (str, ItemStack, int, bool) -> None
         """设置玩家佩戴的饰品信息"""
         if not checkSlotValid(slotId):
             logging.w("铂: 尝试设置玩家{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
             return
         oldItemStack = self.baubleInfo.get(slotId, None)
-        if isChange and oldItemStack is not None and not oldItemStack.isEmpty():
+        if oldItemStack is not None and not oldItemStack.isEmpty():
             oldItemStack = self.baubleInfo[slotId]
             serverUtils.givePlayerItem(oldItemStack.toDict(), self.playerId, index)
         self.baubleInfo[slotId] = itemStack
         self._syncToClient()
-        self.boardcastTakeOffEvent(slotId, oldItemStack)
+        if oldItemStack is not None and not oldItemStack.isEmpty():
+            self.boardcastTakeOffEvent(slotId, oldItemStack)
         if itemStack is not None and not itemStack.isEmpty():
             self.boardcastPutOnEvent(slotId, itemStack)
+
+        # 保存到世界信息中
+        PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()
 
     def setBaubleDict(self, baubleDict, isFirstLoad=False):  # type: (dict[str, dict], bool) -> None
         """直接设置玩家佩戴的饰品信息字典, 用于初始化玩家饰品信息"""
@@ -147,6 +156,39 @@ class PlayerBaubleInfoServerService(BaseService):
     def __init__(self):
         BaseService.__init__(self)
 
+    @BaseService.Listen("ClientLoadAddonsFinishServerEvent")
+    def onClientLoadAddonsFinishServerEvent(self, data):
+        global isInit
+        if isInit:
+            return
+        isInit = True
+        # 从世界信息中加载玩家饰品信息
+        import pickle
+
+        playerBaubleInfoData = compFactory.CreateExtraData(levelId).GetExtraData(commonConfig.PLAYER_BAUBLE_INFO)
+        if playerBaubleInfoData:
+            try:
+                playerBaubleInfo = pickle.loads(playerBaubleInfoData)
+                global playerBaubleInfoDict
+                playerBaubleInfoDict = playerBaubleInfo
+                for _, baubleInfo in playerBaubleInfoDict.items():
+                    baubleInfo.loadFromDataInit()
+            except Exception as e:
+                logging.error("铂: 玩家饰品信息加载失败, 数据可能已损坏. 错误信息: {}".format(e))
+        else:
+            logging.info("铂: 玩家饰品信息加载完成, 无数据可加载")
+
+    @BaseService.REG_API("server/player/requestBaubleInfo")
+    def requestBaubleInfo(self, _=None):
+        """客户端请求玩家饰品信息"""
+        playerId = getLoaderSystem().rpcPlayerId
+        playerBaubleInfo = getPlayerBaubleInfo(playerId)
+        baubleDict = {
+            slotId: itemStack.toDict() if itemStack is not None else None
+            for slotId, itemStack in playerBaubleInfo.baubleInfo.items()
+        }
+        return baubleDict
+
     @BaseService.REG_API("server/player/baubleCheck")
     def checkBaubleAvailable(self, data):
         """检查饰品是否可以装备"""
@@ -159,10 +201,13 @@ class PlayerBaubleInfoServerService(BaseService):
         invItem = itemComp.GetPlayerItem(minecraftEnum.ItemPosType.INVENTORY, data.index, True)
         invItem = ItemStack.fromDict(invItem) if invItem is not None else None
         if not baubleItem or not invItem or not checkSlotValid(data.slotId):
+            print("槽位不存在: baubleItem={}, invItem={}, slotId={}".format(baubleItem, invItem, data.slotId))
             return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).toDict()
         if not invItem.isSameItem(baubleItem):
+            print("物品不匹配: baubleItem={}, invItem={}".format(baubleItem, invItem))
             return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).toDict()
         if not BaubleRegistry().isValidBauble(baubleItem.name, data.slotType):
+            print("饰品不合法: baubleItem={}, slotType={}".format(baubleItem, data.slotType))
             return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).toDict()
         return BaubleCheckResponseData(True, baubleItem, data.slotId, data.index).toDict()
 
@@ -180,5 +225,11 @@ class PlayerBaubleInfoServerService(BaseService):
             comp.SetPlayerUIItem(playerId, minecraftEnum.PlayerUISlot.CursorSelected, None, False)
         comp.SetInvItemNum(data.index, 0)
         playerBaubleInfo = getPlayerBaubleInfo(playerId)
-        playerBaubleInfo.changeBaubleInfoBySlotId(data.slotId, baubleItem, data.index, True)
- 
+        playerBaubleInfo.changeBaubleInfoBySlotId(data.slotId, baubleItem, data.index)
+
+    def savePlayerBaubleInfo(self):
+        """将玩家饰品信息保存到世界信息中"""
+        import pickle
+
+        baubleInfo = pickle.dumps(playerBaubleInfoDict)
+        compFactory.CreateExtraData(levelId).SetExtraData(commonConfig.PLAYER_BAUBLE_INFO, baubleInfo)

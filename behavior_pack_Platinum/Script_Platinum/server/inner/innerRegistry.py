@@ -112,7 +112,7 @@ class InnerServerRegistry(serverApi.GetServerSystemCls()):
         def actualLogic():
             # 获取铂注册系统
             system = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
-            # 注册默认槽位
+            # 注册默认槽位(注意需要先注册槽位再注册饰品)
             for slotData in defaultSlot:
                 system.AddGlobalBaubleSlot(
                     slotId=slotData["baubleSlotIdentifier"],
@@ -124,4 +124,5 @@ class InnerServerRegistry(serverApi.GetServerSystemCls()):
             # 注册饰品
             system.BaubleRegister({"baubleName": "lemon_platinum:traveler_belt", "baubleSlot": "belt"})
 
+        # 如果需要在LoadServerAddonScriptsAfter事件中注册槽位和饰品 需要延迟一帧执行以确保注册系统已经完成初始化
         compFactory.CreateGame(serverApi.GetLevelId()).AddTimer(0, actualLogic)

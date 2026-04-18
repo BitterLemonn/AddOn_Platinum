@@ -32,7 +32,7 @@ class ItemService(BaseService):
                 if "§6栏位: §g" in (customTips or ""):
                     return
                 else:
-                    baubleSlotTypeList = baubleInfo.get("slot")
+                    baubleSlotTypeList = [st for st in baubleInfo["slot"]]
                     slotNames = [self.slotRegistry.getSlotTypeNameByType(st) for st in baubleSlotTypeList]
                     tips = "§6栏位: §g" + "、".join(slotNames) + "§r\n"
                     customTips = (
@@ -44,6 +44,9 @@ class ItemService(BaseService):
                     )
 
             except Exception as e:
+                import traceback
+
+                traceback.print_exc()
                 logging.error(
                     "铂: 饰品 {} 描述格式错误, 请检查Script_Platinum/commonConfig.py {}".format(
                         itemDict.get("newItemName"), e

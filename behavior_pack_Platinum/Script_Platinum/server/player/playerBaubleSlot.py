@@ -5,13 +5,14 @@ from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequ
 from Script_Platinum.commonConfig import PLAYER_SLOT_DATA
 from Script_Platinum.data.slotData import BaubleSlotData
 from Script_Platinum.utils.serverUtils import compFactory
+from Script_Platinum.utils import developLogging as logging
 
 playerSlotList = {}  # type: dict[int, BaubleSlotData]
 
 
 def checkSlotValid(slotId):
     from Script_Platinum.server.registry.slotRegistry import SlotRegistry
-
+    
     return slotId in SlotRegistry().getBaubleSlotIdList()
 
 
@@ -29,8 +30,11 @@ def addPlayerSlot(playerId, slotData):
     global playerSlotList
     if playerId not in playerSlotList:
         playerSlotList[playerId] = []
-    playerSlotList[playerId].append(slotData)
-    _syncToClient(playerId)
+    if slotData.identifier not in [slot.identifier for slot in playerSlotList[playerId]]:
+        playerSlotList[playerId].append(slotData)
+        _syncToClient(playerId)
+    else:
+        logging.error("铂: 玩家{}的槽位{}已存在, 无法添加".format(playerId, slotData.identifier))
 
 
 def deletePlayerSlotById(playerId, slotId):
@@ -38,6 +42,13 @@ def deletePlayerSlotById(playerId, slotId):
     if playerId in playerSlotList and slotId in [slot.identifier for slot in playerSlotList[playerId]]:
         playerSlotList[playerId] = [slot for slot in playerSlotList[playerId] if slot.identifier != slotId]
         _syncToClient(playerId)
+        # 移除饰品信息中的对应槽位数据
+        from Script_Platinum.server.player.playerBaubleInfo import getPlayerBaubleInfo, PlayerBaubleInfo
+
+        playerBaubleInfo = getPlayerBaubleInfo(playerId)  # type: PlayerBaubleInfo
+        playerBaubleInfo.changeBaubleInfoBySlotId(slotId, None)
+    else:
+        logging.error("铂: 玩家{}的槽位{}不存在, 无法删除".format(playerId, slotId))
 
 
 def _syncToClient(playerId):

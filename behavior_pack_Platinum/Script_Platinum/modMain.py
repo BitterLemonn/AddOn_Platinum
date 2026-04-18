@@ -27,6 +27,11 @@ platinum.regNativePyServer(
     commonConfig.PLATINUM_BROADCAST_SERVER,
     "server.vanilla.boardcastServer.BroadcasterServer",
 )
+platinum.regNativePyServer(
+    commonConfig.PLATINUM_NAMESPACE,
+    "buildInBauble",
+    "server.inner.baubleServer.BaubleServer",
+)
 
 # -------------------client-------------------
 platinum.Client("client.player.playerBaubleSlot")

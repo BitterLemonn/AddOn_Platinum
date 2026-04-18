@@ -37,6 +37,13 @@ class SlotRegistry(object):
                 return slot.slotType
         return None
 
+    # 根据标识符获取数据
+    def getSlotDataById(self, slotId):  # type: (str) -> BaubleSlotData
+        for slot in self._slots:
+            if slot.identifier == slotId:
+                return slot
+        return None
+
     # 根据类型获取名称
     def getSlotTypeNameByType(self, slotType):
         for slot in self._slots:
@@ -102,3 +109,7 @@ class SlotRegistry(object):
         self._slots.append(newSlot)
         logging.info("铂: 槽位({}:{})注册成功".format(baubleSlotName, baubleSlotId))
         return True
+
+    def isSlotIdExist(self, slotId):
+        """检查槽位标识符是否已存在"""
+        return any(slot.identifier == slotId for slot in self._slots)
