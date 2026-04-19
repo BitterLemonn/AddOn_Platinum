@@ -50,6 +50,32 @@ class CommandService(BaseService):
         if handler is not None:
             handler(data, args)
 
+    # 改变饰品栏入口位置
+    @BaseService.Listen("ServerChatEvent")
+    def onServerChatEvent(self, data):
+        playerId = data["playerId"]
+        msg = data["message"]
+        if msg.startswith("#platinum_"):
+            comp = serverApi.GetEngineCompFactory().CreateMsg(playerId)
+            data["cancel"] = True
+            msg = msg.replace("#platinum_", "")
+            if msg in ["left_top", "right_top", "left_bottom", "right_bottom"]:
+                Call(playerId, "ChangeUiPosition", msg)
+
+                position = (
+                    "左上角"
+                    if msg == "left_top"
+                    else "右上角" if msg == "right_top" else "左下角" if msg == "left_bottom" else "右下角"
+                )
+
+                comp.NotifyOneMessage(playerId, "铂: 饰品栏按钮已切换至{}".format(position))
+            elif msg in ["get_gs"]:
+                self.getGlobalBaubleSlotInfo()
+            elif msg in ["get_ts"]:
+                self.getTargetBaubleSlotInfo(playerId)
+            else:
+                comp.NotifyOneMessage(playerId, "§c铂: 未知指令§r")
+
     # ------------------------------------------------------------------
     #  platinum_add — 添加槽位
     # ------------------------------------------------------------------

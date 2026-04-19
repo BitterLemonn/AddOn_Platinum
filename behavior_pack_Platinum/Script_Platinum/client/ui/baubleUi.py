@@ -1,7 +1,6 @@
 # coding=utf-8
 from Script_Platinum.QuModLibs.Client import *
 from Script_Platinum.QuModLibs.Modules.Services.Client import BaseService
-from Script_Platinum.QuModLibs.UI import ScreenNode
 from Script_Platinum.client.config.playerConfig import PlayerConfig, QRequests
 from Script_Platinum.client.player.playerBaubleInfo import PlayerBaubleInfoClientService
 from Script_Platinum.client.ui.flyingItemRenderer import FlyingItemRenderer
@@ -16,6 +15,11 @@ ProxyCls = clientApi.GetUIScreenProxyCls()
 Binding = clientApi.GetViewBinderCls()
 minecraftEnum = clientApi.GetMinecraftEnum()
 screen = None  # type: BaubleUIClassicProxy|None
+
+
+@AllowCall
+def ChangeUiPosition(position):
+    PlayerConfig.uiPosition = position
 
 
 @Listen("UiInitFinished")
