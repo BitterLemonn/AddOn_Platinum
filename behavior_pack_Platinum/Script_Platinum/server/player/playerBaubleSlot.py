@@ -1,6 +1,5 @@
 # coding=utf-8
 
-from Script_Platinum import commonConfig
 from Script_Platinum.QuModLibs.Server import *
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
 from Script_Platinum.commonConfig import PLAYER_SLOT_DATA

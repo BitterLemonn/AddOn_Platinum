@@ -17,7 +17,7 @@ isInit = False
 playerBaubleInfoDict = {}  # type: dict[str, PlayerBaubleInfo]
 
 
-def getPlayerBaubleInfo(playerId):
+def getPlayerBaubleInfo(playerId):  # type: (str) -> PlayerBaubleInfo
     global playerBaubleInfoDict
     if playerId not in playerBaubleInfoDict:
         playerBaubleInfoDict[playerId] = PlayerBaubleInfo(playerId)
@@ -35,11 +35,26 @@ class PlayerBaubleInfo(object):
             if itemStack is not None and not itemStack.isEmpty():
                 self.boardcastPutOnEvent(slotId, itemStack, True)
 
+    def getEmptyOrFirstSlotByList(self, slotTypeList):
+        """根据槽位类型列表获取一个空的槽位ID, 没有空槽位则返回该类型的第一个槽位ID"""
+        from Script_Platinum.server.registry.slotRegistry import SlotRegistry
+
+        for slotType in slotTypeList:
+            slotIds = SlotRegistry().getSlotIdByType(slotType)
+            if not slotIds:
+                continue
+            for slotId in slotIds:
+                itemStack = self.baubleInfo.get(slotId)
+                if itemStack is None or itemStack.isEmpty():
+                    return slotId
+            return slotIds[0]
+        return None
+
     def getBaubleInfoBySlotId(self, slotId):  # type: (str) -> ItemStack|None
         """根据槽位ID获取玩家佩戴的饰品信息"""
         return self.baubleInfo.get(slotId, None)
 
-    def changeBaubleInfoBySlotId(self, slotId, itemStack, index=-1):  # type: (str, ItemStack, int, bool) -> None
+    def changeBaubleInfoBySlotId(self, slotId, itemStack, index=-1):  # type: (str, int, ItemStack, bool) -> None
         """设置玩家佩戴的饰品信息"""
         if not checkSlotValid(slotId):
             logging.w("铂: 尝试设置玩家{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
@@ -83,7 +98,8 @@ class PlayerBaubleInfo(object):
         if slotId in self.baubleInfo:
             if durability <= 0:
                 # 耐久度为0或更低时,直接删除饰品
-                # 播放饰品破碎音效 TODO
+                # 播放物品破碎音效
+                Call(self.playerId, "PlaySound", {"soundName": "random.break", "targetId": self.playerId})
                 self.boardcastTakeOffEvent(slotId, self.baubleInfo[slotId])
                 self.baubleInfo[slotId] = None
                 self._syncToClient()
@@ -109,7 +125,8 @@ class PlayerBaubleInfo(object):
             itemDict = itemDict if item.getDurability() > 0 else None
             self.baubleInfo[slotId] = ItemStack.fromDict(itemDict) if itemDict is not None else None
             if itemDict is None:
-                # 播放饰品破碎音效 TODO
+                # 播放饰品破碎音效
+                Call(self.playerId, "PlaySound", {"soundName": "random.break", "targetId": self.playerId})
                 self.boardcastTakeOffEvent(slotId, itemStack)
                 pass
             self._syncToClient()
@@ -216,15 +233,22 @@ class PlayerBaubleInfoServerService(BaseService):
         invItem = itemComp.GetPlayerItem(minecraftEnum.ItemPosType.INVENTORY, data.index, True)
         invItem = ItemStack.fromDict(invItem) if invItem is not None else None
         if not baubleItem or not invItem or not checkSlotValid(data.slotId):
-            print("槽位不存在: baubleItem={}, invItem={}, slotId={}".format(baubleItem, invItem, data.slotId))
             return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).toDict()
         if not invItem.isSameItem(baubleItem):
-            print("物品不匹配: baubleItem={}, invItem={}".format(baubleItem, invItem))
             return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).toDict()
         if not BaubleRegistry().isValidBauble(baubleItem.name, data.slotType):
-            print("饰品不合法: baubleItem={}, slotType={}".format(baubleItem, data.slotType))
             return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).toDict()
         return BaubleCheckResponseData(True, baubleItem, data.slotId, data.index).toDict()
+
+    def _changeBable(self, playerId, slotId, baubleItem, index=-1):  # type: (str, str, ItemStack, int) -> None
+        """更换饰品的内部方法"""
+        if baubleItem and not checkSlotValid(slotId):
+            return
+        comp = compFactory.CreateItem(playerId)
+        comp.SetInvItemNum(index, 0)
+        playerBaubleInfo = getPlayerBaubleInfo(playerId)
+        playerBaubleInfo.changeBaubleInfoBySlotId(slotId, baubleItem, index)
+        Call(playerId, "PlaySound", {"soundName": "armor.equip_iron", "targetId": playerId})
 
     @BaseService.REG_API("server/player/changeBauble")
     def changeBauble(self, data):

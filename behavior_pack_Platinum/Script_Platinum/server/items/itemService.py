@@ -1,6 +1,7 @@
 # coding=utf-8
 from Script_Platinum.QuModLibs.Server import *
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService
+from Script_Platinum.data.requestData import ItemStack
 from Script_Platinum.server.registry.baubleRegistry import BaubleRegistry
 from Script_Platinum.server.registry.slotRegistry import SlotRegistry
 from Script_Platinum.utils import serverUtils
@@ -52,3 +53,44 @@ class ItemService(BaseService):
                         itemDict.get("newItemName"), e
                     )
                 )
+
+        # 右键穿戴饰品
+
+    @BaseService.Listen("ServerItemTryUseEvent")
+    def onServerItemTryUseEvent(self, data):
+        itemStack = ItemStack.fromDict(data["itemDict"])
+        playerId = data["playerId"]
+        itemComp = compFactory.CreateItem(playerId)
+        itemInfo = itemComp.GetItemBasicInfo(itemStack.name)
+        if itemInfo["itemType"] != "armor" and itemInfo["itemType"] != "food":
+            if self.baubleRegistry.getBaubleInfo(itemStack.name) is not None:
+                baubleSlotTypeList = self.baubleRegistry.getBaubleInfo(itemStack.name).get("slot", [])
+                index = itemComp.GetSelectSlotId()
+
+                from Script_Platinum.server.player.playerBaubleInfo import (
+                    getPlayerBaubleInfo,
+                    PlayerBaubleInfoServerService,
+                )
+
+                emptySlotId = getPlayerBaubleInfo(playerId).getEmptyOrFirstSlotByList(baubleSlotTypeList)
+                if emptySlotId is None:
+                    return
+                compFactory.CreateGame(levelId).AddTimer(
+                    0.0,
+                    lambda: PlayerBaubleInfoServerService.access()._changeBable(
+                        playerId, emptySlotId, itemStack, index
+                    ),
+                )
+
+    # 死亡掉落物品
+    @BaseService.Listen("PlayerDieEvent")
+    def onPlayerDieEvent(self, data):
+        playerId = data["id"]
+        pos = Entity(playerId).FootPos
+        dimensionId = Entity(playerId).Dm
+        comp = serverApi.GetEngineCompFactory().CreateGame(levelId)
+        gameRule = comp.GetGameRulesInfoServer()
+        keepInv = gameRule["cheat_info"]["keep_inventory"]
+        if not keepInv:
+            logging.info("铂: 玩家 {} 死亡掉落物品".format(compFactory.CreateName(playerId).GetName()))
+            # self.syncRequest(playerId, "platinum/onPlayerDie", QRequests.Args(pos, dimensionId))

@@ -124,7 +124,6 @@ class SlotRegistry(object):
             from Script_Platinum.server.player.playerBaubleSlot import addPlayerSlot
 
             for playerId in serverApi.GetPlayerList():
-                print("广播默认槽位{}到玩家{}".format(baubleSlotId, playerId))
                 addPlayerSlot(playerId, newSlot)
 
         logging.success("铂: 槽位({}:{})注册成功".format(baubleSlotName, baubleSlotId))

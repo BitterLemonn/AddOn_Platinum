@@ -10,6 +10,7 @@ from Script_Platinum.data.requestData import BaubleCheckRequestData, ChangeBaubl
 from Script_Platinum.data.responseData import BaubleCheckResponseData, ItemStack
 from Script_Platinum.utils.ItemFactory import ItemFactory
 from Script_Platinum.utils.commonUtils import ratioToColor
+from Script_Platinum.utils.clientUtils import compFactory
 
 ProxyCls = clientApi.GetUIScreenProxyCls()
 Binding = clientApi.GetViewBinderCls()
@@ -25,10 +26,10 @@ def onUiInitFinished(data):
         "crafting.inventory_screen", "Script_Platinum.client.ui.baubleUi.BaubleUIClassicProxy"
     )
     PlayerBaubleInfoClientService.access().addBaubleInfoListener(onBaubleInfoChanged)
-    # # 注册口袋背包界面代理
-    # NativeScreenManager.instance().RegisterScreenProxy(
-    #     "crafting_pocket.inventory_screen_pocket", "Script_Platinum.client.ui.baubleUi.BaubleUiPocketProxy"
-    # )
+    # 注册口袋背包界面代理
+    NativeScreenManager.instance().RegisterScreenProxy(
+        "crafting_pocket.inventory_screen_pocket", "Script_Platinum.client.ui.baubleUi.BaubleUIPocketProxy"
+    )
 
 
 def onBaubleInfoChanged(data):
@@ -398,3 +399,108 @@ class BaubleUIClassicProxy(ProxyCls):
 
     def flyingItem(self, itemDict, startPos, endPos):
         self.flyingItemController.FlyingItem(itemDict, startPos, endPos)
+
+
+class BaubleUIPocketProxy(BaubleUIClassicProxy):
+    __instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls.__instance:
+            cls.__instance = super(BaubleUIPocketProxy, cls).__new__(cls)
+        return cls.__instance
+
+    def __init__(self, screenName, screenNode):
+        BaubleUIClassicProxy.__init__(self, screenName, screenNode)
+        self.isLockControl = False
+        self.lockTime = 0
+
+        self.basePath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel"
+        self.cursorSlotPath = self.basePath + "/base_panel/inventory_selected_icon_button/default/selected_item_icon"
+        self.entryBtnPath = (
+            self.basePath
+            + "/base_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg/bauble_button"
+        )
+        self.scrollPanelPath = (
+            self.basePath
+            + "/base_panel/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane"
+        )
+        self.scrollPanel = None
+        self.inventorySlotPathBase = (
+            self.basePath
+            + "/scroll_pane/scroll_touch/scroll_view/panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{index}"
+        )
+        self.hotbarSlotPathBase = None
+
+        self.armorBasePath = (
+            self.basePath
+            + "/base_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/label_and_renderer"
+        )
+        self.armorRenderPath = self.armorBasePath + "/label_panel"
+        self.armorRenderPath2 = self.armorBasePath + "/renderer_panel"
+
+    def OnDestroy(self):
+        super(BaubleUIPocketProxy, self).OnDestroy()
+
+    def OnCreate(self):
+        super(BaubleUIPocketProxy, self).OnCreate()
+        self.scrollPanel = self.screen.GetBaseUIControl(self.scrollPanelPath).asScrollView()
+        self.inventorySlotPathBase = (
+            self.scrollPanel.GetScrollViewContentPath() + "/grid/grid_item_for_inventory{index}"
+        )
+
+    def OnTick(self):
+        # 锁定控制
+        if self.isLockControl:
+            self.lockTime += 1
+            if self.lockTime > 3 * 2:
+                self.isLockControl = False
+                self.lockTime = 0
+
+    @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.bauble_button")
+    def onBaubleButtonClick(self, args):
+        if not self.isLockControl:
+            self.isLockControl = True
+            super(BaubleUIPocketProxy, self).onBaubleButtonClick(args)
+        if self.isShowBaublePanel:
+            basePanel = self.screen.GetBaseUIControl(self.armorBasePath)
+            x, y = basePanel.GetSize()
+            if y < 40:
+                self.setToolTips("§c检测到背包界面过小，请到\n§6设置-视频-GUI标度§r\n§c中缩小GUI标度§r")
+
+    @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.pocket_grid.visible")
+    def bindingPocketGridVisible(self):
+        self.screen.GetBaseUIControl(self.armorRenderPath).SetVisible(not self.isShowBaublePanel)
+        self.screen.GetBaseUIControl(self.armorRenderPath2).SetVisible(not self.isShowBaublePanel)
+        return self.isShowBaublePanel
+
+    # 背包点击
+    def onItemSlotButtonClickedEvent(self, data):
+        if not self.isLockControl:
+            self.isLockControl = True
+            super(BaubleUIPocketProxy, self).onItemSlotButtonClickedEvent(data)
+
+    # 饰品栏点击
+    @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.slot_button")
+    def onSlotButtonClick(self, args):
+        if not self.isLockControl:
+            self.isLockControl = True
+            super(BaubleUIPocketProxy, self).onSlotButtonClick(args)
+
+    def getIsTouchInventorySelected(self):
+        for i in range(9):
+            index = i + 1
+            path = self.hotbarSlotPathBase.format(index=index) + "/item_selected_image"
+            if self.screen.GetBaseUIControl(path).GetVisible():
+                return True
+        for i in range(27):
+            try:
+                index = i + 1
+                path = self.inventorySlotPathBase.format(index=index) + "/item_selected_image"
+                if self.screen.GetBaseUIControl(path).GetVisible():
+                    return True
+            except:
+                pass
+        return False
+
+    def flyingItem(self, itemDict, startPos, endPos):
+        self.flyingItemController.FlyingItem(itemDict, startPos, endPos, (24.0, 24.0))
