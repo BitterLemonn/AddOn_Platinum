@@ -41,9 +41,9 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :param isDefault: 是否为默认槽位
         :return:
         """
-        from Script_Platinum.utils.oldVersionFixer import oldSlotTypeListToNew
+        from Script_Platinum.utils.oldVersionFixer import oldSlotTypeToNew
 
-        slotType = oldSlotTypeListToNew(slotType)
+        slotType = oldSlotTypeToNew(slotType)
         baubleSlotData = BaubleSlotData(slotName, slotPlaceHolderPath, slotId, slotType, isDefault)
         self.slotRegistry.registerSlot(baubleSlotData)
 

@@ -43,7 +43,7 @@ class BaubleRegistry(object):
             comp = compFactory.CreateItem(levelId)
             info = comp.GetItemBasicInfo(data.baubleId, 0)
             data.customTips = info.get("customTips", None)
-    
+
         return self._registerBauble(data.baubleId, data.slotType, data.customTips)
 
     def _registerBauble(self, baubleName, baubleSlot, customTips):  # type: (str, str|list[str], str) -> bool
@@ -59,5 +59,5 @@ class BaubleRegistry(object):
             return False
         baubleSlot = baubleSlot if isinstance(baubleSlot, list) else [baubleSlot]
         self.baubles[baubleName] = {"slot": baubleSlot, "customTips": customTips}
-        logging.sucess("铂: 饰品 {} 注册成功".format(baubleName))
+        logging.success("铂: 饰品 {} 注册成功".format(baubleName))
         return True

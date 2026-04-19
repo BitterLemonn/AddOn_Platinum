@@ -13,9 +13,11 @@ platinum = EasyMod()
 
 # -------------------server-------------------
 platinum.Server("server.server")
+platinum.Server("server.registry.slotRegistry")
 platinum.Server("server.player.playerBaubleSlot")
 platinum.Server("server.player.playerBaubleInfo")
 platinum.Server("server.items.itemService")
+platinum.Server("server.command.commandServer")
 # -----------
 platinum.regNativePyServer(
     commonConfig.PLATINUM_BROADCAST_SERVER,

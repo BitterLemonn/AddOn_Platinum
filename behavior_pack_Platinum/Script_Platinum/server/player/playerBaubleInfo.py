@@ -70,7 +70,7 @@ class PlayerBaubleInfo(object):
                     self.boardcastTakeOffEvent(slotId, oldItemStack, isFirstLoad)
                 self.boardcastPutOnEvent(slotId, self.baubleInfo[slotId], isFirstLoad)
             else:
-                logging.w("铂: 尝试设置玩家{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
+                logging.warning("铂: 尝试设置玩家{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
         self._syncToClient()
         # 保存到世界信息中
         PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()
@@ -78,7 +78,7 @@ class PlayerBaubleInfo(object):
     def setBaubleDurabilityBySlotId(self, slotId, durability):  # type: (str, int) -> None
         """设置玩家佩戴的饰品耐久度"""
         if not checkSlotValid(slotId):
-            logging.w("铂: 尝试设置玩家{}槽位{}的饰品耐久度,但该槽位ID无效".format(self.playerId, slotId))
+            logging.warning("铂: 尝试设置玩家{}槽位{}的饰品耐久度,但该槽位ID无效".format(self.playerId, slotId))
             return
         if slotId in self.baubleInfo:
             if durability <= 0:
@@ -93,14 +93,14 @@ class PlayerBaubleInfo(object):
             self.baubleInfo[slotId] = ItemStack.fromDict(itemDict)
             self._syncToClient()
         else:
-            logging.w("铂: 尝试设置玩家{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self.playerId, slotId))
+            logging.warning("铂: 尝试设置玩家{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self.playerId, slotId))
         # 保存到世界信息中
         PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()
 
     def decreaseBaubleDurabilityBySlotId(self, slotId, decreaseAmount):  # type: (str, int) -> None
         """减少玩家佩戴的饰品耐久度"""
         if not checkSlotValid(slotId):
-            logging.w("铂: 尝试减少玩家{}槽位{}的饰品耐久度,但该槽位ID无效".format(self.playerId, slotId))
+            logging.warning("铂: 尝试减少玩家{}槽位{}的饰品耐久度,但该槽位ID无效".format(self.playerId, slotId))
             return
         if slotId in self.baubleInfo:
             itemStack = self.baubleInfo[slotId]
@@ -114,7 +114,7 @@ class PlayerBaubleInfo(object):
                 pass
             self._syncToClient()
         else:
-            logging.w("铂: 尝试减少玩家{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self.playerId, slotId))
+            logging.warning("铂: 尝试减少玩家{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self.playerId, slotId))
 
         # 保存到世界信息中
         PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()

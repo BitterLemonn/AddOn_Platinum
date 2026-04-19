@@ -17,10 +17,10 @@ def error(msg):
 
 def warning(msg):
     if isDebug:
-        _logging.warning(msg)
+        _logging.warn(msg)
 
 
-def sucess(msg):
+def success(msg):
     if isDebug:
         _logging.suc(msg)
 

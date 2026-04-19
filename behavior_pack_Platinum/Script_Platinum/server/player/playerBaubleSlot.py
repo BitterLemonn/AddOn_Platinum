@@ -5,6 +5,7 @@ from Script_Platinum.QuModLibs.Server import *
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
 from Script_Platinum.commonConfig import PLAYER_SLOT_DATA
 from Script_Platinum.data.slotData import BaubleSlotData
+from Script_Platinum.server.items.itemService import SlotRegistry
 from Script_Platinum.utils.serverUtils import compFactory
 from Script_Platinum.utils import developLogging as logging
 
@@ -69,6 +70,7 @@ class PlayerBaubleSlotServerService(BaseService):
 
     def __init__(self):
         BaseService.__init__(self)
+        self.slotRegistry = SlotRegistry()  # type: SlotRegistry
 
     @BaseService.Listen("AddServerPlayerEvent")
     def onAddServerPlayer(self, data):
@@ -78,12 +80,16 @@ class PlayerBaubleSlotServerService(BaseService):
         slotListData = playerSlotInfo.get(playerId, [])
         if slotListData:
             slotList = [BaubleSlotData(**slotData) for slotData in slotListData]
+            # 同步未拥有的默认槽位
+            defaultSlots = self.slotRegistry.getBaubleSlotList(defaultFilter=True)
+            ownedSlotIds = [slot.identifier for slot in slotList]
+            for defaultSlot in defaultSlots:
+                if defaultSlot.identifier not in ownedSlotIds:
+                    slotList.append(defaultSlot)
             setPlayerSlotList(playerId, slotList)
         else:
             # 请求默认槽位数据
-            from Script_Platinum.server.registry.slotRegistry import SlotRegistry
-
-            defaultSlots = SlotRegistry().getBaubleSlotList(defaultFilter=True)
+            defaultSlots = self.slotRegistry.getBaubleSlotList(defaultFilter=True)
             setPlayerSlotList(playerId, defaultSlots)
 
     @BaseService.REG_API("server/slot/requestPlayerSlotList")
@@ -97,15 +103,17 @@ class PlayerBaubleSlotServerService(BaseService):
         """同步指令添加的槽位数据 (仅用于旧版本数据迁移, 不久后将移除)"""
         if serverApi.IsInServer():
             return
-        
-        registrySys = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+
         playerId = getLoaderSystem().rpcPlayerId
+
+        from Script_Platinum.utils.oldVersionFixer import oldSlotTypeToNew
+
         for slotData in commandSlotList:
             # 注册新槽位
             isDefault = slotData.get("isDefault", False)
-            if isDefault:
-                registrySys.AddGlobalBaubleSlot(slotId=slotData["slotIdentifier"], slotType=slotData["slotType"])
-            else:
-                registrySys.AddTargetBaubleSlot(
-                    playerId=playerId, slotId=slotData["slotIdentifier"], slotType=slotData["slotType"]
-                )
+            slotId = slotData["slotIdentifier"]
+            slotType = oldSlotTypeToNew(slotData["slotType"])
+            baubleSlotData = BaubleSlotData(None, None, slotId, slotType, isDefault, True)
+            self.slotRegistry.registerSlot(baubleSlotData)
+            if not isDefault:
+                addPlayerSlot(playerId, baubleSlotData)
