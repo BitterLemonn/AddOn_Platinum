@@ -88,6 +88,7 @@ class SlotRegistry(object):
                 return False
             if existingSlot is None and slot.slotType == baubleSlotType:
                 existingSlot = slot
+                break
 
         # 如果是新槽位类型 需要传入占位图路径
         if existingSlot is None and placeholderPath is None:
@@ -107,7 +108,7 @@ class SlotRegistry(object):
             isDefault=isDefault,
         )
         self._slots.append(newSlot)
-        logging.info("铂: 槽位({}:{})注册成功".format(baubleSlotName, baubleSlotId))
+        logging.sucess("铂: 槽位({}:{})注册成功".format(baubleSlotName, baubleSlotId))
         return True
 
     def isSlotIdExist(self, slotId):

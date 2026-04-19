@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from Script_Platinum import commonConfig
 from Script_Platinum.QuModLibs.Server import *
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
 from Script_Platinum.commonConfig import PLAYER_SLOT_DATA
@@ -12,7 +13,7 @@ playerSlotList = {}  # type: dict[int, BaubleSlotData]
 
 def checkSlotValid(slotId):
     from Script_Platinum.server.registry.slotRegistry import SlotRegistry
-    
+
     return slotId in SlotRegistry().getBaubleSlotIdList()
 
 
@@ -90,3 +91,21 @@ class PlayerBaubleSlotServerService(BaseService):
         playerId = getLoaderSystem().rpcPlayerId
         slotList = getPlayerSlotList(playerId)
         return [slot.__dict__ for slot in slotList]
+
+    @BaseService.REG_API("server/player/syncCommandSlot")
+    def syncCommandSlot(self, commandSlotList):
+        """同步指令添加的槽位数据 (仅用于旧版本数据迁移, 不久后将移除)"""
+        if serverApi.IsInServer():
+            return
+        
+        registrySys = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        playerId = getLoaderSystem().rpcPlayerId
+        for slotData in commandSlotList:
+            # 注册新槽位
+            isDefault = slotData.get("isDefault", False)
+            if isDefault:
+                registrySys.AddGlobalBaubleSlot(slotId=slotData["slotIdentifier"], slotType=slotData["slotType"])
+            else:
+                registrySys.AddTargetBaubleSlot(
+                    playerId=playerId, slotId=slotData["slotIdentifier"], slotType=slotData["slotType"]
+                )

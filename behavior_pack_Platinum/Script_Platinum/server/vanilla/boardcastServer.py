@@ -24,15 +24,11 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         if not data.get("baubleName", None) or not data.get("baubleSlot", None):
             logging.error("铂: 饰品注册事件缺少必要参数, 请检查是否正确传入baubleName和baubleSlot")
             return
-        from Script_Platinum.utils.oldVersionFixer import oldSlotTypeListToNew
+        from Script_Platinum.utils.oldVersionFixer import oldSlotTypeToNew
 
         # 兼容旧版本直接传入字符串的槽位类型, 将其转换为列表并进行旧槽位类型到新槽位类型的转换
-        slotTypeList = (
-            oldSlotTypeListToNew(data.get("baubleSlot", []))
-            if isinstance(data.get("baubleSlot", None), list)
-            else oldSlotTypeListToNew([data.get("baubleSlot", None)])
-        )
-        baubleData = BaubleInfoData(data["baubleName"], slotTypeList, data.get("customTips", None))
+        slotType = oldSlotTypeToNew(data["baubleSlot"])
+        baubleData = BaubleInfoData(data["baubleName"], slotType, data.get("customTips", None))
         self.baubleRegistry.registerBauble(baubleData)
 
     def AddGlobalBaubleSlot(self, slotId, slotType, slotName=None, slotPlaceHolderPath=None, isDefault=False):
@@ -47,8 +43,8 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         """
         from Script_Platinum.utils.oldVersionFixer import oldSlotTypeListToNew
 
-        slotTypeList = oldSlotTypeListToNew([slotType]) if isinstance(slotType, str) else oldSlotTypeListToNew(slotType)
-        baubleSlotData = BaubleSlotData(slotName, slotPlaceHolderPath, slotId, slotTypeList, isDefault)
+        slotType = oldSlotTypeListToNew(slotType)
+        baubleSlotData = BaubleSlotData(slotName, slotPlaceHolderPath, slotId, slotType, isDefault)
         self.slotRegistry.registerSlot(baubleSlotData)
 
     def SetPlayerBaubleInfo(self, playerId, baubleDict):
@@ -103,7 +99,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         playerBaubleInfo = getPlayerBaubleInfo(playerId)  # type: PlayerBaubleInfo
         playerBaubleInfo.decreaseBaubleDurabilityBySlotId(slotId, num)
 
-    def AddTargetBaubleSlot(self, playerId, slotId, slotType=None, slotName=None, slotPlaceHolderPath=None):
+    def AddTargetBaubleSlot(self, playerId, slotId, slotType, slotName=None, slotPlaceHolderPath=None):
         """
         添加目标饰品槽位
         :param playerId: 玩家ID
@@ -114,7 +110,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :return:
         """
         from Script_Platinum.server.player.playerBaubleSlot import addPlayerSlot
-        from Script_Platinum.utils.oldVersionFixer import oldSlotTypeListToNew
+        from Script_Platinum.utils.oldVersionFixer import oldSlotTypeToNew
 
         # 推荐用法
         if slotType is None and self.slotRegistry.isSlotIdExist(slotId):
@@ -123,12 +119,11 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
             addPlayerSlot(playerId, slotData)
         else:
             # 兼容旧方法直接添加槽位
-            slotTypeList = (
-                oldSlotTypeListToNew([slotType]) if isinstance(slotType, str) else oldSlotTypeListToNew(slotType)
-            )
-            slotData = BaubleSlotData(slotName, slotPlaceHolderPath, slotId, slotTypeList, False)
+            slotType = oldSlotTypeToNew(slotType)
+            slotData = BaubleSlotData(slotName, slotPlaceHolderPath, slotId, slotType, False)
             if self.slotRegistry.isSlotIdExist(slotId) or self.slotRegistry.registerSlot(slotData):
-                addPlayerSlot(playerId, slotData)
+                registeredSlotData = self.slotRegistry.getSlotDataById(slotId)
+                addPlayerSlot(playerId, registeredSlotData)
 
     def AddGlobalBaubleSlot(self, slotId, slotType, slotName=None, slotPlaceHolderPath=None, isDefault=False):
         """
@@ -140,14 +135,14 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :param isDefault: 是否为默认槽位(旧参数已废弃)
         :return:
         """
-        from Script_Platinum.utils.oldVersionFixer import oldSlotTypeListToNew
+        from Script_Platinum.utils.oldVersionFixer import oldSlotTypeToNew
 
         if self.slotRegistry.isSlotIdExist(slotId):
             logging.error("铂: 尝试添加全局槽位{}, 但该槽位ID已存在, 请检查是否重复添加".format(slotId))
             return
 
-        slotTypeList = oldSlotTypeListToNew([slotType]) if isinstance(slotType, str) else oldSlotTypeListToNew(slotType)
-        slotData = BaubleSlotData(slotName, slotPlaceHolderPath, slotId, slotTypeList, True)
+        slotType = oldSlotTypeToNew(slotType)
+        slotData = BaubleSlotData(slotName, slotPlaceHolderPath, slotId, slotType, True)
         self.slotRegistry.registerSlot(slotData)
 
     def DeleteTargetBaubleSlot(self, playerId, slotId):

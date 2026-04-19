@@ -61,6 +61,8 @@ class PlayerBaubleInfo(object):
     def setBaubleDict(self, baubleDict, isFirstLoad=False):  # type: (dict[str, dict], bool) -> None
         """直接设置玩家佩戴的饰品信息字典, 用于初始化玩家饰品信息"""
         for slotId, itemDict in baubleDict.items():
+            if itemDict is None:
+                continue
             if checkSlotValid(slotId):
                 oldItemStack = self.baubleInfo.get(slotId, None)
                 self.baubleInfo[slotId] = ItemStack.fromDict(itemDict)
@@ -70,6 +72,8 @@ class PlayerBaubleInfo(object):
             else:
                 logging.w("铂: 尝试设置玩家{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
         self._syncToClient()
+        # 保存到世界信息中
+        PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()
 
     def setBaubleDurabilityBySlotId(self, slotId, durability):  # type: (str, int) -> None
         """设置玩家佩戴的饰品耐久度"""
@@ -90,6 +94,8 @@ class PlayerBaubleInfo(object):
             self._syncToClient()
         else:
             logging.w("铂: 尝试设置玩家{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self.playerId, slotId))
+        # 保存到世界信息中
+        PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()
 
     def decreaseBaubleDurabilityBySlotId(self, slotId, decreaseAmount):  # type: (str, int) -> None
         """减少玩家佩戴的饰品耐久度"""
@@ -109,6 +115,9 @@ class PlayerBaubleInfo(object):
             self._syncToClient()
         else:
             logging.w("铂: 尝试减少玩家{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self.playerId, slotId))
+
+        # 保存到世界信息中
+        PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()
 
     def _syncToClient(self):
         # 同步饰品信息到客户端
@@ -226,6 +235,18 @@ class PlayerBaubleInfoServerService(BaseService):
         comp.SetInvItemNum(data.index, 0)
         playerBaubleInfo = getPlayerBaubleInfo(playerId)
         playerBaubleInfo.changeBaubleInfoBySlotId(data.slotId, baubleItem, data.index)
+
+    @BaseService.REG_API("server/player/syncOldData")
+    def syncOldData(self, data):
+        """同步旧版本数据, 危险操作, 仅在旧版本更新后的一段时间内使用(不允许山头环境使用)"""
+        if serverApi.IsInServer():
+            return
+
+        playerId = getLoaderSystem().rpcPlayerId
+        playerBaubleInfo = getPlayerBaubleInfo(playerId)
+        # 删除旧数据中value为null的数据
+        data = {slotId: itemDict for slotId, itemDict in data.items() if itemDict is not None}
+        playerBaubleInfo.setBaubleDict(data)
 
     def savePlayerBaubleInfo(self):
         """将玩家饰品信息保存到世界信息中"""
