@@ -197,7 +197,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         self.BroadcastEvent(commonConfig.BAUBLE_GET_GLOBAL_INFO_EVENT, slotInfoList)
         return slotInfoList
 
-    def GetTagetBaubleSlotInfo(self, playerId):
+    def GetTargetBaubleSlotInfo(self, playerId):
         """
         获取玩家饰品槽位信息
         :param playerId: 玩家ID

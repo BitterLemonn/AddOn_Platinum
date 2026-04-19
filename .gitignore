@@ -9,3 +9,4 @@
 .prettierrc
 *.exe
 .mcdev.json
+build_release.py

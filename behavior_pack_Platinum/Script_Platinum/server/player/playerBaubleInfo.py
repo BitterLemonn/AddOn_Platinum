@@ -144,7 +144,7 @@ class PlayerBaubleInfo(object):
             baubleData.dumpToDict(),
         )
         PlayerBaubleInfoServerService.access().syncRequest(
-            self.playerId, "client/bauble/unequipBaubleBoardcast", baubleData.dumpToDict()
+            self.playerId, "client/bauble/unequipBaubleBoardcast", QRequests.Args(baubleData.dumpToDict())
         )
 
     def boardcastPutOnEvent(self, slotId, itemStack, isFirstLoad=False):
@@ -160,7 +160,7 @@ class PlayerBaubleInfo(object):
             baubleData.dumpToDict(),
         )
         PlayerBaubleInfoServerService.access().syncRequest(
-            self.playerId, "client/bauble/equipBaubleBoardcast", baubleData.dumpToDict()
+            self.playerId, "client/bauble/equipBaubleBoardcast", QRequests.Args(baubleData.dumpToDict())
         )
 
 
