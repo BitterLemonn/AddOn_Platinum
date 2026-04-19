@@ -143,6 +143,9 @@ class PlayerBaubleInfo(object):
             commonConfig.BAUBLE_UNEQUIPPED_EVENT,
             baubleData.dumpToDict(),
         )
+        PlayerBaubleInfoServerService.access().syncRequest(
+            self.playerId, "client/bauble/unequipBaubleBoardcast", baubleData.dumpToDict()
+        )
 
     def boardcastPutOnEvent(self, slotId, itemStack, isFirstLoad=False):
         """广播玩家饰品佩戴事件"""
@@ -155,6 +158,9 @@ class PlayerBaubleInfo(object):
         system.BroadcastEvent(
             commonConfig.BAUBLE_EQUIPPED_EVENT,
             baubleData.dumpToDict(),
+        )
+        PlayerBaubleInfoServerService.access().syncRequest(
+            self.playerId, "client/bauble/equipBaubleBoardcast", baubleData.dumpToDict()
         )
 
 

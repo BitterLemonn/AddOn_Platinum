@@ -38,3 +38,9 @@ platinum.regNativePyServer(
 # -------------------client-------------------
 platinum.Client("client.player.playerBaubleSlot")
 platinum.Client("client.ui.baubleUi")
+# -----------
+platinum.regNativePyClient(
+    commonConfig.PLATINUM_NAMESPACE,
+    commonConfig.PLATINUM_BROADCAST_CLIENT,
+    "client.vanilla.boardcastClient.BoardcastClient",
+)

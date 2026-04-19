@@ -1,4 +1,5 @@
 # coding=utf-8
+from Script_Platinum import commonConfig
 from Script_Platinum.QuModLibs.Client import *
 from Script_Platinum.QuModLibs.Modules.Services.Client import BaseService, QRequests
 from Script_Platinum.data.itemStack import ItemStack
@@ -12,6 +13,18 @@ class PlayerBaubleInfoClientService(BaseService):
         BaseService.__init__(self)
         self.baubleInfo = {}  # type: dict[str, ItemStack]
         self.listener = []  # type: list[function]
+
+    @BaseService.REG_API("client/bauble/unequipBaubleBoardcast")
+    def takeOffBaubleBoardcast(self, data):  # type: (dict) -> None
+        boardCastSys = clientApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_CLIENT)
+        if boardCastSys:
+            boardCastSys.BroadcastEvent(commonConfig.BAUBLE_UNEQUIPPED_EVENT, data)
+
+    @BaseService.REG_API("client/bauble/equipBaubleBoardcast")
+    def equipBaubleBoardcast(self, data):  # type: (dict) -> None
+        boardCastSys = clientApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_CLIENT)
+        if boardCastSys:
+            boardCastSys.BroadcastEvent(commonConfig.BAUBLE_EQUIPPED_EVENT, data)
 
     @BaseService.REG_API("client/bauble/syncFromServer")
     def syncFromServer(self, data):  # type: (dict) -> None
