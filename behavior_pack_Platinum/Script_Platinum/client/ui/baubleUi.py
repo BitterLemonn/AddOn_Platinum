@@ -1,4 +1,5 @@
 # coding=utf-8
+from Script_Platinum.QuModLibs.UI import ScreenNode
 from Script_Platinum.QuModLibs.Client import *
 from Script_Platinum.QuModLibs.Modules.Services.Client import BaseService
 from Script_Platinum.client.config.playerConfig import PlayerConfig, QRequests
@@ -29,11 +30,11 @@ def onUiInitFinished(data):
     NativeScreenManager.instance().RegisterScreenProxy(
         "crafting.inventory_screen", "Script_Platinum.client.ui.baubleUi.BaubleUIClassicProxy"
     )
-    PlayerBaubleInfoClientService.access().addBaubleInfoListener(onBaubleInfoChanged)
     # 注册口袋背包界面代理
     NativeScreenManager.instance().RegisterScreenProxy(
         "crafting_pocket.inventory_screen_pocket", "Script_Platinum.client.ui.baubleUi.BaubleUIPocketProxy"
     )
+    PlayerBaubleInfoClientService.access().addBaubleInfoListener(onBaubleInfoChanged)
 
 
 def onBaubleInfoChanged(data):

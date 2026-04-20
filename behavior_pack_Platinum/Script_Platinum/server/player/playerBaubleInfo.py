@@ -151,11 +151,13 @@ class PlayerBaubleInfo(object):
     def boardcastTakeOffEvent(self, slotId, itemStack):
         """广播玩家饰品脱落事件"""
         from Script_Platinum.server.registry.slotRegistry import SlotRegistry
+        from Script_Platinum.utils.oldVersionFixer import newSlotTypeToOld
 
         system = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
         slotType = SlotRegistry().getSlotTypeById(slotId)
+        oldSlotType = newSlotTypeToOld(slotType)
         slotIndex = SlotRegistry().getSlotIndexById(slotId)
-        baubleData = BaubleEventData(self.playerId, slotId, slotType, slotIndex, itemStack, False)
+        baubleData = BaubleEventData(self.playerId, slotId, oldSlotType, slotIndex, itemStack, False)
         system.BroadcastEvent(
             commonConfig.BAUBLE_UNEQUIPPED_EVENT,
             baubleData.dumpToDict(),
@@ -167,11 +169,13 @@ class PlayerBaubleInfo(object):
     def boardcastPutOnEvent(self, slotId, itemStack, isFirstLoad=False):
         """广播玩家饰品佩戴事件"""
         from Script_Platinum.server.registry.slotRegistry import SlotRegistry
+        from Script_Platinum.utils.oldVersionFixer import newSlotTypeToOld
 
         system = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
         slotType = SlotRegistry().getSlotTypeById(slotId)
+        oldSlotType = newSlotTypeToOld(slotType)
         slotIndex = SlotRegistry().getSlotIndexById(slotId)
-        baubleData = BaubleEventData(self.playerId, slotId, slotType, slotIndex, itemStack, False)
+        baubleData = BaubleEventData(self.playerId, slotId, oldSlotType, slotIndex, itemStack, False)
         system.BroadcastEvent(
             commonConfig.BAUBLE_EQUIPPED_EVENT,
             baubleData.dumpToDict(),

@@ -106,7 +106,6 @@ if data["baubleSlotId"] == "bauble_helmet":
 迁移时请按以下清单逐项检查你的代码：
 
 - [ ] **注册事件时机**：如果在 `LoadServerAddonScriptsAfter` 事件注册信息则需延迟一帧再执行
-- [ ] **`baubleSlot` 字段判断逻辑**：检查所有依赖 `data["baubleSlot"]` 进行判断的代码，更新匹配值（旧版常量字符串 → 新版 slotType）
 - [ ] **`isDefault` 参数清理**：检查 `AddGlobalBaubleSlot` 调用中的 `isDefault` 参数，可安全移除
 - [ ] **数据获取方式优化**：考虑将通过事件监听获取数据的方式改为直接使用方法返回值
 - [ ] **示例代码引用路径**：更新引用示例代码的路径为新路径 `server/inner/baubleServer.py`
@@ -134,7 +133,6 @@ if data["baubleSlotId"] == "bauble_helmet":
 
 | 字段 | 旧版本 | 新版本 |
 |-----|-------|-------|
-| `baubleSlot` | `"§6栏位: §g头饰§r\n"` 等常量字符串 | `"helmet"` 等 slotType |
 | `baubleSlotId` | 无 | 新增，槽位唯一ID如 `"bauble_helmet"` |
 | `slotIndex` | 无 | 新增，同类型槽位中的索引 |
 | `isFirstLoad` | 无 | 新增，是否为加入游戏自动穿戴 |

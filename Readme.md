@@ -359,13 +359,11 @@ data = {
     "slotIndex": int,  # 槽位索引(仅当槽位类型中存在多个槽位时>0否则为0)
     "playerId": str,  # 玩家id
     "isFirstLoad": bool,  # 是否为加入游戏自动穿戴
-    "baubleSlot": str,  # 槽位类型(值为slotType, 如"helmet"、"belt"等, 新版添加的槽位值与baubleSlotId一致)
+    "baubleSlot": str,  # 槽位类型(值为commonConfig.py的常量, 新版添加的槽位值与baubleSlotId一致)
     "baubleSlotId": str,  # 槽位id
     "itemDict": dict  # 饰品信息
 }
 ```
-
-**⚠️注意: 新版本中`baubleSlot`字段的含义已变更，旧版本中该字段值为commonConfig.py中的常量字符串(如`"§6栏位: §g头饰§r\n"`)，新版本中该字段值为槽位类型(如`"helmet"`)。请开发者注意区分，旧版代码若依赖此字段进行判断需要做相应修改。**
 
 #### 4. 饰品信息返回值
 
