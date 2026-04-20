@@ -376,6 +376,7 @@ class BaubleUIClassicProxy(ProxyCls):
             else self.inventorySlotPathBase.format(index=index - 9)
         )
         slotPos = self.screen.GetGlobalPosition(path)
+        print("slotPos", slotPos)
         return slotPos
 
     def getIsTouchInventorySelected(self):
@@ -434,7 +435,10 @@ class BaubleUIPocketProxy(BaubleUIClassicProxy):
             self.basePath
             + "/scroll_pane/scroll_touch/scroll_view/panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{index}"
         )
-        self.hotbarSlotPathBase = None
+        self.hotbarSlotPathBase = (
+            self.basePath
+            + "/base_panel/hotbar_and_panels/hotbar_section_panel/hotbar/hotbar_grid/hotbar_grid_item{index}"
+        )
 
         self.armorBasePath = (
             self.basePath

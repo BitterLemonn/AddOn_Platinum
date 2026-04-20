@@ -1,6 +1,5 @@
 # coding=utf-8
 if 1 > 2:
-    from Script_Platinum.QuModLibs.QuClientApi.ui.screenNode import BaseUIControl
     from Script_Platinum.QuModLibs.UI import ScreenNode
 
 from Script_Platinum.utils import developLogging as logging
@@ -12,16 +11,16 @@ class FlyingItemRenderer:
     __FLYING_ITEM_DEF = "bauble_reborn.flying_item"
 
     def __init__(self, screen, basePath):
-        self.flyingTime = 2  # 帧
+        self.flyingSpeed = 2000.0  # 像素/秒
 
         self.screen = screen  # type: ScreenNode
         self.basePath = basePath
 
         self.flyingItemPanel = self.screen.GetBaseUIControl(self.basePath)
 
-        self.flyingPool = []  # type: list[BaseUIControl]
-        self.flyingBigPool = []  # type: list[BaseUIControl]
-        self.flyingUsing = []  # type: list[BaseUIControl]
+        self.flyingPool = []
+        self.flyingBigPool = []
+        self.flyingUsing = []
 
     def OnDestroy(self):
         for flyingRender in self.flyingPool:
@@ -76,11 +75,19 @@ class FlyingItemRenderer:
         fromPos = [fromPos[0] - flyingPanelOffset[0], fromPos[1] - flyingPanelOffset[1]]
         toPos = [toPos[0] - flyingPanelOffset[0], toPos[1] - flyingPanelOffset[1]]
 
+        # 根据两点距离和固定速度计算动画时长
+        import math
+
+        dx = toPos[0] - fromPos[0]
+        dy = toPos[1] - fromPos[1]
+        distance = math.sqrt(dx * dx + dy * dy)
+        duration = distance / self.flyingSpeed if self.flyingSpeed > 0 else 0.1
+
         offsetAnimateData = {
             "namespace": "PlatinumFlyingItem",
             "flying_animation": {
                 "anim_type": "offset",
-                "duration": self.flyingTime / 30.0,
+                "duration": duration,
                 "from": fromPos,
                 "to": toPos,
             },
@@ -90,7 +97,7 @@ class FlyingItemRenderer:
         itemRender.SetAnimation("offset", "PlatinumFlyingItem", "flying_animation", True)
 
         comp = clientApi.GetEngineCompFactory().CreateGame(levelId)
-        comp.AddTimer(self.flyingTime / 30.0, self.__EndFlying, itemRender)
+        comp.AddTimer(duration, self.__EndFlying, itemRender)
 
     def __EndFlying(self, itemRender):
         itemRender.SetVisible(False)
