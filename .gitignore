@@ -10,3 +10,5 @@
 *.exe
 .mcdev.json
 build_release.py
+.env
+*.zip

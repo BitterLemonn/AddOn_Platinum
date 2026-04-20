@@ -82,7 +82,7 @@ class PlayerBaubleInfo(object):
                 oldItemStack = self.baubleInfo.get(slotId, None)
                 self.baubleInfo[slotId] = ItemStack.fromDict(itemDict)
                 if oldItemStack is not None and not oldItemStack.isEmpty():
-                    self.boardcastTakeOffEvent(slotId, oldItemStack, isFirstLoad)
+                    self.boardcastTakeOffEvent(slotId, oldItemStack)
                 self.boardcastPutOnEvent(slotId, self.baubleInfo[slotId], isFirstLoad)
             else:
                 logging.warning("铂: 尝试设置玩家{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
