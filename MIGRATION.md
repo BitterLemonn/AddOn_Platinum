@@ -55,26 +55,26 @@ registerSys.AddGlobalBaubleSlot("slotId", "slotType", "名称", "贴图路径", 
 registerSys.AddGlobalBaubleSlot("slotId", "slotType", "名称", "贴图路径")
 ```
 
-### 5. 事件数据 `baubleSlot` 字段含义变更
+### 5. 事件数据 `slotIndex` 字段含义变更
 
-饰品穿脱事件（`BaubleEquippedEvent` / `BaubleUnequippedEvent`）返回的 data 中，`baubleSlot` 字段的含义已变更：
+饰品穿脱事件（`BaubleEquippedEvent` / `BaubleUnequippedEvent`）返回的 data 中，`slotIndex` 字段的含义已变更：
 
-- **旧版本**：值为 `commonConfig.BaubleEnum` 中的常量字符串，如 `"§6栏位: §g头饰§r\n"`
-- **新版本**：值为槽位类型（slotType），如 `"helmet"`、`"belt"` 等
+- **旧版本**：若该槽位类型 `slotType` 的可用槽位大于 1 则返回由 1 开始的 `index`, 若该槽位类型仅有一个可用槽位, 则返回 0
+- **新版本**：无论该槽位类型 `slotType` 的可用槽位为多少, 始终返回槽位类型中列表的index, 即  0-x
 
-如果你的代码依赖 `data["baubleSlot"]` 进行判断，**必须修改匹配逻辑**。
+如果你的代码依赖 `data["slotIndex"]` 进行判断，**必须修改匹配逻辑**。
 
 ```python
-# 旧版本写法
-if data["baubleSlot"] == "§6栏位: §g头饰§r\n":
-    pass
-
-# 新版本写法
-if data["baubleSlot"] == "helmet":
-    pass
-# 或使用新增的 baubleSlotId 字段
-if data["baubleSlotId"] == "bauble_helmet":
-    pass
+# 旧版本
+if data["slotType"] == BaubleEnum.Other:
+    slotIndex = data["slotIndex"] # 返回 1-4
+if data["slotType"] == BaubleEnum.Helmet:
+    slotIndex = data["slotIndex"] # 返回 0
+# 新版本
+if data["slotType"] == BaubleEnum.Other:
+    slotIndex = data["slotIndex"] # 返回 0-3
+if data["slotType"] == BaubleEnum.Helmet:
+    slotIndex = data["slotIndex"] # 返回 0
 ```
 
 ### 6. 示例代码路径变更
@@ -106,6 +106,7 @@ if data["baubleSlotId"] == "bauble_helmet":
 迁移时请按以下清单逐项检查你的代码：
 
 - [ ] **注册事件时机**：如果在 `LoadServerAddonScriptsAfter` 事件注册信息则需延迟一帧再执行
+- [ ] **事件参数`slotIndex`注意适配**：检查 `BaubleEquippedEvent` / `BaubleUnequippedEvent` 事件中是否用到了 `slotIndex` 的参数进行判断注意适配
 - [ ] **`isDefault` 参数清理**：检查 `AddGlobalBaubleSlot` 调用中的 `isDefault` 参数，可安全移除
 - [ ] **数据获取方式优化**：考虑将通过事件监听获取数据的方式改为直接使用方法返回值
 - [ ] **示例代码引用路径**：更新引用示例代码的路径为新路径 `server/inner/baubleServer.py`
