@@ -6,9 +6,11 @@
 /.qu_packages
 /.idea/
 /.vscode/
+/.claude/
 .prettierrc
 *.exe
 .mcdev.json
 build_release.py
 .env
 *.zip
+.mcp.json

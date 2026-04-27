@@ -323,10 +323,15 @@ class BaubleUIClassicProxy(ProxyCls):
                     # 卸下饰品
                     self.baubleInfoManager.popBaubleInfoBySlot(slotInfo.identifier, inventorySelectedIndex)
                     # 播放飞行物品动画
-                    self.flyingItem(
-                        self.baubleInfoManager.getBaubleInfoBySlot(slotInfo.identifier).toDict(),
-                        self.getBaubleSlotPos(self.baubleSelectedPath),
-                        self.getInventorySlotPos(inventorySelectedIndex),
+                    self.flyingItemParam(
+                        [
+                            FlyingItemRenderer.FlyingItemParam(
+                                itemDict=self.baubleInfoManager.getBaubleInfoBySlot(slotInfo.identifier).toDict(),
+                                fromPos=self.getBaubleSlotPos(self.baubleSelectedPath),
+                                toPos=self.getInventorySlotPos(inventorySelectedIndex),
+                                size=1.0,
+                            )
+                        ]
                     )
                     self.baubleSelectedIndex = -1
                     self.baubleSelectedPath = ""
@@ -347,19 +352,26 @@ class BaubleUIClassicProxy(ProxyCls):
             )
             oldBaubleItem = self.baubleInfoManager.getBaubleInfoBySlot(data.slotId)
             # 脱下旧物品
+            itemParamList = []
             if oldBaubleItem:
-                # 播放飞行物品动画
-                self.flyingItem(
-                    oldBaubleItem.toDict(),
-                    self.getBaubleSlotPos(self.baubleSelectedPath),
-                    self.getInventorySlotPos(data.index),
+                itemParamList.append(
+                    FlyingItemRenderer.FlyingItemParam(
+                        itemDict=oldBaubleItem.toDict(),
+                        fromPos=self.getBaubleSlotPos(self.baubleSelectedPath),
+                        toPos=self.getInventorySlotPos(data.index),
+                        size=1.0,
+                    )
                 )
-            # 播放飞行物品动画
-            self.flyingItem(
-                data.baubleInfo.toDict(),
-                self.getInventorySlotPos(data.index),
-                self.getBaubleSlotPos(self.baubleSelectedPath),
+            itemParamList.append(
+                FlyingItemRenderer.FlyingItemParam(
+                    itemDict=data.baubleInfo.toDict(),
+                    fromPos=self.getInventorySlotPos(data.index),
+                    toPos=self.getBaubleSlotPos(self.baubleSelectedPath),
+                    size=1.0,
+                )
             )
+            # 播放飞行物品动画
+            self.flyingItemParam(itemParamList)
         self.baubleSelectedIndex = -1
         self.baubleSelectedPath = ""
 
@@ -376,7 +388,6 @@ class BaubleUIClassicProxy(ProxyCls):
             else self.inventorySlotPathBase.format(index=index - 9)
         )
         slotPos = self.screen.GetGlobalPosition(path)
-        print("slotPos", slotPos)
         return slotPos
 
     def getIsTouchInventorySelected(self):
@@ -403,8 +414,8 @@ class BaubleUIClassicProxy(ProxyCls):
             text.StopAnimation()
             text.PlayAnimation()
 
-    def flyingItem(self, itemDict, startPos, endPos):
-        self.flyingItemController.FlyingItem(itemDict, startPos, endPos)
+    def flyingItemParam(self, itemParamList):  # type: (list[FlyingItemRenderer.FlyingItemParam]) -> None
+        self.flyingItemController.flyingItem(itemParamList)
 
 
 class BaubleUIPocketProxy(BaubleUIClassicProxy):
@@ -511,5 +522,8 @@ class BaubleUIPocketProxy(BaubleUIClassicProxy):
                 pass
         return False
 
-    def flyingItem(self, itemDict, startPos, endPos):
-        self.flyingItemController.FlyingItem(itemDict, startPos, endPos, (24.0, 24.0))
+    def flyingItemParam(self, itemParamList):
+        # 将size改为1.5倍以适配口袋背包界面
+        for param in itemParamList:
+            param.size = 1.5
+        super(BaubleUIPocketProxy, self).flyingItemParam(itemParamList)

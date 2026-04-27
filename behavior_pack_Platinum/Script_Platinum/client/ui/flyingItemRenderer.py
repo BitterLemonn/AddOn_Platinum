@@ -2,105 +2,53 @@
 if 1 > 2:
     from Script_Platinum.QuModLibs.UI import ScreenNode
 
+from Script_Platinum.data.itemStack import ItemStack
 from Script_Platinum.utils import developLogging as logging
 from Script_Platinum.QuModLibs.Client import *
 
 
 # coding=utf-8
 class FlyingItemRenderer:
-    __FLYING_ITEM_DEF = "bauble_reborn.flying_item"
+
+    class FlyingItemParam:
+        def __init__(self, itemDict, fromPos, toPos, size):
+            self.itemDict = ItemStack.fromDict(itemDict)
+            self.fromPos = fromPos
+            self.toPos = toPos
+            self.size = size
+
+    class _FlyingItemRendererParam:
+        def __init__(self):
+            self.count = 0
+            self.itemParams = []  # type: list[FlyingItemRenderer.FlyingItemParam]
+
+        def createPropertyBag(self, itemComp):
+            result = {"flying_item_count": self.count}
+            for index, itemParam in enumerate(self.itemParams):
+                itemIdAux = itemComp.GetItemBasicInfo(itemParam.itemDict.name, itemParam.itemDict.aux).get("id_aux", 0)
+                result["flying_item_id_aux%d" % index] = itemIdAux
+                result["flying_item_origin_position_x%d" % index] = itemParam.fromPos[0]
+                result["flying_item_origin_position_y%d" % index] = itemParam.fromPos[1]
+                result["flying_item_origin_scale%d" % index] = itemParam.size
+                result["flying_item_destination_position_x%d" % index] = itemParam.toPos[0]
+                result["flying_item_destination_position_y%d" % index] = itemParam.toPos[1]
+                result["flying_item_destination_scale%d" % index] = itemParam.size
+            return result
 
     def __init__(self, screen, basePath):
-        self.flyingSpeed = 2000.0  # 像素/秒
-
         self.screen = screen  # type: ScreenNode
         self.basePath = basePath
+        self.itemComp = compFactory.CreateItem(levelId)
 
-        self.flyingItemPanel = self.screen.GetBaseUIControl(self.basePath)
+        self.flyingItemRenderer = self.screen.GetBaseUIControl(self.basePath)
 
-        self.flyingPool = []
-        self.flyingBigPool = []
-        self.flyingUsing = []
-
-    def OnDestroy(self):
-        for flyingRender in self.flyingPool:
-            self.screen.RemoveChildControl(flyingRender)
-        for flyingRender in self.flyingBigPool:
-            self.screen.RemoveChildControl(flyingRender)
-
-    def __CreateFlying(self, size):
-        count = len(self.flyingPool)
-        flyingItem = self.screen.CreateChildControl(
-            self.__FLYING_ITEM_DEF, "flying_item{}".format(count), self.flyingItemPanel
-        ).asItemRenderer()
-        flyingItem.SetVisible(False)
-        flyingItem.SetAnchorFrom("top_left")
-        flyingItem.SetAnchorTo("top_left")
-        flyingItem.SetSize(size)
-        self.flyingPool.append(flyingItem)
-        return flyingItem
-
-    def FlyingItem(self, itemDict, fromPos, toPos, size=None):
+    def flyingItem(self, paramList):  # type: (list[FlyingItemParam]) -> None
         """
         开始渲染飞行物品动画
-        :type itemDict: dict
-        :param itemDict: 物品信息字典
-        :type fromPos: list
-        :param fromPos: 开始位置(左上)
-        :type toPos: list
-        :param toPos: 结束位置(左上)
-        :type size: tuple
-        :param size: 大小(默认为18, 18)
-        :return:
+        :type paramList: list
         """
-        itemRender = None
-
-        if size is None:
-            size = (18, 18)
-        for flyingRender in self.flyingPool:
-            if flyingRender not in self.flyingUsing:
-                itemRender = flyingRender
-                itemRender.SetSize(size)
-                break
-
-        if not itemRender:
-            itemRender = self.__CreateFlying(size)
-
-        self.flyingUsing.append(itemRender)
-        itemRender.SetUiItem(itemDict["newItemName"], itemDict["newAuxValue"], False, itemDict.get("userData"))
-        self.__StartFlying(itemRender, fromPos, toPos)
-
-    def __StartFlying(self, itemRender, fromPos, toPos):
-        flyingPanelOffset = self.flyingItemPanel.GetGlobalPosition()
-        fromPos = [fromPos[0] - flyingPanelOffset[0], fromPos[1] - flyingPanelOffset[1]]
-        toPos = [toPos[0] - flyingPanelOffset[0], toPos[1] - flyingPanelOffset[1]]
-
-        # 根据两点距离和固定速度计算动画时长
-        import math
-
-        dx = toPos[0] - fromPos[0]
-        dy = toPos[1] - fromPos[1]
-        distance = math.sqrt(dx * dx + dy * dy)
-        duration = distance / self.flyingSpeed if self.flyingSpeed > 0 else 0.1
-
-        offsetAnimateData = {
-            "namespace": "PlatinumFlyingItem",
-            "flying_animation": {
-                "anim_type": "offset",
-                "duration": duration,
-                "from": fromPos,
-                "to": toPos,
-            },
-        }
-        clientApi.RegisterUIAnimations(offsetAnimateData, True)
-        itemRender.SetVisible(True)
-        itemRender.SetAnimation("offset", "PlatinumFlyingItem", "flying_animation", True)
-
-        comp = clientApi.GetEngineCompFactory().CreateGame(levelId)
-        comp.AddTimer(duration, self.__EndFlying, itemRender)
-
-    def __EndFlying(self, itemRender):
-        itemRender.SetVisible(False)
-        itemRender.RemoveAnimation("offset")
-        if itemRender in self.flyingUsing:
-            self.flyingUsing.remove(itemRender)
+        propertyBag = self._FlyingItemRendererParam()
+        for param in paramList:
+            propertyBag.itemParams.append(param)
+            propertyBag.count += 1
+        self.flyingItemRenderer.SetPropertyBag(propertyBag.createPropertyBag(self.itemComp))

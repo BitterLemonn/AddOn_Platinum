@@ -64,7 +64,7 @@ class SlotRegistry(object):
         sameTypeSlots = [slot for slot in self._slots if slot.slotType == slotType]
         for index, slot in enumerate(sameTypeSlots):
             if slot.identifier == slotId:
-                return index + 1
+                return index
         return -1
 
     # 根据类型获取标识符列表

@@ -58,7 +58,7 @@ class ItemService(BaseService):
 
     @BaseService.Listen("ServerItemTryUseEvent")
     def onServerItemTryUseEvent(self, data):
-        itemStack = ItemStack.fromDict(data["itemDict"])
+        itemStack = ItemStack.fromDict(data["itemDict"]) 
         playerId = data["playerId"]
         itemComp = compFactory.CreateItem(playerId)
         itemInfo = itemComp.GetItemBasicInfo(itemStack.name)
