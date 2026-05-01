@@ -177,7 +177,7 @@ class PlayerBaubleInfo(object):
         slotType = SlotRegistry().getSlotTypeById(slotId)
         oldSlotType = newSlotTypeToOld(slotType)
         slotIndex = SlotRegistry().getSlotIndexById(slotId)
-        baubleData = BaubleEventData(self.playerId, slotId, oldSlotType, slotIndex, itemStack, False)
+        baubleData = BaubleEventData(self.playerId, slotId, oldSlotType, slotIndex, itemStack, isFirstLoad)
         system.BroadcastEvent(
             commonConfig.BAUBLE_EQUIPPED_EVENT,
             baubleData.dumpToDict(),
@@ -301,7 +301,7 @@ class PlayerBaubleInfoServerService(BaseService):
         playerBaubleInfo = getPlayerBaubleInfo(playerId)
         # 删除旧数据中value为null的数据
         data = {slotId: itemDict for slotId, itemDict in data.items() if itemDict is not None}
-        playerBaubleInfo.setBaubleDict(data)
+        playerBaubleInfo.setBaubleDict(data, isFirstLoad=True)
 
     def savePlayerBaubleInfo(self):
         """将玩家饰品信息保存到世界信息中"""
