@@ -54,13 +54,15 @@ class PlayerBaubleInfo(object):
         """根据槽位ID获取玩家佩戴的饰品信息"""
         return self.baubleInfo.get(slotId, None)
 
-    def changeBaubleInfoBySlotId(self, slotId, itemStack, index=-1):  # type: (str, int, ItemStack, bool) -> None
+    def changeBaubleInfoBySlotId(
+        self, slotId, itemStack, index=-1, isChanged=True
+    ):  # type: (str, int, ItemStack, bool) -> None
         """设置玩家佩戴的饰品信息"""
         if not checkSlotValid(slotId):
             logging.w("铂: 尝试设置玩家{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
             return
         oldItemStack = self.baubleInfo.get(slotId, None)
-        if oldItemStack is not None and not oldItemStack.isEmpty():
+        if oldItemStack is not None and not oldItemStack.isEmpty() and isChanged:
             oldItemStack = self.baubleInfo[slotId]
             serverUtils.givePlayerItem(oldItemStack.toDict(), self.playerId, index)
         self.baubleInfo[slotId] = itemStack
@@ -191,6 +193,25 @@ class PlayerBaubleInfoServerService(BaseService):
 
     def __init__(self):
         BaseService.__init__(self)
+
+    @BaseService.Listen("PlayerDieEvent")
+    def onPlayerDieEvent(self, data):
+        # 检查游戏规则
+        rule = compFactory.CreateGame(levelId).GetGameRulesInfoServer()
+        isKeep = rule.get("cheat_info", {}).get("keep_inventory")
+        if not isKeep:
+            # 移除玩家穿戴饰品
+            playerId = data["id"]
+            playerBaubleInfo = getPlayerBaubleInfo(playerId)
+            for slotId, itemStack in playerBaubleInfo.baubleInfo.items():
+                if itemStack is None or itemStack.isEmpty():
+                    continue
+                # 设置槽位信息为None
+                playerBaubleInfo.changeBaubleInfoBySlotId(slotId, None, -1, False)
+                # 掉落饰品
+                pos = Entity(playerId).Pos
+                dimension = Entity(playerId).Dm
+                System.CreateEngineItemEntity(itemStack.toDict(), dimension, pos)
 
     @BaseService.Listen("ClientLoadAddonsFinishServerEvent")
     def onClientLoadAddonsFinishServerEvent(self, data):

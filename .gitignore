@@ -14,3 +14,4 @@ build_release.py
 .env
 *.zip
 .mcp.json
+AGENTS.md

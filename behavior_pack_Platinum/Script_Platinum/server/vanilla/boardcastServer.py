@@ -76,13 +76,11 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         from Script_Platinum.utils.oldVersionFixer import oldSlotIdFixer
         from Script_Platinum.data.itemStack import ItemStack
 
-        if not baubleInfo:
-            logging.error("铂: SetPlayerBaubleInfoWithSlot方法的必要参数baubleInfo为None, 请检查是否正确传入")
-            return
-
         slotId = oldSlotIdFixer(slotName)
         playerBaubleInfo = getPlayerBaubleInfo(playerId)  # type: PlayerBaubleInfo
-        playerBaubleInfo.changeBaubleInfoBySlotId(slotId, ItemStack.fromDict(baubleInfo))
+        playerBaubleInfo.changeBaubleInfoBySlotId(
+            slotId, ItemStack.fromDict(baubleInfo) if baubleInfo else None, isChanged=False
+        )
 
     def DecreaseBaubleDurability(self, playerId, slotName, num=1):
         """
