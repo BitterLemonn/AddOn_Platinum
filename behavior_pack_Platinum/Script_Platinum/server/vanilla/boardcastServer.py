@@ -182,7 +182,8 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         playerBaubleInfo = getPlayerBaubleInfo(playerId)  # type: PlayerBaubleInfo
         # 兼容旧方法发送事件
         self.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, playerBaubleInfo.baubleInfo)
-        return playerBaubleInfo.baubleInfo
+        baubleInfoDict = {slotId: baubleInfo.toDict() for slotId, baubleInfo in playerBaubleInfo.baubleInfo.items()}
+        return baubleInfoDict
 
     def GetGlobalBaubleSlotInfo(self):
         """
