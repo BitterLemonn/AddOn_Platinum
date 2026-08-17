@@ -51,13 +51,15 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         """
         设置玩家饰品信息
         :param playerId: 玩家ID
-        :param baubleDict: 饰品字典
+        :param baubleDict: 饰品字典(兼容Readme八.4包装结构 {"playerId":..., "baubleDict":{槽位id: itemDict}} 或直接传裸dict)
         :type baubleDict: dict
         :type playerId: str
         :return:
         """
         from Script_Platinum.server.player.playerBaubleInfo import getPlayerBaubleInfo, PlayerBaubleInfo
 
+        if isinstance(baubleDict, dict) and set(baubleDict.keys()) == {"playerId", "baubleDict"}:
+            baubleDict = baubleDict["baubleDict"]
         playerBaubleInfo = getPlayerBaubleInfo(playerId)  # type: PlayerBaubleInfo
         playerBaubleInfo.setBaubleDict(baubleDict)
 
@@ -180,14 +182,15 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         from Script_Platinum.server.player.playerBaubleInfo import getPlayerBaubleInfo, PlayerBaubleInfo
 
         playerBaubleInfo = getPlayerBaubleInfo(playerId)  # type: PlayerBaubleInfo
-        # 兼容旧方法发送事件
         baubleInfoDict = {
             slotId: baubleInfo.toDict()
             for slotId, baubleInfo in playerBaubleInfo.baubleInfo.items()
             if baubleInfo is not None
         }
-        self.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, baubleInfoDict)
-        return baubleInfoDict
+        baubleInfoData = {"playerId": playerId, "baubleDict": baubleInfoDict}
+        # 兼容旧方法发送事件
+        self.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, baubleInfoData)
+        return baubleInfoData
 
     def GetGlobalBaubleSlotInfo(self):
         """
@@ -195,10 +198,11 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         :return:
         """
         slotList = self.slotRegistry.getBaubleSlotList()
-        slotInfoList = [slot.__dict__ for slot in slotList]
+        slotInfoList = [{slot.identifier: self._slotToInfoDict(slot)} for slot in slotList]
+        slotInfoData = {"baubleSlotList": slotInfoList}
         # 兼容旧方法发送事件
-        self.BroadcastEvent(commonConfig.BAUBLE_GET_GLOBAL_INFO_EVENT, slotInfoList)
-        return slotInfoList
+        self.BroadcastEvent(commonConfig.BAUBLE_GET_GLOBAL_INFO_EVENT, slotInfoData)
+        return slotInfoData
 
     def GetTargetBaubleSlotInfo(self, playerId):
         """
@@ -209,7 +213,19 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         from Script_Platinum.server.player.playerBaubleSlot import getPlayerSlotList
 
         playerSlotList = getPlayerSlotList(playerId)
-        slotInfoList = [slot.__dict__ for slot in playerSlotList]
+        slotInfoList = [{slot.identifier: self._slotToInfoDict(slot)} for slot in playerSlotList]
+        slotInfoData = {"playerId": playerId, "baubleSlotList": slotInfoList}
         # 兼容旧方法发送事件
-        self.BroadcastEvent(commonConfig.BAUBLE_GET_TARGET_INFO_EVENT, slotInfoList)
-        return slotInfoList
+        self.BroadcastEvent(commonConfig.BAUBLE_GET_TARGET_INFO_EVENT, slotInfoData)
+        return slotInfoData
+
+    @staticmethod
+    def _slotToInfoDict(slot):
+        # type: (BaubleSlotData) -> dict
+        """槽位数据转Readme规定的字段结构"""
+        return {
+            "slotId": slot.identifier,
+            "slotType": slot.slotType,
+            "slotName": slot.name,
+            "isDefault": slot.isDefault,
+        }

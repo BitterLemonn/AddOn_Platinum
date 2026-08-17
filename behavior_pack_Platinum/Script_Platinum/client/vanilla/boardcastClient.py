@@ -14,12 +14,11 @@ class BoardcastClient(clientApi.GetClientSystemCls()):
         from Script_Platinum.client.player.playerBaubleInfo import PlayerBaubleInfoClientService
 
         playerBaubleInfo = PlayerBaubleInfoClientService.access().getBaubleInfo()
-        infoDict = {
-            slotId: itemStack.dumpToDict() if itemStack else None for slotId, itemStack in playerBaubleInfo.items()
-        }
+        infoDict = {slotId: itemStack.toDict() if itemStack else None for slotId, itemStack in playerBaubleInfo.items()}
+        baubleInfoData = {"playerId": clientApi.GetLocalPlayerId(), "baubleDict": infoDict}
         # 兼容旧版本发送事件
-        self.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, infoDict)
-        return infoDict
+        self.BroadcastEvent(commonConfig.BAUBLE_GET_INFO_EVENT, baubleInfoData)
+        return baubleInfoData
 
     def GetSlotInfo(self):
         """获取玩家饰品槽位信息"""

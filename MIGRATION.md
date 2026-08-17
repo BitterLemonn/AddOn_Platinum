@@ -29,9 +29,9 @@ def onLoadServerAddonScriptsAfter(self, data):
 
 新版本中以下方法会**直接返回数据**，无需再通过监听事件获取（但仍兼容旧版事件方式）：
 
-- `GetPlayerBaubleInfo(playerId)` → 直接返回玩家饰品信息 dict
-- `GetGlobalBaubleSlotInfo()` → 直接返回全局槽位信息 list
-- `GetTargetBaubleSlotInfo(playerId)` → 直接返回特定玩家槽位信息 list
+- `GetPlayerBaubleInfo(playerId)` → 直接返回玩家饰品信息 dict (参考[数据说明](Readme.md#八数据说明))
+- `GetGlobalBaubleSlotInfo()` → 直接返回全局槽位信息 list (参考[数据说明](Readme.md#八数据说明))
+- `GetTargetBaubleSlotInfo(playerId)` → 直接返回特定玩家槽位信息 list (参考[数据说明](Readme.md#八数据说明))
 
 ```python
 # 旧版本写法（仍兼容）
