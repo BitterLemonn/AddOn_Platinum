@@ -3,9 +3,14 @@
 /work.mcscfg
 /world_behavior_packs.json
 /world_resource_packs.json
-/resource_pack_Platinum/QAddonPackager.exe
-/resource_pack_Platinum/QuCleaner.exe
+*.exe
 /.qu_packages
 /.idea/
 /.vscode/
 .prettierrc
+.claude
+.codegraph
+CLAUDE.md
+AGENTS.md
+build_release.py
+.mcp.json
