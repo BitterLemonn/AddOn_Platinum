@@ -4,6 +4,7 @@ from Script_Platinum.QuModLibs.Client import *
 from Script_Platinum.QuModLibs.Modules.Services.Client import BaseService
 from Script_Platinum.client.config.playerConfig import PlayerConfig, QRequests
 from Script_Platinum.client.player.playerBaubleInfo import PlayerBaubleInfoClientService
+from Script_Platinum.client.ui.baubleContainerUi import openBaubleContainer
 from Script_Platinum.client.ui.flyingItemRenderer import FlyingItemRenderer
 from Script_Platinum.client.player.playerBaubleSlot import PlayerBaubleSlotClientService
 from Script_Platinum.data.requestData import BaubleCheckRequestData, ChangeBaubleRequestData
@@ -135,6 +136,11 @@ class BaubleUIClassicProxy(ProxyCls):
         if self.isShowBaublePanel and playerMode == minecraftEnum.GameType.Creative:
             self.setToolTips("§c========注意========\n暂不支持直接从创造物品栏装备饰品\n请先获取到背包当中§r")
         self.screen.UpdateScreen()
+
+    @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.bauble_layout_toggle")
+    def onBaubleLayoutToggleClick(self, args):
+        self.jumpToBaubleScreen = True
+        openBaubleContainer()
 
     @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.vertical_grid.left_visible")
     def bindingPanelLeftVisible(self):

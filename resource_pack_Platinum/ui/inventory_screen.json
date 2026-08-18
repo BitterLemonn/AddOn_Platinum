@@ -87,5 +87,23 @@
                 ]
             }
         ]
+    },
+    "toolbar_panel/toolbar_background/toolbar_stack_panel": {
+        "modifications": [
+            {
+                "control_name": "padding_0",
+                "operation": "insert_after",
+                "value": [
+                    {
+                        "bauble_layout_toggle_panel@bauble_reborn.bauble_layout_toggle_panel": {}
+                    },
+                    {
+                        "padding_bauble@common.empty_panel":{
+                            "size": [2, 0]
+                        }
+                    }
+                ]
+            }
+        ]
     }
 }

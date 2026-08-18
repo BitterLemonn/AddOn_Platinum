@@ -15,3 +15,4 @@ build_release.py
 *.zip
 .mcp.json
 AGENTS.md
+.codegraph

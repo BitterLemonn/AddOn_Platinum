@@ -9,23 +9,12 @@
         "$nine_slice_left": 0,
         "$nine_slice_right": 0,
         "$nine_slice_top": 0,
-        "$nineslice_size": [
-            0,
-            0,
-            0,
-            0
-        ],
+        "$nineslice_size": [0, 0, 0, 0],
         "$pressed_button_name": "#bauble_reborn.bauble_button",
         "$pressed_texture": "textures/ui/bauble_btn_pressed",
         "$texture_layer": 2,
-        "offset": [
-            "-35.0%+0.0px",
-            "-40.0%+0.0px"
-        ],
-        "size": [
-            15,
-            15
-        ],
+        "offset": ["-35.0%+0.0px", "-40.0%+0.0px"],
+        "size": [15, 15],
         "default_control": "default",
         "hover_control": "hover",
         "is_handle_button_move_event": true,
@@ -47,10 +36,7 @@
     "bauble_grid_classical": {
         "type": "grid",
         "$item_collection_name|default": "platinum_bauble_collection",
-        "size": [
-            "100%cm",
-            "100%c"
-        ],
+        "size": ["100%cm", "100%c"],
         "layer": 1,
         "collection_name": "$item_collection_name",
         "grid_item_template": "bauble_reborn.slot_panel",
@@ -69,14 +55,8 @@
     "bauble_grid_pocket": {
         "type": "grid",
         "$item_collection_name|default": "platinum_bauble_collection",
-        "offset": [
-            0,
-            5
-        ],
-        "size": [
-            "100%",
-            "default"
-        ],
+        "offset": [0, 5],
+        "size": ["100%", "default"],
         "layer": 1,
         "collection_name": "$item_collection_name",
         "grid_item_template": "bauble_reborn.slot_panel",
@@ -94,43 +74,22 @@
     },
     "bauble_pocket_panel": {
         "type": "panel",
-        "size": [
-            "100%",
-            "100%-10px"
-        ],
+        "size": ["100%", "100%-10px"],
         "controls": [
             {
                 "bauble_pocket_scroll@common.scrolling_panel": {
-                    "$background_size": [
-                        0,
-                        0
-                    ],
-                    "$background_size_touch": [
-                        0,
-                        0
-                    ],
+                    "$background_size": [0, 0],
+                    "$background_size_touch": [0, 0],
                     "$scroll_bar_contained_touch": true,
                     "$scroll_box_mouse_image_control": "common-classic.button_state_default",
-                    "$scroll_size_touch|default": [
-                        4,
-                        "100%"
-                    ],
-                    "$scroll_view_port_size": [
-                        "100%",
-                        "100%c+10px"
-                    ],
-                    "$scroll_view_port_size_touch": [
-                        "100%",
-                        "100%c+10px"
-                    ],
+                    "$scroll_size_touch|default": [4, "100%"],
+                    "$scroll_view_port_size": ["100%", "100%c+10px"],
+                    "$scroll_view_port_size_touch": ["100%", "100%c+10px"],
                     "$scrolling_content": "bauble_reborn.bauble_grid_pocket",
                     "$show_background": false,
                     "$wider_scroll_area": true,
                     "layer": 9,
-                    "size": [
-                        "100%",
-                        "default"
-                    ]
+                    "size": ["100%", "default"]
                 }
             }
         ]
@@ -148,22 +107,13 @@
     },
     "bauble_vertical_panel": {
         "type": "panel",
-        "$content_offset|default": [
-            0,
-            0
-        ],
-        "size": [
-            "100%cm-6px",
-            "100%+0px"
-        ],
+        "$content_offset|default": [0, 0],
+        "size": ["100%cm-6px", "100%+0px"],
         "controls": [
             {
                 "image": {
                     "type": "image",
-                    "size": [
-                        "100%sm+8px",
-                        "100%+0px"
-                    ],
+                    "size": ["100%sm+8px", "100%+0px"],
                     "layer": 2,
                     "texture": "textures/ui/dialog_background_hollow_4_thin"
                 }
@@ -174,22 +124,12 @@
                     "$background_nine_slice_left": 0,
                     "$background_nine_slice_right": 0,
                     "$background_nine_slice_top": 0,
-                    "$background_nineslice_size": [
-                        0,
-                        0,
-                        0,
-                        0
-                    ],
+                    "$background_nineslice_size": [0, 0, 0, 0],
                     "$box_nine_slice_buttom": 0,
                     "$box_nine_slice_left": 0,
                     "$box_nine_slice_right": 0,
                     "$box_nine_slice_top": 0,
-                    "$box_nineslice_size": [
-                        0,
-                        0,
-                        0,
-                        0
-                    ],
+                    "$box_nineslice_size": [0, 0, 0, 0],
                     "$is_background_nine_slice": false,
                     "$is_box_nine_slice": false,
                     "$is_track_nine_slice": false,
@@ -200,10 +140,7 @@
                     "$scroll_box_mouse_image_control": "netease_editor_template_namespace.scroll_box_image",
                     "$scroll_box_texture": "textures/ui/newTouchScrollBox",
                     "$scroll_box_touch_image_control": "netease_editor_template_namespace.scroll_box_image",
-                    "$scroll_size": [
-                        0,
-                        "100%"
-                    ],
+                    "$scroll_size": [0, "100%"],
                     "$scroll_track_image_control": "netease_editor_template_namespace.scroll_track_image",
                     "$scroll_track_texture": "textures/ui/ScrollRail",
                     "$scrolling_content": "bauble_reborn.bauble_grid_classical",
@@ -212,32 +149,18 @@
                     "$track_nine_slice_left": 0,
                     "$track_nine_slice_right": 0,
                     "$track_nine_slice_top": 0,
-                    "$track_nineslice_size": [
-                        0,
-                        0,
-                        0,
-                        0
-                    ],
+                    "$track_nineslice_size": [0, 0, 0, 0],
                     "layer": 0,
                     "offset": "$content_offset",
-                    "size": [
-                        24,
-                        "100%+-11px"
-                    ]
+                    "size": [24, "100%+-11px"]
                 }
             }
         ]
     },
     "durability_bar": {
         "type": "panel",
-        "$durability_bar_size|default": [
-            13,
-            1.5
-        ],
-        "size": [
-            "100%cm+0px",
-            "100%cm+0px"
-        ],
+        "$durability_bar_size|default": [13, 1.5],
+        "size": ["100%cm+0px", "100%cm+0px"],
         "layer": 1,
         "bindings": [
             {
@@ -252,20 +175,10 @@
             {
                 "shadow": {
                     "type": "image",
-                    "offset": [
-                        0.5,
-                        0.5
-                    ],
-                    "size": [
-                        "100%sm",
-                        "100%sm"
-                    ],
+                    "offset": [0.5, 0.5],
+                    "size": ["100%sm", "100%sm"],
                     "layer": 1,
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
+                    "color": [0, 0, 0],
                     "fill": true,
                     "texture": "textures/ui/white_background"
                 }
@@ -275,11 +188,7 @@
                     "type": "image",
                     "size": "$durability_bar_size",
                     "layer": 2,
-                    "color": [
-                        0.2235,
-                        0.2235,
-                        0.2235
-                    ],
+                    "color": [0.2235, 0.2235, 0.2235],
                     "fill": true,
                     "texture": "textures/ui/white_background"
                 }
@@ -287,10 +196,7 @@
             {
                 "durability_bar": {
                     "type": "image",
-                    "size": [
-                        "100%sm",
-                        "100%sm"
-                    ],
+                    "size": ["100%sm", "100%sm"],
                     "layer": 3,
                     "clip_direction": "left",
                     "clip_ratio": "#clip_ratio",
@@ -323,10 +229,7 @@
         "renderer": "inventory_item_renderer",
         "anchor_from": "top_left",
         "anchor_to": "top_left",
-        "size": [
-            18,
-            18
-        ]
+        "size": [18, 18]
     },
     "hover_img": {
         "type": "image",
@@ -348,14 +251,8 @@
         "$wait_duration|default": 0,
         "anchor_from": "bottom_middle",
         "anchor_to": "bottom_middle",
-        "offset": [
-            0,
-            -22
-        ],
-        "size": [
-            "100%c + 12px",
-            "100%c + 5px"
-        ],
+        "offset": [0, -22],
+        "size": ["100%c + 12px", "100%c + 5px"],
         "layer": 9999,
         "alpha": "@hud.anim_item_name_text_alpha_out",
         "texture": "textures/ui/purpleBorder",
@@ -390,18 +287,9 @@
     "namespace": "bauble_reborn",
     "slot_panel": {
         "type": "panel",
-        "$button_size|default": [
-            18,
-            18
-        ],
-        "$durability_bar_offset|default": [
-            0,
-            4
-        ],
-        "$item_renderer_size|default": [
-            16,
-            16
-        ],
+        "$button_size|default": [18, 18],
+        "$durability_bar_offset|default": [0, 4],
+        "$item_renderer_size|default": [16, 16],
         "size": "$button_size",
         "controls": [
             {
@@ -414,10 +302,7 @@
             {
                 "image_holder": {
                     "type": "image",
-                    "size": [
-                        "100%-2px",
-                        "100%-2px"
-                    ],
+                    "size": ["100%-2px", "100%-2px"],
                     "layer": 13,
                     "bindings": [
                         {
@@ -518,10 +403,7 @@
             {
                 "selected_img": {
                     "type": "image",
-                    "size": [
-                        "100%+6px",
-                        "100%+6px"
-                    ],
+                    "size": ["100%+6px", "100%+6px"],
                     "layer": 40,
                     "texture": "textures/ui/selected_hotbar_slot",
                     "bindings": [
@@ -536,5 +418,66 @@
                 }
             }
         ]
+    },
+    "bauble_layout_toggle_panel": {
+        "type": "panel",
+        "size": ["100%c", "100%"],
+        "controls": [
+            {
+                "bauble_layout_toggle@bauble_reborn.bauble_layout_toggle": {
+                    "$focus_override_left": "search_tab"
+                }
+            }
+        ]
+    },
+    "layout_toggle_content": {
+        "type": "image",
+        "size": [23, 16],
+        "texture": "$texture",
+        "layer": "$texture_layer"
+    },
+    "bauble_layout_toggle@common.button": {
+        "$icon_control": "bauble_reborn.bauble_icon",
+        "$pressed_button_name": "#bauble_reborn.bauble_layout_toggle",
+        "$default_texture": "textures/ui/recipe_book_button_borderless_light",
+        "$hover_texture": "textures/ui/recipe_book_button_borderless_lighthover",
+        "$pressed_texture": "textures/ui/recipe_book_button_borderless_lightpressednohover",
+        "$texture_layer": 2,
+        "size": [25, 20],
+        "controls": [
+            {
+                "default@bauble_reborn.layout_toggle_content": {
+                    "$texture": "$default_texture"
+                }
+            },
+            {
+                "hover@bauble_reborn.layout_toggle_content": {
+                    "$texture": "$hover_texture"
+                }
+            },
+            {
+                "pressed@bauble_reborn.layout_toggle_content": {
+                    "$texture": "$pressed_texture"
+                }
+            },
+            {
+                "content_icon@bauble_reborn.bauble_icon": {
+                    "layer": "($texture_layer + 1)"
+                }
+            },
+            {
+                "boarder@bauble_reborn.layout_toggle_content": {
+                    "$texture": "textures/ui/focus_border_white",
+                    "size": [25, 18],
+                    "layer": "($texture_layer + 2)",
+                    "color": [0.07500000298023224, 0.07500000298023224, 0.07500000298023224]
+                }
+            }
+        ]
+    },
+    "bauble_icon": {
+        "type": "image",
+        "size": [19, 13],
+        "texture": "textures/ui/bauble_toggle"
     }
 }

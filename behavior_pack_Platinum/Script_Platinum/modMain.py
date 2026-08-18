@@ -16,6 +16,7 @@ platinum.Server("server.server")
 platinum.Server("server.registry.slotRegistry")
 platinum.Server("server.player.playerBaubleSlot")
 platinum.Server("server.player.playerBaubleInfo")
+platinum.Server("server.player.baubleContainer")
 platinum.Server("server.items.itemService")
 platinum.Server("server.command.commandServer")
 # -----------
