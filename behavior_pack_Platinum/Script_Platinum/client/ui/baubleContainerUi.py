@@ -30,7 +30,7 @@ def openBaubleContainer():
     clientApi.PopTopUI()
 
     def readyToOpen():
-        if clientApi.GetTopUI() != "inventory_screen":
+        if clientApi.GetTopUI() not in ("inventory_screen", "inventory_screen_pocket"):
             BaseService().syncRequest(
                 "server/player/openBaubleContainer", QRequests.Args().setCallBack(_onBaubleContainerOpened)
             )

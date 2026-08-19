@@ -50,5 +50,20 @@
                 ]
             }
         ]
+    },
+    "right_tab_navigation_panel_pocket/content": {
+        "modifications": [
+            {
+                "control_name": "fill",
+                "operation": "insert_after",
+                "value": [
+                    {
+                        "platinum_tab@bauble_reborn.platinum_right_tab": {
+                            "size": ["100%", 29]
+                        }
+                    }
+                ]
+            }
+        ]
     }
 }

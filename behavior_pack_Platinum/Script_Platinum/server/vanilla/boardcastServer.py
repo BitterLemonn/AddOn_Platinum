@@ -4,8 +4,8 @@ from Script_Platinum import commonConfig
 from Script_Platinum.data.eventData import BaubleInfoData
 from Script_Platinum.data.slotData import BaubleSlotData
 from Script_Platinum.server.player.playerAttributeModifier import (
-    PlayerAttributeModifierService,
-    PlayerAttributeType,
+    PlatinumAttributeModifierService,
+    PlatinumAttributeType,
 )
 from Script_Platinum.server.registry.baubleRegistry import BaubleRegistry
 from Script_Platinum.server.registry.slotRegistry import SlotRegistry
@@ -13,7 +13,7 @@ from Script_Platinum.utils import developLogging as logging
 
 
 class BroadcasterServer(serverApi.GetServerSystemCls()):
-    AttrType = PlayerAttributeType
+    AttrType = PlatinumAttributeType
     AttributeModifierOperation = serverApi.GetMinecraftEnum().AttributeModifierOperation
     AttributeOperands = serverApi.GetMinecraftEnum().AttributeOperands
 
@@ -23,28 +23,28 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         self.slotRegistry = SlotRegistry()
 
     def AddModifier(self, playerId, attributeType, modifierId, amount, operation, operand):
-        """添加玩家特殊属性修饰符；modifierId 已存在时返回 False。"""
-        return PlayerAttributeModifierService.access().addModifier(
+        """添加玩家属性修饰符；modifierId 已存在时返回 False。"""
+        return PlatinumAttributeModifierService.access().addModifier(
             playerId, attributeType, modifierId, amount, operation, operand
         )
 
     def UpdateModifier(self, playerId, attributeType, modifierId, amount, operation, operand):
-        """更新玩家特殊属性修饰符；modifierId 不存在时返回 False。"""
-        return PlayerAttributeModifierService.access().updateModifier(
+        """更新玩家属性修饰符；modifierId 不存在时返回 False。"""
+        return PlatinumAttributeModifierService.access().updateModifier(
             playerId, attributeType, modifierId, amount, operation, operand
         )
 
     def RemoveModifier(self, playerId, attributeType, modifierId):
-        """移除玩家特殊属性修饰符，并返回操作结果。"""
-        return PlayerAttributeModifierService.access().removeModifier(playerId, attributeType, modifierId)
+        """移除玩家属性修饰符，并返回操作结果。"""
+        return PlatinumAttributeModifierService.access().removeModifier(playerId, attributeType, modifierId)
 
     def HasModifier(self, playerId, attributeType, modifierId):
-        """返回玩家特殊属性是否存在指定修饰符。"""
-        return PlayerAttributeModifierService.access().hasModifier(playerId, attributeType, modifierId)
+        """返回玩家属性是否存在指定修饰符。"""
+        return PlatinumAttributeModifierService.access().hasModifier(playerId, attributeType, modifierId)
 
     def GetAllModifiers(self, playerId, attributeType):
-        """返回玩家特殊属性全部修饰符的副本列表。"""
-        return PlayerAttributeModifierService.access().getAllModifiers(playerId, attributeType)
+        """返回玩家属性全部修饰符的副本列表。"""
+        return PlatinumAttributeModifierService.access().getAllModifiers(playerId, attributeType)
 
     def BaubleRegister(self, data):
         """

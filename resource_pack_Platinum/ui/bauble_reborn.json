@@ -452,7 +452,16 @@
             },
             {
                 "hover@bauble_reborn.layout_toggle_content": {
-                    "$texture": "$hover_texture"
+                    "$texture": "$hover_texture",
+                    "controls": [
+                        {
+                            "hover_boarder@bauble_reborn.layout_toggle_content": {
+                                "$texture": "textures/ui/focus_border_white",
+                                "size": [25, 18],
+                                "layer": "($texture_layer + 2)"
+                            }
+                        }
+                    ]
                 }
             },
             {
@@ -461,7 +470,7 @@
                 }
             },
             {
-                "content_icon@bauble_reborn.bauble_icon": {
+                "content_icon@bauble_reborn.platinum_icon": {
                     "layer": "($texture_layer + 1)"
                 }
             },
@@ -475,9 +484,44 @@
             }
         ]
     },
-    "bauble_icon": {
+    "platinum_right_tab@common.button": {
+        "$default_texture": "textures/ui/TabRightBack",
+        "$hover_texture": "textures/ui/TabRightBackHover",
+        "$pressed_texture": "textures/ui/TabRightFront",
+        "$pressed_button_name": "#bauble_reborn.bauble_layout_toggle",
+        "$texture_layer": 2,
+        "controls": [
+            {
+                "default@common.empty_image": {
+                    "texture": "$default_texture",
+                    "layer": "$texture_layer"
+                }
+            },
+            {
+                "hover@common.empty_image": {
+                    "texture": "$hover_texture",
+                    "layer": "$texture_layer"
+                }
+            },
+            {
+                "pressed@common.empty_image": {
+                    "texture": "$pressed_texture",
+                    "layer": "$texture_layer"
+                }
+            },
+            {
+                "icon_content@bauble_reborn.platinum_icon_pocket": {
+                    "layer": "($texture_layer + 1)"
+                }
+            }
+        ]
+    },
+    "platinum_icon_pocket@bauble_reborn.platinum_icon": {
+        "size": [17, 17]
+    },
+    "platinum_icon": {
         "type": "image",
         "size": [19, 13],
-        "texture": "textures/ui/bauble_toggle"
+        "texture": "textures/items/traveler_belt"
     }
 }

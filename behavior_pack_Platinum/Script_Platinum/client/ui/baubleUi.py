@@ -139,7 +139,6 @@ class BaubleUIClassicProxy(ProxyCls):
 
     @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.bauble_layout_toggle")
     def onBaubleLayoutToggleClick(self, args):
-        self.jumpToBaubleScreen = True
         openBaubleContainer()
 
     @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.vertical_grid.left_visible")

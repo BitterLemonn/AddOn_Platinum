@@ -1,5 +1,6 @@
 # coding=utf-8
 
+
 def calculateModifiedValue(baseValue, modifiers, operationEnum):
     """按网易属性修饰符操作顺序计算 OperandCurrent。"""
     value = float(baseValue)
