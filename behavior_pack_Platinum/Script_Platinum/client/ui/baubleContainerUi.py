@@ -6,10 +6,8 @@ from Script_Platinum.client.player.playerBaubleSlot import PlayerBaubleSlotClien
 from Script_Platinum.data.responseData import ItemStack
 from Script_Platinum.utils.clientUtils import compFactory
 
-
 ProxyCls = clientApi.GetUIScreenProxyCls()
 Binding = clientApi.GetViewBinderCls()
-# ponytail: SetPlayerUIItem 屏蔽索引 50；需要更多槽位时须先更换容器 API。
 NETEASE_UI_CONTAINER_SLOT_LIMIT = 50
 BAUBLE_CONTAINER_NAME = "bauble_reborn.screen.name"
 baubleContainerRules = {}
@@ -72,8 +70,7 @@ class BaubleContainerProxy(ProxyCls):
     @staticmethod
     def _isBaubleContainer(data):
         return (
-            data.get("collectionType") == "netease_ui_container"
-            and data.get("collectionName") == BAUBLE_CONTAINER_NAME
+            data.get("collectionType") == "netease_ui_container" and data.get("collectionName") == BAUBLE_CONTAINER_NAME
         )
 
     def onTryPutItem(self, data):
@@ -97,9 +94,7 @@ class BaubleContainerProxy(ProxyCls):
     def bindingMaxItemsCount(self):
         return min(len(self.slotManager.getPlayerSlotList()), NETEASE_UI_CONTAINER_SLOT_LIMIT)
 
-    @Binding.binding_collection(
-        Binding.BF_BindString, "netease_ui_container", "#bauble_reborn.container.slot_overlay"
-    )
+    @Binding.binding_collection(Binding.BF_BindString, "netease_ui_container", "#bauble_reborn.container.slot_overlay")
     def bindingSlotOverlay(self, index):
         slotList = self.slotManager.getPlayerSlotList()
         return slotList[index].placeholderPath if index < min(len(slotList), NETEASE_UI_CONTAINER_SLOT_LIMIT) else ""
@@ -109,6 +104,7 @@ class BaubleContainerProxy(ProxyCls):
     )
     def bindingSlotOverlayVisible(self, index):
         slotList = self.slotManager.getPlayerSlotList()
-        return index < min(len(slotList), NETEASE_UI_CONTAINER_SLOT_LIMIT) and self.baubleInfoManager.getBaubleInfoBySlot(
-            slotList[index].identifier
-        ) is None
+        return (
+            index < min(len(slotList), NETEASE_UI_CONTAINER_SLOT_LIMIT)
+            and self.baubleInfoManager.getBaubleInfoBySlot(slotList[index].identifier) is None
+        )

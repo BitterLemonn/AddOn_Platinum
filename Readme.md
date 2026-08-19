@@ -266,6 +266,51 @@ registerSys.DecreaseBaubleDurability("playerId", "slotId", 1)
 
 **⚠️注意: 当饰品耐久度降为0或更低时，饰品会自动从槽位中移除并触发饰品卸下事件**
 
+#### 9. 玩家特殊属性修饰符
+
+组件为飞行能力、台阶高度和盔甲值提供服务端修饰符接口。接口参数和操作枚举与网易引擎属性修饰符保持一致：
+
+```python
+# coding=utf-8
+import mod.server.extraServerApi as serverApi
+
+modifierSystem = serverApi.GetSystem("platinum", "broadcasterServer")
+
+modifierSystem.AddModifier(
+    playerId,
+    modifierSystem.AttrType.STEP_HEIGHT,
+    "example:step_height",
+    0.5,
+    modifierSystem.AttributeModifierOperation.OperationAddition,
+    modifierSystem.AttributeOperands.OperandCurrent,
+)
+
+# 更新、查询和移除使用相同的 playerId、属性类型与 modifierId。
+modifierSystem.UpdateModifier(
+    playerId,
+    modifierSystem.AttrType.STEP_HEIGHT,
+    "example:step_height",
+    1.0,
+    modifierSystem.AttributeModifierOperation.OperationAddition,
+    modifierSystem.AttributeOperands.OperandCurrent,
+)
+modifierSystem.HasModifier(
+    playerId, modifierSystem.AttrType.STEP_HEIGHT, "example:step_height"
+)
+modifierSystem.GetAllModifiers(playerId, modifierSystem.AttrType.STEP_HEIGHT)
+modifierSystem.RemoveModifier(
+    playerId, modifierSystem.AttrType.STEP_HEIGHT, "example:step_height"
+)
+```
+
+支持的属性类型：
+
+- `modifierSystem.AttrType.FLYING_ABILITY`：计算结果大于 `0` 时允许飞行。
+- `modifierSystem.AttrType.STEP_HEIGHT`：计算结果必须大于 `0`。
+- `modifierSystem.AttrType.ARMOR`：复用网易 `AttrType.ARMOR`，结果必须为非负整数；设置的是额外护甲值，装备护甲由引擎叠加。
+
+当前仅支持 `AttributeOperands.OperandCurrent`。修饰符按 `OperationAddition`、`OperationMultiplyBase`、`OperationMultiplyTotal`、`OperationCap` 顺序计算。`AddModifier` 遇到重复 `modifierId` 返回 `False`，已有修饰符必须使用 `UpdateModifier`。修饰符只保存在当前服务端运行期；玩家数据加载或饰品恢复时应重新添加。特殊属性存在修饰符期间，不要绕过本接口直接修改同一属性。
+
 ### 六、示例代码
 
 组件内还内置了一个腰带饰品【旅行者腰带】，[服务端代码](behavior_pack_Platinum/Script_Platinum/server/inner/baubleServer.py)中详细的说明了如何进行饰品穿脱的监听以及对应功能的实现。实现了一个可以提升玩家跨越高度的饰品。

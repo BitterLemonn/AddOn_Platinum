@@ -2,7 +2,9 @@
 from mod.server import extraServerApi as serverApi
 
 from Script_Platinum import commonConfig
-from Script_Platinum.utils.serverUtils import compFactory
+
+
+TRAVELER_BELT_MODIFIER = "lemon_platinum:traveler_belt_step_height"
 
 
 class BaubleServer(serverApi.GetServerSystemCls()):
@@ -39,8 +41,17 @@ class BaubleServer(serverApi.GetServerSystemCls()):
         slotId = data["baubleSlotId"]  # 饰品槽ID
         slotIndex = data["slotIndex"]  # 饰品槽索引
         if bauble["newItemName"] == "lemon_platinum:traveler_belt":
-            comp = compFactory.CreateAttr(playerId)
-            comp.SetStepHeight(1.0625)
+            modifierSystem = serverApi.GetSystem(
+                commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
+            )
+            modifierSystem.AddModifier(
+                playerId,
+                modifierSystem.AttrType.STEP_HEIGHT,
+                TRAVELER_BELT_MODIFIER,
+                0.5,
+                modifierSystem.AttributeModifierOperation.OperationAddition,
+                modifierSystem.AttributeOperands.OperandCurrent,
+            )
 
     def onBaubleUnequipped(self, data):
         """
@@ -53,5 +64,9 @@ class BaubleServer(serverApi.GetServerSystemCls()):
         slotId = data["baubleSlotId"]  # 饰品槽ID
         slotIndex = data["slotIndex"]  # 饰品槽索引
         if bauble["newItemName"] == "lemon_platinum:traveler_belt":
-            comp = compFactory.CreateAttr(playerId)
-            comp.SetStepHeight(0.5626)
+            modifierSystem = serverApi.GetSystem(
+                commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
+            )
+            modifierSystem.RemoveModifier(
+                playerId, modifierSystem.AttrType.STEP_HEIGHT, TRAVELER_BELT_MODIFIER
+            )
