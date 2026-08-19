@@ -21,6 +21,12 @@
         "pressed_control": "pressed",
         "sound_pitch": 0,
         "sound_volume": 0,
+        "bindings": [
+            {
+                "binding_name": "#bauble_reborn.bauble_button.visible",
+                "binding_name_override": "#visible"
+            }
+        ],
         "controls": [
             {
                 "default@netease_editor_template_namespace.default": {}
@@ -422,6 +428,12 @@
     "bauble_layout_toggle_panel": {
         "type": "panel",
         "size": ["100%c", "100%"],
+        "bindings": [
+            {
+                "binding_name": "#bauble_reborn.container_button.visible",
+                "binding_name_override": "#visible"
+            }
+        ],
         "controls": [
             {
                 "bauble_layout_toggle@bauble_reborn.bauble_layout_toggle": {
@@ -490,6 +502,12 @@
         "$pressed_texture": "textures/ui/TabRightFront",
         "$pressed_button_name": "#bauble_reborn.bauble_layout_toggle",
         "$texture_layer": 2,
+        "bindings": [
+            {
+                "binding_name": "#bauble_reborn.container_button.visible",
+                "binding_name_override": "#visible"
+            }
+        ],
         "controls": [
             {
                 "default@common.empty_image": {

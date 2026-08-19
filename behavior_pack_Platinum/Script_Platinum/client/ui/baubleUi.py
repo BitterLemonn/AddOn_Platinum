@@ -2,7 +2,7 @@
 from Script_Platinum.QuModLibs.UI import ScreenNode
 from Script_Platinum.QuModLibs.Client import *
 from Script_Platinum.QuModLibs.Modules.Services.Client import BaseService
-from Script_Platinum.client.config.playerConfig import PlayerConfig, QRequests
+from Script_Platinum.client.config.playerConfig import PlayerConfig, PlayerConfigService, QRequests
 from Script_Platinum.client.player.playerBaubleInfo import PlayerBaubleInfoClientService
 from Script_Platinum.client.ui.baubleContainerUi import openBaubleContainer
 from Script_Platinum.client.ui.flyingItemRenderer import FlyingItemRenderer
@@ -21,7 +21,7 @@ screen = None  # type: BaubleUIClassicProxy|None
 
 @AllowCall
 def ChangeUiPosition(position):
-    PlayerConfig.uiPosition = position
+    PlayerConfigService.access().setUiPosition(position)
 
 
 @Listen("UiInitFinished")
@@ -73,6 +73,8 @@ class BaubleUIClassicProxy(ProxyCls):
         self.isShowBaublePanel = False
         self.recipeBagPage = False
         self.entryPosition = PlayerConfig.uiPosition
+        self.showBaubleSidebarButton = PlayerConfig.showBaubleSidebarButton
+        self.showBaubleContainerButton = PlayerConfig.showBaubleContainerButton
 
         self.baubleSelectedIndex = -1
         self.baubleSelectedPath = ""
@@ -96,6 +98,7 @@ class BaubleUIClassicProxy(ProxyCls):
         self.setEntryPosition()
 
     def OnTick(self):
+        self.syncPlayerConfig()
         gameMode = self.gameComp.GetPlayerGameType(playerId)
         if gameMode != self.gameMode:
             self.gameMode = gameMode
@@ -129,6 +132,21 @@ class BaubleUIClassicProxy(ProxyCls):
             btn.SetFullPosition(axis="x", paramDict={"followType": "parent", "relativeValue": 0.35})
             btn.SetFullPosition(axis="y", paramDict={"followType": "parent", "relativeValue": 0.4})
 
+    def syncPlayerConfig(self):
+        needUpdate = False
+        if self.entryPosition != PlayerConfig.uiPosition:
+            self.entryPosition = PlayerConfig.uiPosition
+            self.setEntryPosition()
+            needUpdate = True
+        if self.showBaubleSidebarButton != PlayerConfig.showBaubleSidebarButton:
+            self.showBaubleSidebarButton = PlayerConfig.showBaubleSidebarButton
+            needUpdate = True
+        if self.showBaubleContainerButton != PlayerConfig.showBaubleContainerButton:
+            self.showBaubleContainerButton = PlayerConfig.showBaubleContainerButton
+            needUpdate = True
+        if needUpdate:
+            self.screen.UpdateScreen()
+
     @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.bauble_button")
     def onBaubleButtonClick(self, args):
         self.isShowBaublePanel = not self.isShowBaublePanel
@@ -140,6 +158,14 @@ class BaubleUIClassicProxy(ProxyCls):
     @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.bauble_layout_toggle")
     def onBaubleLayoutToggleClick(self, args):
         openBaubleContainer()
+
+    @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.bauble_button.visible")
+    def bindingBaubleButtonVisible(self):
+        return PlayerConfig.showBaubleSidebarButton
+
+    @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.container_button.visible")
+    def bindingBaubleContainerButtonVisible(self):
+        return PlayerConfig.showBaubleContainerButton
 
     @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.vertical_grid.left_visible")
     def bindingPanelLeftVisible(self):
@@ -474,6 +500,7 @@ class BaubleUIPocketProxy(BaubleUIClassicProxy):
         )
 
     def OnTick(self):
+        self.syncPlayerConfig()
         # 锁定控制
         if self.isLockControl:
             self.lockTime += 1
