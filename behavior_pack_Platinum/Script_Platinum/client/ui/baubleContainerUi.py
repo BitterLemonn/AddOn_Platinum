@@ -8,9 +8,48 @@ from Script_Platinum.utils.clientUtils import compFactory
 
 ProxyCls = clientApi.GetUIScreenProxyCls()
 Binding = clientApi.GetViewBinderCls()
-NETEASE_UI_CONTAINER_SLOT_LIMIT = 50
 BAUBLE_CONTAINER_NAME = "bauble_reborn.screen.name"
+RESERVED_UI_SLOT_INDEX = 107
+BAUBLE_GRID_CELL_SIZE = 18
+BAUBLE_GRID_BASE_COLUMN_COUNT = 9
+BAUBLE_GRID_MAX_ROW_COUNT = 5
+BAUBLE_GRID_HORIZONTAL_PADDING = 14
 baubleContainerRules = {}
+
+
+def _getVisibleSlotCount(slotCount):
+    return min(max(slotCount, 0), RESERVED_UI_SLOT_INDEX)
+
+
+def _getBaubleGridLayout(slotCount):
+    slotCount = _getVisibleSlotCount(slotCount)
+    columnCount = max(
+        BAUBLE_GRID_BASE_COLUMN_COUNT,
+        (slotCount + BAUBLE_GRID_MAX_ROW_COUNT - 1) // BAUBLE_GRID_MAX_ROW_COUNT,
+    )
+    rowCount = (slotCount + columnCount - 1) // columnCount
+    gridWidth = columnCount * BAUBLE_GRID_CELL_SIZE
+    return (
+        (columnCount, rowCount),
+        (
+            gridWidth,
+            rowCount * BAUBLE_GRID_CELL_SIZE,
+        ),
+        gridWidth + BAUBLE_GRID_HORIZONTAL_PADDING,
+    )
+
+
+def _getContainerItemCount(slotCount):
+    slotCount = _getVisibleSlotCount(slotCount)
+    return slotCount + (1 if slotCount > RESERVED_UI_SLOT_INDEX else 0)
+
+
+def _getSlotIndex(containerIndex, slotCount):
+    if not isinstance(containerIndex, (int, long)) or containerIndex < 0 or containerIndex == RESERVED_UI_SLOT_INDEX:
+        return None
+    slotCount = _getVisibleSlotCount(slotCount)
+    slotIndex = containerIndex - (1 if containerIndex > RESERVED_UI_SLOT_INDEX else 0)
+    return slotIndex if slotIndex < slotCount else None
 
 
 def _isValidContainerItem(itemDict, slotType, baubleRules):
@@ -54,14 +93,22 @@ class BaubleContainerProxy(ProxyCls):
         self.screen = self.GetScreenNode()
         self.slotManager = PlayerBaubleSlotClientService.access()
         self.baubleInfoManager = PlayerBaubleInfoClientService.access()
+        self.contentStackPath = (
+            "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/"
+            "safezone_screen_panel/root_screen_panel/root_panel/bauble_panel/content_stack"
+        )
+        self.baubleGridPath = self.contentStackPath + "/bauble_top_half/content_stack/bauble_grid"
+        self.pendingSlotLayout = None
 
     def OnCreate(self):
         self.slotManager.addPlayerSlotListener(self.onSlotListChanged)
         self.baubleInfoManager.addBaubleInfoListener(self.onBaubleInfoChanged)
         ListenForEvent("PlayerTryPutCustomContainerItemClientEvent", self, self.onTryPutItem)
         ListenForEvent("PlayerTryAddCustomContainerItemClientEvent", self, self.onTryPutItem)
+        self._updateBaubleLayout(len(self.slotManager.getPlayerSlotList()))
 
     def OnDestroy(self):
+        self.pendingSlotLayout = None
         self.slotManager.removePlayerSlotListener(self.onSlotListChanged)
         self.baubleInfoManager.removeBaubleInfoListener(self.onBaubleInfoChanged)
         UnListenForEvent("PlayerTryPutCustomContainerItemClientEvent", self, self.onTryPutItem)
@@ -78,33 +125,85 @@ class BaubleContainerProxy(ProxyCls):
             return
         index = data.get("collectionIndex")
         slotList = self.slotManager.getPlayerSlotList()
-        if not isinstance(index, (int, long)) or not 0 <= index < min(len(slotList), NETEASE_UI_CONTAINER_SLOT_LIMIT):
+        slotIndex = _getSlotIndex(index, len(slotList))
+        if slotIndex is None:
             data["cancel"] = True
             return
-        if not _isValidContainerItem(data.get("itemDict"), slotList[index].slotType, baubleContainerRules):
+        if not _isValidContainerItem(data.get("itemDict"), slotList[slotIndex].slotType, baubleContainerRules):
             data["cancel"] = True
 
     def onSlotListChanged(self, slotList):
-        self.screen.UpdateScreen()
+        self._updateBaubleLayout(len(slotList))
+
+    def OnTick(self):
+        if self.pendingSlotLayout is None:
+            return
+        slotCount, columnCount = self.pendingSlotLayout
+        containerItemCount = _getContainerItemCount(slotCount)
+        if containerItemCount == 0:
+            self.pendingSlotLayout = None
+            return
+        if (
+            self.screen.GetBaseUIControl(self.baubleGridPath + "/bauble_ui_grid_item{}".format(containerItemCount))
+            is None
+        ):
+            return
+        for containerIndex in range(containerItemCount):
+            slotIndex = _getSlotIndex(containerIndex, slotCount)
+            if slotIndex is None:
+                continue
+            self.screen.GetBaseUIControl(
+                self.baubleGridPath + "/bauble_ui_grid_item{}".format(containerIndex + 1)
+            ).SetPosition(
+                (
+                    slotIndex % columnCount * BAUBLE_GRID_CELL_SIZE,
+                    slotIndex // columnCount * BAUBLE_GRID_CELL_SIZE,
+                )
+            )
+        self.pendingSlotLayout = None
+
+    def _updateBaubleLayout(self, slotCount):
+        containerItemCount = _getContainerItemCount(slotCount)
+        gridDimension, gridSize, contentWidth = _getBaubleGridLayout(slotCount)
+        containerGridDimension = _getBaubleGridLayout(containerItemCount)[0]
+        gridControl = self.screen.GetBaseUIControl(self.baubleGridPath)
+        contentStackControl = self.screen.GetBaseUIControl(self.contentStackPath)
+        topHalfPath = self.contentStackPath + "/bauble_top_half"
+        topHalfContentControl = self.screen.GetBaseUIControl(topHalfPath + "/content_stack")
+        if gridDimension[1] > 0:
+            gridControl.asGrid().SetGridDimension(containerGridDimension)
+        gridControl.SetFullSize(axis="x", paramDict={"absoluteValue": gridSize[0]})
+        gridControl.SetFullSize(axis="y", paramDict={"absoluteValue": gridSize[1]})
+        contentStackControl.SetFullSize(axis="x", paramDict={"absoluteValue": contentWidth})
+        topHalfContentControl.SetFullSize(
+            axis="x",
+            paramDict={"absoluteValue": -BAUBLE_GRID_HORIZONTAL_PADDING, "followType": "parent", "relativeValue": 1.0},
+        )
+        self.pendingSlotLayout = (slotCount, gridDimension[0])
 
     def onBaubleInfoChanged(self, baubleInfo):
-        self.screen.UpdateScreen()
+        self._updateBaubleLayout(len(self.slotManager.getPlayerSlotList()))
 
     @Binding.binding(Binding.BF_BindInt, "#bauble_reborn.container.max_items_count")
     def bindingMaxItemsCount(self):
-        return min(len(self.slotManager.getPlayerSlotList()), NETEASE_UI_CONTAINER_SLOT_LIMIT)
+        return _getContainerItemCount(len(self.slotManager.getPlayerSlotList()))
+
+    @Binding.binding_collection(Binding.BF_BindBool, "netease_ui_container", "#bauble_reborn.container.slot.visible")
+    def bindingSlotVisible(self, index):
+        return _getSlotIndex(index, len(self.slotManager.getPlayerSlotList())) is not None
 
     @Binding.binding_collection(Binding.BF_BindString, "netease_ui_container", "#bauble_reborn.container.slot_overlay")
     def bindingSlotOverlay(self, index):
         slotList = self.slotManager.getPlayerSlotList()
-        return slotList[index].placeholderPath if index < min(len(slotList), NETEASE_UI_CONTAINER_SLOT_LIMIT) else ""
+        slotIndex = _getSlotIndex(index, len(slotList))
+        return slotList[slotIndex].placeholderPath if slotIndex is not None else ""
 
     @Binding.binding_collection(
         Binding.BF_BindBool, "netease_ui_container", "#bauble_reborn.container.slot_overlay.visible"
     )
     def bindingSlotOverlayVisible(self, index):
         slotList = self.slotManager.getPlayerSlotList()
+        slotIndex = _getSlotIndex(index, len(slotList))
         return (
-            index < min(len(slotList), NETEASE_UI_CONTAINER_SLOT_LIMIT)
-            and self.baubleInfoManager.getBaubleInfoBySlot(slotList[index].identifier) is None
+            slotIndex is not None and self.baubleInfoManager.getBaubleInfoBySlot(slotList[slotIndex].identifier) is None
         )

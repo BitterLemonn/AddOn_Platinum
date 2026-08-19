@@ -22,7 +22,7 @@
         "type": "label",
         "anchor_from": "top_left",
         "anchor_to": "top_left",
-        "text": "饰品",
+        "text": "饰品栏",
         "size": ["100%-6px", "default"],
         "color": "$title_text_color",
         "layer": 2
@@ -30,7 +30,16 @@
 
     "bauble_ui_grid_item@common.container_item": {
         "$item_collection_name": "netease_ui_container",
-        "$cell_overlay_ref": "bauble_reborn_screen.bauble_slot_overlay"
+        "$cell_overlay_ref": "bauble_reborn_screen.bauble_slot_overlay",
+        "bindings": [
+            {
+                "binding_type": "collection",
+                "binding_collection_name": "netease_ui_container",
+                "binding_name_override": "#visible",
+                "binding_condition": "always",
+                "binding_name": "#bauble_reborn.container.slot.visible"
+            }
+        ]
     },
 
     "bauble_slot_overlay": {
@@ -72,6 +81,56 @@
         ]
     },
 
+    "bauble_top_half": {
+        "type": "panel",
+        "size": ["100%", "100%cm"],
+        "controls": [
+            {
+                "common_panel@common.common_panel": {
+                    "size": ["100%", "100%sm+18px"]
+                }
+            },
+            {
+                "content_stack": {
+                    "type": "stack_panel",
+                    "offset": [0, 2],
+                    "size": ["100%-14px", "100%c"],
+                    "controls": [
+                        {
+                            "bauble_label@bauble_reborn_screen.bauble_label": {}
+                        },
+                        {
+                            "bauble_grid@bauble_reborn_screen.bauble_grid": {}
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+
+    "bauble_inventory_bottom_half": {
+        "type": "panel",
+        "size": ["100%", 93],
+        "controls": [
+            {
+                "common_panel@common.common_panel": {
+                    "$dialog_background": "bauble_reborn_screen.inventory_background",
+                    "$show_close_button": false,
+                    "offset": [0, -3],
+                    "size": [176, 100]
+                }
+            },
+            {
+                "inventory_panel_bottom_half_with_label@common.inventory_panel_bottom_half_with_label": {
+                    "anchor_from": "center",
+                    "anchor_to": "center",
+                    "size": [176, 93]
+                }
+            },
+            { "hotbar_grid@common.hotbar_grid_template": {} }
+        ]
+    },
+
     "content_panel": {
         "type": "panel",
         "controls": [
@@ -80,50 +139,45 @@
             { "item_lock_notification_factory@common.item_lock_notification_factory": {} },
             {
                 "root_panel@common.root_panel": {
-                    "size": [176, 160],
+                    "size": [176, 180],
                     "layer": 1,
                     "controls": [
-                        { "common_panel@common.common_panel": {} },
                         {
                             "bauble_panel": {
                                 "type": "panel",
                                 "layer": 5,
+                                "size": ["100%", "100%c"],
                                 "controls": [
                                     {
-                                        "bauble_label@bauble_reborn_screen.bauble_label": {
-                                            "offset": [7, 8]
+                                        "content_stack": {
+                                            "type": "stack_panel",
+                                            "size": [176, "100%c"],
+                                            "controls": [
+                                                {
+                                                    "bauble_top_half@bauble_reborn_screen.bauble_top_half": {}
+                                                },
+                                                {
+                                                    "bauble_inventory_bottom_half@bauble_reborn_screen.bauble_inventory_bottom_half": {}
+                                                }
+                                            ]
                                         }
-                                    },
-                                    {
-                                        "bauble_scroll_view@common.scrolling_panel": {
-                                            "anchor_from": "top_left",
-                                            "anchor_to": "top_left",
-                                            "$scroll_background_image_control": "common.empty_image",
-                                            "$scroll_bar_and_track_size": [0, 0],
-                                            "$scroll_box_mouse_image_control": "common.empty_image",
-                                            "$scroll_box_touch_image_control": "common.empty_image",
-                                            "$scroll_track_image_control": "common.empty_image",
-                                            "$scrolling_content": "bauble_reborn_screen.bauble_grid",
-                                            "size": ["100% - 6px", 44],
-                                            "offset": [7, 22]
-                                        }
-                                    },
-                                    {
-                                        "inventory_panel_bottom_half_with_label@common.inventory_panel_bottom_half_with_label": {}
-                                    },
-                                    { "hotbar_grid@common.hotbar_grid_template": {} },
-                                    {
-                                        "inventory_take_progress_icon_button@common.inventory_take_progress_icon_button": {}
-                                    },
-                                    { "flying_item_renderer@common.flying_item_renderer": { "layer": 15 } }
+                                    }
                                 ]
                             }
                         },
+                        {
+                            "inventory_take_progress_icon_button@common.inventory_take_progress_icon_button": {}
+                        },
+                        { "flying_item_renderer@common.flying_item_renderer": { "layer": 15 } },
                         { "inventory_selected_icon_button@common.inventory_selected_icon_button": {} },
                         { "gamepad_cursor@common.gamepad_cursor_button": {} }
                     ]
                 }
             }
         ]
+    },
+    "inventory_background": {
+        "type": "image",
+        "texture": "textures/ui/dialog_background_opaque_overlap_bottom"
     }
 }

@@ -1,8 +1,6 @@
 isDebug = True
 LOGGER_LEVEL = "DEBUG"
 _LOGGER_LEVEL_VALUES = {"DEBUG": 10, "INFO": 20, "WARNING": 30}
-assert LOGGER_LEVEL in _LOGGER_LEVEL_VALUES
-
 
 def isEnabledFor(level):
     return isDebug and level in _LOGGER_LEVEL_VALUES and _LOGGER_LEVEL_VALUES[level] >= _LOGGER_LEVEL_VALUES[LOGGER_LEVEL]

@@ -9,8 +9,9 @@ from Script_Platinum.utils.serverUtils import compFactory, givePlayerItem
 
 BAUBLE_CONTAINER_SCREEN = "bauble_reborn_screen.screen"
 BAUBLE_CONTAINER_NAME = "bauble_reborn.screen.name"
-# ponytail: SetPlayerUIItem 屏蔽索引 50；需要更多槽位时须先更换容器 API。
-NETEASE_UI_CONTAINER_SLOT_LIMIT = 50
+RESERVED_UI_SLOT_INDEX = 50
+# ponytail: 网易自定义容器当前验证上限为107个逻辑槽；引擎支持更高数量后同步调整客户端与服务端。
+BAUBLE_CONTAINER_SLOT_LIMIT = 107
 
 
 def _toItemStack(itemDict):
@@ -24,15 +25,15 @@ def _isSameItem(first, second):
     return first.count == second.count and first.isSameItem(second)
 
 
-def _isValidSlotIndex(slotList, index):
-    return isinstance(index, (int, long)) and 0 <= index < min(len(slotList), NETEASE_UI_CONTAINER_SLOT_LIMIT)
+def _getContainerIndex(slotIndex):
+    return slotIndex + (1 if slotIndex >= RESERVED_UI_SLOT_INDEX else 0)
 
 
-assert (
-    _toItemStack(None) is None
-    and _isSameItem(None, None)
-    and _isValidSlotIndex([None], 0)
-)
+def _getSlotIndex(slotList, containerIndex):
+    if not isinstance(containerIndex, (int, long)) or containerIndex < 0 or containerIndex == RESERVED_UI_SLOT_INDEX:
+        return None
+    slotIndex = containerIndex - (1 if containerIndex > RESERVED_UI_SLOT_INDEX else 0)
+    return slotIndex if slotIndex < min(len(slotList), BAUBLE_CONTAINER_SLOT_LIMIT) else None
 
 
 @BaseService.Init
@@ -51,7 +52,8 @@ class BaubleContainerServerService(BaseService):
     @staticmethod
     def _getSlotData(playerId, index):
         slotList = getPlayerSlotList(playerId)
-        return slotList[index] if _isValidSlotIndex(slotList, index) else None
+        slotIndex = _getSlotIndex(slotList, index)
+        return slotList[slotIndex] if slotIndex is not None else None
 
     @staticmethod
     def _isValidBauble(itemStack, slotData):
@@ -70,12 +72,10 @@ class BaubleContainerServerService(BaseService):
         baubleInfo = getPlayerBaubleInfo(playerId)
         itemComp = compFactory.CreateItem(playerId)
 
-        for index in range(NETEASE_UI_CONTAINER_SLOT_LIMIT):
-            itemDict = None
-            if index < len(slotList):
-                itemStack = baubleInfo.getBaubleInfoBySlotId(slotList[index].identifier)
-                itemDict = itemStack.toDict() if itemStack is not None and not itemStack.isEmpty() else None
-            itemComp.SetPlayerUIItem(playerId, index, itemDict, False, True)
+        for slotIndex, slotData in enumerate(slotList[:BAUBLE_CONTAINER_SLOT_LIMIT]):
+            itemStack = baubleInfo.getBaubleInfoBySlotId(slotData.identifier)
+            itemDict = itemStack.toDict() if itemStack is not None and not itemStack.isEmpty() else None
+            itemComp.SetPlayerUIItem(playerId, _getContainerIndex(slotIndex), itemDict, False, True)
 
         playerComp = compFactory.CreatePlayer(playerId)
         isOpen = playerComp.OpenNeteaseContainer(BAUBLE_CONTAINER_SCREEN, BAUBLE_CONTAINER_NAME, False)
@@ -107,7 +107,7 @@ class BaubleContainerServerService(BaseService):
         slotData = self._getSlotData(playerId, index)
         itemStack = _toItemStack(data.get("afterItemDict"))
         if slotData is None:
-            if isinstance(index, (int, long)) and 0 <= index < NETEASE_UI_CONTAINER_SLOT_LIMIT:
+            if isinstance(index, (int, long)) and index >= 0 and index != RESERVED_UI_SLOT_INDEX:
                 self._restoreSlot(playerId, index, None, data.get("changedItemDict"))
             return
         if itemStack is not None and not self._isValidBauble(itemStack, slotData):
@@ -121,7 +121,7 @@ class BaubleContainerServerService(BaseService):
             self._queuePlayerSync(data.get("playerId"), data.get("collectionIndex"))
 
     def _queuePlayerSync(self, playerId, index):
-        if not playerId or not _isValidSlotIndex(getPlayerSlotList(playerId), index):
+        if not playerId or _getSlotIndex(getPlayerSlotList(playerId), index) is None:
             return
         isPending = playerId in self.pendingSlotIndices
         self.pendingSlotIndices.setdefault(playerId, set()).add(index)
@@ -136,13 +136,14 @@ class BaubleContainerServerService(BaseService):
         baubleInfo = getPlayerBaubleInfo(playerId)
         itemComp = compFactory.CreateItem(playerId)
         changedSlots = []
-        for index in sorted(changedIndices):
-            if index >= len(slotList):
+        for containerIndex in sorted(changedIndices):
+            slotIndex = _getSlotIndex(slotList, containerIndex)
+            if slotIndex is None:
                 continue
-            slotData = slotList[index]
-            itemStack = _toItemStack(itemComp.GetPlayerUIItem(playerId, index, True, True))
+            slotData = slotList[slotIndex]
+            itemStack = _toItemStack(itemComp.GetPlayerUIItem(playerId, containerIndex, True, True))
             if itemStack is not None and not self._isValidBauble(itemStack, slotData):
-                self._restoreSlot(playerId, index, slotData.identifier)
+                self._restoreSlot(playerId, containerIndex, slotData.identifier)
                 continue
             oldItemStack = baubleInfo.getBaubleInfoBySlotId(slotData.identifier)
             if not _isSameItem(oldItemStack, itemStack):

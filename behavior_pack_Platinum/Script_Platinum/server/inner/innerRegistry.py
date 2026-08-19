@@ -2,7 +2,6 @@
 from mod.server import extraServerApi as serverApi
 
 from Script_Platinum import commonConfig
-from Script_Platinum.utils.serverUtils import compFactory
 
 defaultSlot = [
     {
