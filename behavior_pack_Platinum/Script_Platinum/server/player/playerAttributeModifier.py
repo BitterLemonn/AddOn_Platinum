@@ -4,6 +4,7 @@ import math
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService
 from Script_Platinum.QuModLibs.Server import compFactory, serverApi
 from Script_Platinum.data.attributeModifier import calculateModifiedValue
+from Script_Platinum.utils import developLogging as logging
 
 minecraftEnum = serverApi.GetMinecraftEnum()
 AttributeModifierOperation = minecraftEnum.AttributeModifierOperation
@@ -50,6 +51,7 @@ class PlatinumAttributeModifierService(BaseService):
         if modifierId in modifiers:
             return False
         modifier = self._createModifier(modifierId, amount, operation, operand)
+        oldValue = self._getDebugAttributeValue(key)
         if attributeType == PlatinumAttributeType.HUNGER:
             if not compFactory.CreateAttr(playerId).AddModifier(
                 attributeType,
@@ -61,6 +63,7 @@ class PlatinumAttributeModifierService(BaseService):
                 self._removeEmptyKey(key)
                 return False
             modifiers[modifierId] = modifier
+            self._logModifierChange("添加", key, modifier, oldValue)
             return True
         if key not in self._baseValueMap:
             baseValue = self._getBaseValue(playerId, attributeType)
@@ -70,6 +73,7 @@ class PlatinumAttributeModifierService(BaseService):
             self._baseValueMap[key] = baseValue
         modifiers[modifierId] = modifier
         if self._apply(key):
+            self._logModifierChange("添加", key, modifier, oldValue)
             return True
         del modifiers[modifierId]
         self._removeEmptyKey(key)
@@ -108,14 +112,17 @@ class PlatinumAttributeModifierService(BaseService):
         modifiers = self._modifierMap.get(key)
         if not modifiers or modifierId not in modifiers:
             return False
+        oldValue = self._getDebugAttributeValue(key)
         oldModifier = modifiers.pop(modifierId)
         if attributeType == PlatinumAttributeType.HUNGER:
             if compFactory.CreateAttr(playerId).RemoveModifier(attributeType, modifierId):
+                self._logModifierChange("移除", key, oldModifier, oldValue)
                 self._removeEmptyKey(key)
                 return True
             modifiers[modifierId] = oldModifier
             return False
         if self._apply(key):
+            self._logModifierChange("移除", key, oldModifier, oldValue)
             self._removeEmptyKey(key)
             return True
         modifiers[modifierId] = oldModifier
@@ -253,6 +260,43 @@ class PlatinumAttributeModifierService(BaseService):
         if key not in self._baseValueMap:
             return True
         return self._setValue(key[0], key[1], self._baseValueMap[key])
+
+    def _getDebugAttributeValue(self, key):
+        if not logging.isEnabledFor("DEBUG"):
+            return None
+        playerId, attributeType = key
+        if attributeType == PlatinumAttributeType.HUNGER:
+            attrComp = compFactory.CreateAttr(playerId)
+            return {
+                "current": attrComp.GetAttrValue(attributeType),
+                "max": attrComp.GetAttrMaxValue(attributeType),
+            }
+        if key not in self._baseValueMap:
+            return self._getBaseValue(playerId, attributeType)
+        modifiers = self._modifierMap.get(key, {})
+        if not modifiers:
+            return self._baseValueMap[key]
+        return calculateModifiedValue(self._baseValueMap[key], modifiers.values(), AttributeModifierOperation)
+
+    def _logModifierChange(self, action, key, modifier, oldValue):
+        if not logging.isEnabledFor("DEBUG"):
+            return
+        playerId, attributeType = key
+        newValue = self._getDebugAttributeValue(key)
+        logging.debug(
+            "铂: {}属性修饰符 playerId={}, attributeType={}, modifierId={}, amount={}, operation={}, operand={}, "
+            "属性值: {} -> {}".format(
+                action,
+                playerId,
+                attributeType,
+                modifier["modifierId"],
+                modifier["amount"],
+                modifier["operation"],
+                modifier["operand"],
+                oldValue,
+                newValue,
+            )
+        )
 
     @staticmethod
     def _setValue(playerId, attributeType, value):
