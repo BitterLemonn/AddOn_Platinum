@@ -16,6 +16,8 @@ def onLoadServerAddonScriptsAfter(data):
         baseInfo = itemComp.GetItemBasicInfo(item)
         if baseInfo is not None:
             maxStackStore[item] = baseInfo["maxStackSize"]
+    server = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+    server.BroadcastEvent(commonConfig.PLATINUM_SYSTEM_INIT_FINISHED_EVENT, {})
 
 
 @Listen("ServerChatEvent")

@@ -100,29 +100,51 @@ class InnerServerRegistry(serverApi.GetServerSystemCls()):
 
     def listenEvent(self):
         self.ListenForEvent(
-            serverApi.GetEngineNamespace(),
-            serverApi.GetEngineSystemName(),
-            "LoadServerAddonScriptsAfter",
+            commonConfig.PLATINUM_NAMESPACE,
+            commonConfig.PLATINUM_BROADCAST_SERVER,
+            commonConfig.PLATINUM_SYSTEM_INIT_FINISHED_EVENT,
             self,
-            self.onLoadServerAddonScriptsAfter,
+            self.onPlatinumSystemInitFinished,
         )
+        # self.ListenForEvent(
+        #     serverApi.GetEngineNamespace(),
+        #     serverApi.GetEngineSystemName(),
+        #     "LoadServerAddonScriptsAfter",
+        #     self,
+        #     self.onLoadServerAddonScriptsAfter,
+        # )
 
-    def onLoadServerAddonScriptsAfter(self, data):
+    # 推荐使用 铂 提供的事件进行注册
+    def onPlatinumSystemInitFinished(self, data):
+        # 获取铂注册系统
+        system = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        # 注册默认槽位(注意需要先注册槽位再注册饰品)
+        for slotData in defaultSlot:
+            system.AddGlobalBaubleSlot(
+                slotId=slotData["baubleSlotIdentifier"],
+                slotType=slotData["baubleSlotType"],
+                slotName=slotData["baubleSlotName"],
+                slotPlaceHolderPath=slotData["placeholderPath"],
+                isDefault=slotData["isDefault"],
+            )
+        # 注册饰品
+        system.BaubleRegister({"baubleName": "lemon_platinum:traveler_belt", "baubleSlot": "belt"})
 
-        def actualLogic():
-            # 获取铂注册系统
-            system = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
-            # 注册默认槽位(注意需要先注册槽位再注册饰品)
-            for slotData in defaultSlot:
-                system.AddGlobalBaubleSlot(
-                    slotId=slotData["baubleSlotIdentifier"],
-                    slotType=slotData["baubleSlotType"],
-                    slotName=slotData["baubleSlotName"],
-                    slotPlaceHolderPath=slotData["placeholderPath"],
-                    isDefault=slotData["isDefault"],
-                )
-            # 注册饰品
-            system.BaubleRegister({"baubleName": "lemon_platinum:traveler_belt", "baubleSlot": "belt"})
+    # def onLoadServerAddonScriptsAfter(self, data):
+    #     def actualLogic():
+    #         # 获取铂注册系统
+    #         system = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+    #         # 注册默认槽位(注意需要先注册槽位再注册饰品)
+    #         for slotData in defaultSlot:
+    #             system.AddGlobalBaubleSlot(
+    #                 slotId=slotData["baubleSlotIdentifier"],
+    #                 slotType=slotData["baubleSlotType"],
+    #                 slotName=slotData["baubleSlotName"],
+    #                 slotPlaceHolderPath=slotData["placeholderPath"],
+    #                 isDefault=slotData["isDefault"],
+    #             )
+    #         # 注册饰品
+    #         system.BaubleRegister({"baubleName": "lemon_platinum:traveler_belt", "baubleSlot": "belt"})
 
-        # 如果需要在LoadServerAddonScriptsAfter事件中注册槽位和饰品 需要延迟一帧执行以确保注册系统已经完成初始化
-        compFactory.CreateGame(serverApi.GetLevelId()).AddTimer(0, actualLogic)
+    #     # 如果需要在LoadServerAddonScriptsAfter事件中注册槽位和饰品 需要延迟一帧执行以确保注册系统已经完成初始化
+    #     compFactory.CreateGame(serverApi.GetLevelId()).AddTimer(0, actualLogic)

@@ -12,6 +12,7 @@ BAUBLE_UNEQUIPPED_EVENT = "BaubleUnequipped"
 BAUBLE_GET_INFO_EVENT = "BaubleGetInfo"
 BAUBLE_GET_GLOBAL_INFO_EVENT = "BaubleGetGlobalInfo"
 BAUBLE_GET_TARGET_INFO_EVENT = "BaubleGetTargetInfo"
+PLATINUM_SYSTEM_INIT_FINISHED_EVENT = "PlatinumSystemInitFinished"
 
 PLATINUM_NAMESPACE = "platinum"
 PLATINUM_BROADCAST_SERVER = "broadcasterServer"

@@ -36,35 +36,38 @@
 
 **开发者不能将本组件作为内容导入(可能会引发模组冲突)**，本组件会同时发布在网易资源市场当中，只需要玩家同时装载即可正常使用组件。
 
-完成饰品注册需要通过以下代码发送事件来完成：
+推荐监听铂服务端广播的 `PlatinumSystemInitFinished` 事件，并在回调中完成饰品注册。该事件触发时，铂的注册系统已经初始化完成：
 
 ```py
 # coding=utf-8
 # 推荐将commonConfig.py中的常量复制到开发项目当中,方便使用
 import mod.server.extraServerApi as serverApi
 
+PLATINUM_NAMESPACE = "platinum"
+PLATINUM_BROADCAST_SERVER = "broadcasterServer"
+PLATINUM_SYSTEM_INIT_FINISHED_EVENT = "PlatinumSystemInitFinished"
 
-# 对应的服务端中监听LoadServerAddonScriptsAfter(或执行顺序之后的)事件
+# 在开发项目的服务端System中监听铂系统初始化完成事件
 class BaubleRegister(serverApi.GetServerSystemCls()):
     def __init__(self, namespace, name):
         super(BaubleRegister, self).__init__(namespace, name)
         self.listenEvent()
 
-    # 监听LoadServerAddonScriptsAfter事件
     def listenEvent(self):
-        self.ListenForEvent(serverApi.GetEngineNamespace(), serverApi.GetEngineSystemName(),
-                            'LoadServerAddonScriptsAfter', self, self.onLoadServerAddonScriptsAfter)
+        self.ListenForEvent(
+            PLATINUM_NAMESPACE,
+            PLATINUM_BROADCAST_SERVER,
+            PLATINUM_SYSTEM_INIT_FINISHED_EVENT,
+            self,
+            self.onPlatinumSystemInitFinished,
+        )
 
-    # 对应的回调函数
-    def onLoadServerAddonScriptsAfter(self, data):
-        # ⚠️注意: 如果在 LoadServerAddonScriptsAfter 中注册需要延迟一帧执行, 以确保组件的注册系统已完成初始化
-        from Script_Platinum.utils.serverUtils import compFactory
-        compFactory.CreateGame(serverApi.GetLevelId()).AddTimer(0, self._registerBauble)
+    def onPlatinumSystemInitFinished(self, data):
+        self._registerBauble()
 
     def _registerBauble(self):
         # 项目文件中获取一个与组件通信的服务端
-        # 如导入了commonConfig.py中的常量可将nameSpace和systemName分别改为commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
-        registerSys = serverApi.GetSystem("platinum", "broadcasterServer")
+        registerSys = serverApi.GetSystem(PLATINUM_NAMESPACE, PLATINUM_BROADCAST_SERVER)
         # 需要注册的饰品信息Dict
         baubleInfoDict = {
             "baubleName": "命名空间:物品名称",
@@ -78,6 +81,24 @@ class BaubleRegister(serverApi.GetServerSystemCls()):
         }
         # 调用注册函数
         registerSys.BaubleRegister(baubleInfoDict)
+```
+
+如果项目仍使用引擎事件 `LoadServerAddonScriptsAfter`，必须在事件回调中延迟一帧再注册。该事件触发时，铂的注册系统可能尚未完成初始化，不能直接调用 `BaubleRegister`。保留上例的 `_registerBauble` 方法，仅将 `listenEvent` 和回调替换为：
+
+```py
+    def listenEvent(self):
+        self.ListenForEvent(
+            serverApi.GetEngineNamespace(),
+            serverApi.GetEngineSystemName(),
+            "LoadServerAddonScriptsAfter",
+            self,
+            self.onLoadServerAddonScriptsAfter,
+        )
+
+    def onLoadServerAddonScriptsAfter(self, data):
+        # AddTimer(0, ...) 将注册延迟到下一帧执行
+        gameComp = serverApi.GetEngineCompFactory().CreateGame(serverApi.GetLevelId())
+        gameComp.AddTimer(0, self._registerBauble)
 ```
 
 如果需要注册一个自定义槽位的饰品，需要在注册槽位之后再注册饰品，注册槽位方法请查看 **(五.2.槽位注册)**
