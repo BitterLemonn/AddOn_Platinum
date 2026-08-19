@@ -157,7 +157,7 @@ class BaubleUIClassicProxy(ProxyCls):
 
     @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.bauble_layout_toggle")
     def onBaubleLayoutToggleClick(self, args):
-        openBaubleContainer()
+        openBaubleContainer(minecraftEnum.InventoryType.EQUIPMENT)
 
     @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.bauble_button.visible")
     def bindingBaubleButtonVisible(self):

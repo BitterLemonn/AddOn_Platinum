@@ -8,13 +8,17 @@ from Script_Platinum.utils.clientUtils import compFactory
 
 ProxyCls = clientApi.GetUIScreenProxyCls()
 Binding = clientApi.GetViewBinderCls()
+minecraftEnum = clientApi.GetMinecraftEnum()
 BAUBLE_CONTAINER_NAME = "bauble_reborn.screen.name"
+BAUBLE_KEY_MAPPING_NAME = "platinum.open_bauble_window"
+BAUBLE_KEY_MAPPING_CATEGORY = "Platinum-铂"
 RESERVED_UI_SLOT_INDEX = 107
 BAUBLE_GRID_CELL_SIZE = 18
 BAUBLE_GRID_BASE_COLUMN_COUNT = 9
 BAUBLE_GRID_MAX_ROW_COUNT = 5
 BAUBLE_GRID_HORIZONTAL_PADDING = 14
 baubleContainerRules = {}
+_returnInventoryCategory = None
 
 
 def _getVisibleSlotCount(slotCount):
@@ -64,9 +68,12 @@ def _onBaubleContainerOpened(data):
         baubleContainerRules.update(data.get("rules", {}))
 
 
-def openBaubleContainer():
+def openBaubleContainer(returnCategory=None):
+    global _returnInventoryCategory
+    _returnInventoryCategory = returnCategory
     baubleContainerRules.clear()
-    clientApi.PopTopUI()
+    if returnCategory is not None:
+        clientApi.PopTopUI()
 
     def readyToOpen():
         if clientApi.GetTopUI() not in ("inventory_screen", "inventory_screen_pocket"):
@@ -77,6 +84,26 @@ def openBaubleContainer():
         compFactory.CreateGame(levelId).AddTimer(0.0, readyToOpen)
 
     readyToOpen()
+
+
+@BaseService.Init
+class BaubleKeyMappingClientService(BaseService):
+
+    @BaseService.Listen("LoadClientAddonScriptsAfter")
+    def registerKeyMapping(self, data):
+        compFactory.CreatePlayerView(levelId).RegisterCustomKeyMapping(
+            BAUBLE_KEY_MAPPING_NAME, minecraftEnum.KeyBoardType.KEY_C, BAUBLE_KEY_MAPPING_CATEGORY
+        )
+
+    @BaseService.Listen("OnCustomKeyPressInGame")
+    def onCustomKeyPressInGame(self, data):
+        if (
+            data.get("name") != BAUBLE_KEY_MAPPING_NAME
+            or data.get("isDown") != "1"
+            or data.get("screenName") != "hud_screen"
+        ):
+            return
+        openBaubleContainer()
 
 
 @Listen("UiInitFinished")
@@ -108,11 +135,24 @@ class BaubleContainerProxy(ProxyCls):
         self._updateBaubleLayout(len(self.slotManager.getPlayerSlotList()))
 
     def OnDestroy(self):
+        global _returnInventoryCategory
         self.pendingSlotLayout = None
         self.slotManager.removePlayerSlotListener(self.onSlotListChanged)
         self.baubleInfoManager.removeBaubleInfoListener(self.onBaubleInfoChanged)
         UnListenForEvent("PlayerTryPutCustomContainerItemClientEvent", self, self.onTryPutItem)
         UnListenForEvent("PlayerTryAddCustomContainerItemClientEvent", self, self.onTryPutItem)
+        if _returnInventoryCategory is not None:
+            category = _returnInventoryCategory
+            _returnInventoryCategory = None
+
+            def readyToOpenInventory():
+                screen = clientApi.GetTopUI()
+                if screen != "hud_screen":
+                    compFactory.CreateGame(levelId).AddTimer(0.0, readyToOpenInventory)
+                    return
+                clientApi.OpenInventoryGui(category, True)
+
+            readyToOpenInventory()
 
     @staticmethod
     def _isBaubleContainer(data):
