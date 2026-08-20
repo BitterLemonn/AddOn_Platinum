@@ -4,9 +4,9 @@
     "description": "铂: 添加饰品栏槽位",
     "permission_level": "admin",
     "args": [
-        {"name": "目标", "type": "target", "default": "@s"},
-        {"name": "槽位id", "type": "str"},
-        {"name": "槽位类型", "type": "str"},
-        {"name": "是否为全局注册", "type": "bool", "default": false}
+        { "name": "槽位类型", "type": "str" },
+        { "name": "数量", "type": "int", "default": 1 },
+        { "name": "目标", "type": "target", "default": "@s" },
+        { "name": "是否为全局注册", "type": "bool", "default": false }
     ]
 }

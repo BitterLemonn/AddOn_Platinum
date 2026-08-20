@@ -4,7 +4,8 @@
     "description": "铂: 删除饰品栏槽位",
     "permission_level": "admin",
     "args": [
-        {"name": "目标", "type": "target", "default": "@s"},
-        {"name": "槽位id", "type": "str"}
+        { "name": "槽位类型", "type": "str" },
+        { "name": "数量", "type": "int", "default": 1 },
+        { "name": "目标", "type": "target", "default": "@s" }
     ]
 }

@@ -3,6 +3,12 @@ from Script_Platinum.QuModLibs.Server import *
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService
 from Script_Platinum.server.items.itemService import SlotRegistry
 from Script_Platinum.server.player.playerBaubleSlot import addPlayerSlot, deletePlayerSlotById, getPlayerSlotList
+from Script_Platinum.server.command.slotCommandUtils import (
+    MAX_SLOT_COUNT,
+    createCommandSlotIds,
+    getDeletableCommandSlots,
+    isValidSlotCount,
+)
 from Script_Platinum.data.slotData import BaubleSlotData
 
 
@@ -19,7 +25,7 @@ def _extractArgs(args):
 
 def _setFailed(data, msg):
     """设置指令执行失败状态和消息"""
-    data["return_failed"] = False
+    data["return_failed"] = True
     data["return_msg_key"] = msg
 
 
@@ -82,13 +88,18 @@ class CommandService(BaseService):
 
     def _handleAdd(self, data, args):
         parsed = _extractArgs(args)
+        print(parsed)
         targetTuple = parsed.get("目标", ())
-        slotId = parsed.get("槽位id", "")
         slotType = parsed.get("槽位类型", "")
+        count = parsed.get("数量", 0)
         isGlobal = parsed.get("是否为全局注册", False)
 
         # 参数完整性校验
-        if not targetTuple or not slotId or not slotType:
+        if not targetTuple or not slotType or not isValidSlotCount(count):
+            _setFailed(data, "§c铂: 参数异常 数量必须为1-{}的整数§r".format(MAX_SLOT_COUNT))
+            return
+
+        if not isinstance(isGlobal, bool):
             _setFailed(data, "§c铂: 参数异常 请检查指令是否输入正确§r")
             return
 
@@ -103,38 +114,36 @@ class CommandService(BaseService):
             _setFailed(data, "§c铂: 未找到目标玩家 请检查目标是否正确§r")
             return
 
-        # 检测玩家是否已拥有该槽位
-        for playerId in playerList:
-            if any(slot.identifier == slotId for slot in getPlayerSlotList(playerId)):
-                _setFailed(data, "§c铂: 玩家{}已拥有槽位id {} 无法重复添加§r".format(Entity(playerId).Name, slotId))
-                return
-
-        # 检测槽位id是否存在且全局属性是否冲突
-        existingSlot = self.slotRegistry.getSlotDataById(slotId)
-        if existingSlot is not None:
-            if existingSlot.isDefault:
-                _setFailed(data, "§c铂: 槽位id {} 为全局槽位 无法重复注册§r".format(slotId))
-                return
-
-            if isGlobal and not existingSlot.isDefault:
-                _setFailed(data, "§c铂: 槽位id {} 已存在且非默认槽位 无法全局注册§r".format(slotId))
-                return
         # 全局注册时目标必须为全部玩家
         if isGlobal and len(playerList) != len(serverApi.GetPlayerList()):
             _setFailed(data, "§c铂: 全局注册时目标玩家必须为全部玩家§r")
             return
 
-        # 执行注册
-        if not self.slotRegistry.isSlotIdExist(slotId):
-            self.slotRegistry.registerSlot(BaubleSlotData(None, None, slotId, slotType, isGlobal, True))
+        currentSlotCount = len(self.slotRegistry.getBaubleSlotList())
+        if currentSlotCount + count > MAX_SLOT_COUNT:
+            _setFailed(
+                data,
+                "§c铂: 创建失败 当前已有{}个槽位 创建{}个后将超过{}个槽位上限§r".format(
+                    currentSlotCount, count, MAX_SLOT_COUNT
+                ),
+            )
+            return
+
+        slotIds = createCommandSlotIds(self.slotRegistry.getBaubleSlotIdList(), count)
+        createdSlots = []
+        for slotId in slotIds:
+            if not self.slotRegistry.registerSlot(BaubleSlotData(None, None, slotId, slotType, isGlobal, True)):
+                _setFailed(data, "§c铂: 批量创建中断 已创建{}个槽位§r".format(len(createdSlots)))
+                return
+            createdSlots.append(self.slotRegistry.getSlotDataById(slotId))
 
         if isGlobal:
-            data["return_msg_key"] = "铂: 已执行全局注册槽位 {}".format(slotId)
+            data["return_msg_key"] = "铂: 已全局创建{}个{}槽位".format(count, slotType)
         else:
-            slotData = self.slotRegistry.getSlotDataById(slotId)
             for playerId in playerList:
-                addPlayerSlot(playerId, slotData)
-            data["return_msg_key"] = "铂: 已执行为特定玩家注册槽位 {}".format(slotId)
+                for slotData in createdSlots:
+                    addPlayerSlot(playerId, slotData)
+            data["return_msg_key"] = "铂: 已为目标玩家创建{}个{}槽位".format(count, slotType)
 
     # ------------------------------------------------------------------
     #  platinum_del — 删除槽位
@@ -143,10 +152,11 @@ class CommandService(BaseService):
     def _handleDel(self, data, args):
         parsed = _extractArgs(args)
         targetTuple = parsed.get("目标", ())
-        slotId = parsed.get("槽位id", "")
+        slotType = parsed.get("槽位类型", "")
+        count = parsed.get("数量", 0)
 
-        if not targetTuple or not slotId:
-            _setFailed(data, "§c铂: 参数异常 请检查指令是否输入正确§r")
+        if not targetTuple or not slotType or not isValidSlotCount(count):
+            _setFailed(data, "§c铂: 参数异常 数量必须为1-{}的整数§r".format(MAX_SLOT_COUNT))
             return
 
         playerList = [pid for pid in targetTuple if Entity(pid).IsPlayer]
@@ -154,30 +164,32 @@ class CommandService(BaseService):
             _setFailed(data, "§c铂: 未找到目标玩家 请检查目标是否正确§r")
             return
 
-        # 默认槽位不可删除
-        defaultSlots = self.slotRegistry.getBaubleSlotList(defaultFilter=True)
-        if slotId in defaultSlots:
-            # 如果不为指令添加的默认槽位 则提示无法删除
-            commandAddedSlotIds = [slot.identifier for slot in defaultSlots if slot.isCommandAdded]
-            if slotId not in commandAddedSlotIds:
-                _setFailed(data, "§c铂: 槽位id {} 为模组默认槽位，无法删除§r".format(slotId))
-                return
-            # 如果目标不为全体玩家 则提示无法删除
-            if len(playerList) != len(serverApi.GetPlayerList()):
-                _setFailed(data, "§c铂: 删除默认槽位时目标玩家必须为全部玩家§r")
-                return
+        if slotType not in self.slotRegistry.getBaubleSlotTypeList():
+            _setFailed(data, "§c铂: 槽位类型不存在 请检查槽位类型是否正确 输入/platinum_help查看帮助§r")
+            return
 
-        for playerId in playerList:
-            deletePlayerSlotById(playerId, slotId)
-
-        # 检查是否所有玩家都不再持有该槽位，若都不持有则取消注册
-        stillOwned = any(
-            any(slot.identifier == slotId for slot in getPlayerSlotList(pid)) for pid in serverApi.GetPlayerList()
+        allPlayerIds = serverApi.GetPlayerList()
+        targetsAllPlayers = len(playerList) == len(allPlayerIds)
+        ownedSlotIds = [slot.identifier for playerId in playerList for slot in getPlayerSlotList(playerId)]
+        slotsToDelete = getDeletableCommandSlots(
+            self.slotRegistry.getBaubleSlotList(), slotType, ownedSlotIds, count, targetsAllPlayers
         )
-        if not stillOwned:
-            self.slotRegistry.deleteSlotById(slotId)
+        if len(slotsToDelete) < count:
+            _setFailed(data, "§c铂: 目标玩家仅有{}个可删除的{}指令槽位§r".format(len(slotsToDelete), slotType))
+            return
 
-        data["return_msg_key"] = "铂: 已执行删除槽位 {}".format(slotId)
+        for slotData in slotsToDelete:
+            slotId = slotData.identifier
+            for playerId in playerList:
+                if any(slot.identifier == slotId for slot in getPlayerSlotList(playerId)):
+                    deletePlayerSlotById(playerId, slotId)
+
+            # 检查是否所有在线玩家都不再持有该槽位，若都不持有则取消注册
+            stillOwned = any(any(slot.identifier == slotId for slot in getPlayerSlotList(pid)) for pid in allPlayerIds)
+            if not stillOwned:
+                self.slotRegistry.deleteSlotById(slotId)
+
+        data["return_msg_key"] = "铂: 已删除{}个{}槽位".format(count, slotType)
 
     # ------------------------------------------------------------------
     #  platinum_help — 帮助信息
@@ -190,6 +202,8 @@ class CommandService(BaseService):
         if control == "help":
             data["return_msg_key"] = (
                 "铂: 查看帮助\n"
+                "§6/platinum_add <槽位类型> [数量1-107] [目标] [是否全局] - 创建槽位 总量上限107\n"
+                "§6/platinum_del <槽位类型> [数量1-107] [目标] - 删除最近创建的指令槽位\n"
                 "§6/platinum_help slot_type - 查看已注册的槽位类型列表\n"
                 "§6/platinum_help slot_id - 查看已注册的槽位id列表"
             )

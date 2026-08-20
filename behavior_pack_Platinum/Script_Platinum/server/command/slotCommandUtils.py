@@ -3,12 +3,12 @@
 import uuid
 
 
-MAX_BATCH_SLOT_COUNT = 64
+MAX_SLOT_COUNT = 107
 COMMAND_SLOT_ID_PREFIX = "platinum_command_slot_"
 
 
 def isValidSlotCount(count):
-    return not isinstance(count, bool) and isinstance(count, (int, long)) and 1 <= count <= MAX_BATCH_SLOT_COUNT
+    return not isinstance(count, bool) and isinstance(count, (int, long)) and 1 <= count <= MAX_SLOT_COUNT
 
 
 def createCommandSlotIds(existingSlotIds, count):
@@ -47,8 +47,9 @@ if __name__ == "__main__":
             self.isCommandAdded = isCommandAdded
 
     assert isValidSlotCount(1)
+    assert isValidSlotCount(MAX_SLOT_COUNT)
     assert not isValidSlotCount(0)
-    assert not isValidSlotCount(MAX_BATCH_SLOT_COUNT + 1)
+    assert not isValidSlotCount(MAX_SLOT_COUNT + 1)
     generatedIds = createCommandSlotIds([], 2)
     assert len(generatedIds) == len(set(generatedIds)) == 2
     slots = [_Slot("a", "hand"), _Slot("b", "hand", True), _Slot("c", "belt")]
