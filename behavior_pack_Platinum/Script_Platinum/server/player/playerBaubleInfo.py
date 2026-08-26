@@ -1,7 +1,12 @@
 # coding=utf-8
+import random
 from Script_Platinum import commonConfig
 from Script_Platinum.QuModLibs.Server import *
-from Script_Platinum.data.eventData import BaubleEventData
+from Script_Platinum.data.eventData import (
+    BaubleEventData,
+    EntityBaubleEventData,
+    EntityBaubleDropEventData,
+)
 from Script_Platinum.data.requestData import BaubleCheckRequestData, ChangeBaubleRequestData
 from Script_Platinum.data.responseData import BaubleCheckResponseData
 from Script_Platinum.data.itemStack import ItemStack
@@ -15,6 +20,7 @@ minecraftEnum = serverApi.GetMinecraftEnum()
 
 isInit = False
 playerBaubleInfoDict = {}  # type: dict[str, PlayerBaubleInfo]
+entityBaubleInfoDict = {}  # type: dict[str, PlayerBaubleInfo]
 
 
 def getPlayerBaubleInfo(playerId):  # type: (str) -> PlayerBaubleInfo
@@ -24,16 +30,47 @@ def getPlayerBaubleInfo(playerId):  # type: (str) -> PlayerBaubleInfo
     return playerBaubleInfoDict[playerId]
 
 
+def getEntityBaubleInfo(entityId):  # type: (str) -> PlayerBaubleInfo
+    """获取实体饰品信息；玩家沿用世界数据，非玩家使用实体ModAttr持久化。"""
+    if entityId in serverApi.GetPlayerList():
+        return getPlayerBaubleInfo(entityId)
+    if entityId not in entityBaubleInfoDict:
+        baubleInfo = PlayerBaubleInfo(entityId, False)
+        entityBaubleInfoDict[entityId] = baubleInfo
+        baubleInfo.loadEntityDataInit()
+    return entityBaubleInfoDict[entityId]
+
+
 class PlayerBaubleInfo(object):
-    def __init__(self, playerId):
+    def __init__(self, playerId, isPlayer=True):
         self.playerId = playerId
+        self.isPlayer = isPlayer
         self.baubleInfo = {}  # type: dict[str, ItemStack]
+        self.dropProbability = {}  # type: dict[str, float]
+
+    def _isPlayerTarget(self):
+        # 旧存档对象没有 isPlayer 字段，默认按玩家处理。
+        return getattr(self, "isPlayer", True)
 
     def loadFromDataInit(self):
         """当从存档数据中加载玩家饰品信息时调用, 用于触发饰品的穿戴事件"""
         for slotId, itemStack in self.baubleInfo.items():
             if itemStack is not None and not itemStack.isEmpty():
                 self.boardcastPutOnEvent(slotId, itemStack, True)
+
+    def loadEntityDataInit(self):
+        """从实体ModAttr加载生物饰品，并恢复穿戴事件。"""
+        if self._isPlayerTarget():
+            return
+        comp = compFactory.CreateModAttr(self.playerId)
+        baubleDict = comp.GetAttr(commonConfig.ENTITY_BAUBLE_INFO, {})
+        dropProbDict = comp.GetAttr(commonConfig.ENTITY_BAUBLE_DROP_PROBABILITY, {})
+        if isinstance(dropProbDict, dict):
+            self.dropProbability = {k: float(v) for k, v in dropProbDict.items() if isinstance(v, (int, float))}
+        if not isinstance(baubleDict, dict):
+            logging.warning("铂: 生物{}饰品ModAttr数据无效".format(self.playerId))
+            return
+        self.setBaubleDict(baubleDict, True, False)
 
     def getEmptyOrFirstSlotByList(self, slotTypeList):
         """根据槽位类型列表获取一个空的槽位ID, 没有空槽位则返回该类型的第一个槽位ID"""
@@ -55,17 +92,22 @@ class PlayerBaubleInfo(object):
         return self.baubleInfo.get(slotId, None)
 
     def changeBaubleInfoBySlotId(
-        self, slotId, itemStack, index=-1, isChanged=True
-    ):  # type: (str, int, ItemStack, bool) -> None
+        self, slotId, itemStack, index=-1, isChanged=True, dropProbability=1.0
+    ):  # type: (str, int, ItemStack, bool, float) -> None
         """设置玩家佩戴的饰品信息"""
         if not checkSlotValid(slotId):
             logging.w("铂: 尝试设置玩家{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
             return
         oldItemStack = self.baubleInfo.get(slotId, None)
-        if oldItemStack is not None and not oldItemStack.isEmpty() and isChanged:
+        if oldItemStack is not None and not oldItemStack.isEmpty() and isChanged and self._isPlayerTarget():
             oldItemStack = self.baubleInfo[slotId]
             serverUtils.givePlayerItem(oldItemStack.toDict(), self.playerId, index)
         self.baubleInfo[slotId] = itemStack
+        if not self._isPlayerTarget():
+            if itemStack is None or itemStack.isEmpty():
+                self.dropProbability.pop(slotId, None)
+            else:
+                self.dropProbability[slotId] = float(dropProbability)
         self._syncToClient()
         if oldItemStack is not None and not oldItemStack.isEmpty():
             self.boardcastTakeOffEvent(slotId, oldItemStack)
@@ -73,16 +115,31 @@ class PlayerBaubleInfo(object):
             self.boardcastPutOnEvent(slotId, itemStack)
 
         # 保存到世界信息中
-        PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()
+        self._save()
 
-    def setBaubleDict(self, baubleDict, isFirstLoad=False):  # type: (dict[str, dict], bool) -> None
+    def setBaubleDict(
+        self, baubleDict, isFirstLoad=False, needSave=True, dropProbability=None
+    ):  # type: (dict[str, dict], bool, bool, float|dict[str, float]|None) -> None
         """直接设置玩家佩戴的饰品信息字典, 用于初始化玩家饰品信息"""
+        if not isinstance(baubleDict, dict):
+            return
         for slotId, itemDict in baubleDict.items():
             if itemDict is None:
+                continue
+            if not isinstance(itemDict, dict):
+                logging.warning("铂: 目标{}槽位{}的饰品数据无效".format(self.playerId, slotId))
                 continue
             if checkSlotValid(slotId):
                 oldItemStack = self.baubleInfo.get(slotId, None)
                 self.baubleInfo[slotId] = ItemStack.fromDict(itemDict)
+                if not self._isPlayerTarget():
+                    if isinstance(dropProbability, dict):
+                        prob = dropProbability.get(slotId, 1.0)
+                    elif isinstance(dropProbability, (int, float)):
+                        prob = float(dropProbability)
+                    else:
+                        prob = self.dropProbability.get(slotId, 1.0)
+                    self.dropProbability[slotId] = float(prob)
                 if oldItemStack is not None and not oldItemStack.isEmpty():
                     self.boardcastTakeOffEvent(slotId, oldItemStack)
                 self.boardcastPutOnEvent(slotId, self.baubleInfo[slotId], isFirstLoad)
@@ -90,7 +147,8 @@ class PlayerBaubleInfo(object):
                 logging.warning("铂: 尝试设置玩家{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
         self._syncToClient()
         # 保存到世界信息中
-        PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()
+        if needSave:
+            self._save()
 
     def setBaubleDurabilityBySlotId(self, slotId, durability):  # type: (str, int) -> None
         """设置玩家佩戴的饰品耐久度"""
@@ -101,10 +159,12 @@ class PlayerBaubleInfo(object):
             if durability <= 0:
                 # 耐久度为0或更低时,直接删除饰品
                 # 播放物品破碎音效
-                Call(self.playerId, "PlaySound", {"soundName": "random.break", "targetId": self.playerId})
+                if self._isPlayerTarget():
+                    Call(self.playerId, "PlaySound", {"soundName": "random.break", "targetId": self.playerId})
                 self.boardcastTakeOffEvent(slotId, self.baubleInfo[slotId])
                 self.baubleInfo[slotId] = None
                 self._syncToClient()
+                self._save()
                 return
             itemStack = self.baubleInfo[slotId]
             itemDict = ItemFactory.fromDict(itemStack.toDict()).setDurability(durability).build()
@@ -113,7 +173,7 @@ class PlayerBaubleInfo(object):
         else:
             logging.warning("铂: 尝试设置玩家{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self.playerId, slotId))
         # 保存到世界信息中
-        PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()
+        self._save()
 
     def decreaseBaubleDurabilityBySlotId(self, slotId, decreaseAmount):  # type: (str, int) -> None
         """减少玩家佩戴的饰品耐久度"""
@@ -128,7 +188,8 @@ class PlayerBaubleInfo(object):
             self.baubleInfo[slotId] = ItemStack.fromDict(itemDict) if itemDict is not None else None
             if itemDict is None:
                 # 播放饰品破碎音效
-                Call(self.playerId, "PlaySound", {"soundName": "random.break", "targetId": self.playerId})
+                if self._isPlayerTarget():
+                    Call(self.playerId, "PlaySound", {"soundName": "random.break", "targetId": self.playerId})
                 self.boardcastTakeOffEvent(slotId, itemStack)
                 pass
             self._syncToClient()
@@ -136,9 +197,23 @@ class PlayerBaubleInfo(object):
             logging.warning("铂: 尝试减少玩家{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self.playerId, slotId))
 
         # 保存到世界信息中
-        PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()
+        self._save()
+
+    def _save(self):
+        if self._isPlayerTarget():
+            PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()
+            return
+        baubleDict = {
+            slotId: itemStack.toDict() if itemStack is not None else None
+            for slotId, itemStack in self.baubleInfo.items()
+        }
+        modAttrComp = compFactory.CreateModAttr(self.playerId)
+        modAttrComp.SetAttr(commonConfig.ENTITY_BAUBLE_INFO, baubleDict, True)
+        modAttrComp.SetAttr(commonConfig.ENTITY_BAUBLE_DROP_PROBABILITY, self.dropProbability, True)
 
     def _syncToClient(self):
+        if not self._isPlayerTarget():
+            return
         # 同步饰品信息到客户端
         baubleDict = {
             slotId: itemStack.toDict() if itemStack is not None else None
@@ -159,14 +234,20 @@ class PlayerBaubleInfo(object):
         slotType = SlotRegistry().getSlotTypeById(slotId)
         oldSlotType = newSlotTypeToOld(slotType)
         slotIndex = SlotRegistry().getSlotIndexById(slotId)
-        baubleData = BaubleEventData(self.playerId, slotId, oldSlotType, slotIndex, itemStack, False)
+        if self._isPlayerTarget():
+            baubleData = BaubleEventData(self.playerId, slotId, oldSlotType, slotIndex, itemStack, False)
+            eventName = commonConfig.BAUBLE_UNEQUIPPED_EVENT
+        else:
+            baubleData = EntityBaubleEventData(self.playerId, slotId, oldSlotType, slotIndex, itemStack, False)
+            eventName = commonConfig.ENTITY_BAUBLE_UNEQUIPPED_EVENT
         system.BroadcastEvent(
-            commonConfig.BAUBLE_UNEQUIPPED_EVENT,
+            eventName,
             baubleData.dumpToDict(),
         )
-        PlayerBaubleInfoServerService.access().syncRequest(
-            self.playerId, "client/bauble/unequipBaubleBoardcast", QRequests.Args(baubleData.dumpToDict())
-        )
+        if self._isPlayerTarget():
+            PlayerBaubleInfoServerService.access().syncRequest(
+                self.playerId, "client/bauble/unequipBaubleBoardcast", QRequests.Args(baubleData.dumpToDict())
+            )
 
     def boardcastPutOnEvent(self, slotId, itemStack, isFirstLoad=False):
         """广播玩家饰品佩戴事件"""
@@ -177,14 +258,20 @@ class PlayerBaubleInfo(object):
         slotType = SlotRegistry().getSlotTypeById(slotId)
         oldSlotType = newSlotTypeToOld(slotType)
         slotIndex = SlotRegistry().getSlotIndexById(slotId)
-        baubleData = BaubleEventData(self.playerId, slotId, oldSlotType, slotIndex, itemStack, isFirstLoad)
+        if self._isPlayerTarget():
+            baubleData = BaubleEventData(self.playerId, slotId, oldSlotType, slotIndex, itemStack, isFirstLoad)
+            eventName = commonConfig.BAUBLE_EQUIPPED_EVENT
+        else:
+            baubleData = EntityBaubleEventData(self.playerId, slotId, oldSlotType, slotIndex, itemStack, isFirstLoad)
+            eventName = commonConfig.ENTITY_BAUBLE_EQUIPPED_EVENT
         system.BroadcastEvent(
-            commonConfig.BAUBLE_EQUIPPED_EVENT,
+            eventName,
             baubleData.dumpToDict(),
         )
-        PlayerBaubleInfoServerService.access().syncRequest(
-            self.playerId, "client/bauble/equipBaubleBoardcast", QRequests.Args(baubleData.dumpToDict())
-        )
+        if self._isPlayerTarget():
+            PlayerBaubleInfoServerService.access().syncRequest(
+                self.playerId, "client/bauble/equipBaubleBoardcast", QRequests.Args(baubleData.dumpToDict())
+            )
 
 
 @BaseService.Init
@@ -212,6 +299,67 @@ class PlayerBaubleInfoServerService(BaseService):
                 pos = Entity(playerId).Pos
                 dimension = Entity(playerId).Dm
                 System.CreateEngineItemEntity(itemStack.toDict(), dimension, pos)
+
+    @BaseService.Listen("MobDieEvent")
+    def onMobDieEvent(self, data):
+        """生物死亡事件：根据概率计算掉落饰品，广播事件并在下一帧掉落。"""
+        entityId = data.get("id")
+        if not entityId or entityId in serverApi.GetPlayerList():
+            return
+        entityBaubleInfo = entityBaubleInfoDict.get(entityId)
+        if entityBaubleInfo is None:
+            return
+        itemList = []
+        for slotId, itemStack in entityBaubleInfo.baubleInfo.items():
+            if itemStack is None or itemStack.isEmpty():
+                continue
+            prob = entityBaubleInfo.dropProbability.get(slotId, 1.0)
+            if prob >= 1.0 or random.random() < prob:
+                itemList.append(itemStack.toDict())
+        if not itemList:
+            return
+        dropData = EntityBaubleDropEventData(entityId, itemList, False)
+        dropDict = dropData.dumpToDict()
+        system = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
+        system.BroadcastEvent(commonConfig.ENTITY_BAUBLE_DROP_BEFORE_EVENT, dropDict)
+
+        pos = Entity(entityId).Pos
+        dimension = Entity(entityId).Dm
+        if pos is None:
+            return
+
+        def actualDrop():
+            if dropDict.get("cancel", False):
+                return
+            currentItems = dropDict.get("itemList", [])
+            for item in currentItems:
+                if item and isinstance(item, dict):
+                    System.CreateEngineItemEntity(item, dimension, pos)
+
+        compFactory.CreateGame(levelId).AddTimer(0.0, actualDrop)
+
+    @BaseService.Listen("AddEntityServerEvent")
+    def onAddEntityServerEvent(self, data):
+        """实体从存档加载时恢复ModAttr中的饰品。"""
+        entityId = data["id"]
+        comp = compFactory.CreateModAttr(entityId)
+        baubleDict = comp.GetAttr(commonConfig.ENTITY_BAUBLE_INFO, {})
+        if isinstance(baubleDict, dict) and baubleDict:
+            getEntityBaubleInfo(entityId)
+
+    @BaseService.Listen("EntityRemoveEvent")
+    def onEntityRemoveEvent(self, data):
+        """清理非玩家实体的运行时饰品及属性修饰符。"""
+        entityId = data["id"]
+        entityBaubleInfo = entityBaubleInfoDict.pop(entityId, None)
+        if entityBaubleInfo is None:
+            return
+        for slotId, itemStack in entityBaubleInfo.baubleInfo.items():
+            if itemStack is not None and not itemStack.isEmpty():
+                entityBaubleInfo.boardcastTakeOffEvent(slotId, itemStack)
+        from Script_Platinum.server.player.playerAttributeModifier import PlatinumAttributeModifierService
+
+        PlatinumAttributeModifierService.access().clearPlayer(entityId, False)
 
     @BaseService.Listen("ClientLoadAddonsFinishServerEvent")
     def onClientLoadAddonsFinishServerEvent(self, data):

@@ -287,9 +287,66 @@ registerSys.DecreaseBaubleDurability("playerId", "slotId", 1)
 
 **⚠️注意: 当饰品耐久度降为0或更低时，饰品会自动从槽位中移除并触发饰品卸下事件**
 
-#### 9. 玩家特殊属性修饰符
+#### 9. 非玩家生物穿戴饰品及掉落
 
-**⚠️注意: 不建议对非玩家使用特殊修饰符，具体原因请查看本小节最后注意项**
+非玩家生物没有饰品栏界面，通过服务端接口穿戴、卸下和查询饰品，支持设置饰品掉落几率（默认为 1.0 即 100%）：
+
+```python
+# coding=utf-8
+import mod.server.extraServerApi as serverApi
+
+registerSys = serverApi.GetSystem("platinum", "broadcasterServer")
+
+# 穿戴指定槽位并设置掉落几率（dropProbability 默认为 1.0，即 100% 掉落；0.0 为不掉落）。
+registerSys.SetEntityBaubleInfoWithSlot(entityId, itemDict, "slotId", dropProbability=1.0)
+
+# 卸下指定槽位。
+registerSys.SetEntityBaubleInfoWithSlot(entityId, None, "slotId")
+
+# 批量设置饰品（支持 dropProbability 传入 float 或 dict 指定各槽位概率）、查询、减少耐久度。
+registerSys.SetEntityBaubleInfo(entityId, {"slotId": itemDict}, dropProbability=1.0)
+entityBaubleInfo = registerSys.GetEntityBaubleInfo(entityId)
+registerSys.DecreaseEntityBaubleDurability(entityId, "slotId", 1)
+```
+
+非玩家生物使用独立服务端穿脱事件：`EntityBaubleEquipped` 和 `EntityBaubleUnequipped`，事件参数使用 `entityId`。非玩家饰品不会同步饰品栏 UI，也不会写入世界存档；实体触发 `EntityRemoveEvent` 时自动卸下并清理。
+
+##### 生物死亡掉落事件与拦截注意
+
+当非玩家生物死亡（引擎触发 `MobDieEvent`）时，组件会根据各槽位设定的掉落概率计算出掉落物品列表，并广播服务端自定义事件 `EntityBaubleDrop`（常量 `commonConfig.ENTITY_BAUBLE_DROP_EVENT`），并在**下一帧**生成掉落物实体。
+
+`EntityBaubleDrop` 事件参数格式：
+```python
+{
+    "entityId": str,      # 死亡生物实体ID
+    "itemList": list,     # 本次计算掉落的物品dict列表，开发者可就地修改增删
+    "cancel": bool        # 是否取消掉落，开发者在监听回调中将 data["cancel"] = True 即可拦截掉落
+}
+```
+
+监听示例：
+```python
+self.ListenForEvent("platinum", "broadcasterServer", "EntityBaubleDrop", self, self.onEntityBaubleDrop)
+
+def onEntityBaubleDrop(self, data):
+    entityId = data["entityId"]
+    itemList = data["itemList"]
+    # 可在此处修改 itemList 或设置 data["cancel"] = True 取消掉落
+```
+
+**⚠️重要注意: 若你的模组拦截了生物死亡逻辑（如用于制作尸体、自定义死亡倒地动画等未触发原生引擎 MobDieEvent 的情况），需要开发者自行模拟原生引擎向服务端发送一次 MobDieEvent 事件（参数至少包含 `{"id": entityId}`），以确保饰品掉落事件能够正常计算与触发。**
+
+模拟发送事件示例：
+```python
+# coding=utf-8
+import mod.server.extraServerApi as serverApi
+
+# 在你拦截死亡的自定义逻辑处（如生物血量归零进入假死/倒地阶段）：
+engineSystem = serverApi.GetSystem(serverApi.GetEngineNamespace(), serverApi.GetEngineSystemName())
+engineSystem.BroadcastEvent("MobDieEvent", {"id": entityId})
+```
+
+#### 10. 特殊属性修饰符
 
 组件为飞行能力、台阶高度、盔甲值、饥饿值和自然回血提供服务端修饰符接口。接口参数和操作枚举与网易引擎属性修饰符保持一致：
 
@@ -338,7 +395,7 @@ modifierSystem.RemoveModifier(
 
 `HUNGER` 委托网易引擎，支持 `OperandMin`、`OperandMax` 和 `OperandCurrent`；其余属性仅支持 `OperandCurrent`。自定义属性修饰符按 `OperationAddition`、`OperationMultiplyBase`、`OperationMultiplyTotal`、`OperationCap` 顺序计算。`AddModifier` 遇到重复 `modifierId` 返回 `False`，已有修饰符必须使用 `UpdateModifier`。修饰符只保存在当前服务端运行期；玩家数据加载或饰品恢复时应重新添加。自定义属性存在修饰符期间，不要绕过本接口直接修改同一属性。
 
-**⚠️注意: 使用玩家特殊属性修饰符进行的属性不存盘，所有修饰的属性将会在系统关闭或该玩家退出后移除，建议在穿脱饰品事件中使用保持正常的生命周期**
+**⚠️注意: 使用特殊属性修饰符进行的属性不存盘，所有修饰的属性将会在系统关闭或该玩家退出后移除，建议在穿脱饰品事件中使用保持正常的生命周期**
 
 ### 六、示例代码
 

@@ -9,6 +9,9 @@ Copyright (c) 2023 Bitterlemon
 # 饰品广播事件 (请勿更改!!)
 BAUBLE_EQUIPPED_EVENT = "BaubleEquipped"
 BAUBLE_UNEQUIPPED_EVENT = "BaubleUnequipped"
+ENTITY_BAUBLE_EQUIPPED_EVENT = "EntityBaubleEquipped"
+ENTITY_BAUBLE_UNEQUIPPED_EVENT = "EntityBaubleUnequipped"
+ENTITY_BAUBLE_DROP_BEFORE_EVENT = "EntityBaubleDropBefore"
 BAUBLE_GET_INFO_EVENT = "BaubleGetInfo"
 BAUBLE_GET_GLOBAL_INFO_EVENT = "BaubleGetGlobalInfo"
 BAUBLE_GET_TARGET_INFO_EVENT = "BaubleGetTargetInfo"
@@ -20,6 +23,10 @@ PLATINUM_BROADCAST_CLIENT = "broadcasterClient"
 
 PLAYER_SLOT_DATA = "platinum:player_slot_data"  # 玩家槽位数据存储标签 (请勿更改!!)
 PLAYER_BAUBLE_INFO = "platinum:player_bauble_info"  # 玩家饰品信息存储标签 (请勿更改!!)
+ENTITY_BAUBLE_INFO = "platinum:entity_bauble_info"  # 生物饰品信息ModAttr存储标签 (请勿更改!!)
+ENTITY_BAUBLE_DROP_PROBABILITY = (
+    "platinum:entity_bauble_drop_probability"  # 生物饰品掉落概率ModAttr存储标签 (请勿更改!!)
+)
 COMMAND_ADDED_SLOTS_KEY = "platinum:command_added_slots"  # 通过指令添加的槽位列表存储标签 (请勿更改!!)
 PLAYER_LOCAL_DATA_VERSION = 2  # 玩家本地数据版本 (请勿更改!!)
 

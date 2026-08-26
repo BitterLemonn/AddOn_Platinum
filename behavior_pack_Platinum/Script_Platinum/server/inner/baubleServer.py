@@ -28,13 +28,27 @@ class BaubleServer(serverApi.GetServerSystemCls()):
             self,
             self.onBaubleUnequipped,
         )
+        self.ListenForEvent(
+            commonConfig.PLATINUM_NAMESPACE,
+            commonConfig.PLATINUM_BROADCAST_SERVER,
+            commonConfig.ENTITY_BAUBLE_EQUIPPED_EVENT,
+            self,
+            self.onBaubleEquipped,
+        )
+        self.ListenForEvent(
+            commonConfig.PLATINUM_NAMESPACE,
+            commonConfig.PLATINUM_BROADCAST_SERVER,
+            commonConfig.ENTITY_BAUBLE_UNEQUIPPED_EVENT,
+            self,
+            self.onBaubleUnequipped,
+        )
 
     def onBaubleEquipped(self, data):
         """
         饰品装备事件
         :param data: {"slotIndex": Int, "playerId": str, "isFirstLoad": bool, "baubleSlot": str, "baubleSlotId": str "itemDict": dict}
         """
-        playerId = data["playerId"]  # 玩家ID
+        entityId = data.get("entityId") or data["playerId"]
         bauble = data["itemDict"]  # 饰品信息
         isFirstLoad = data["isFirstLoad"]  # 是否是第一次加载
         slot = data["baubleSlot"]  # 饰品槽名称(旧版)
@@ -45,7 +59,7 @@ class BaubleServer(serverApi.GetServerSystemCls()):
                 commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
             )
             modifierSystem.AddModifier(
-                playerId,
+                entityId,
                 modifierSystem.AttrType.STEP_HEIGHT,
                 TRAVELER_BELT_MODIFIER,
                 0.5,
@@ -58,7 +72,7 @@ class BaubleServer(serverApi.GetServerSystemCls()):
         饰品脱落事件
         :param data: {"slotIndex": Int, "playerId": str, "baubleSlot": str, "baubleSlotId": str "itemDict": dict}
         """
-        playerId = data["playerId"]  # 玩家ID
+        entityId = data.get("entityId") or data["playerId"]
         bauble = data["itemDict"]  # 饰品信息
         slot = data["baubleSlot"]  # 饰品槽名称(旧版)
         slotId = data["baubleSlotId"]  # 饰品槽ID
@@ -68,5 +82,5 @@ class BaubleServer(serverApi.GetServerSystemCls()):
                 commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
             )
             modifierSystem.RemoveModifier(
-                playerId, modifierSystem.AttrType.STEP_HEIGHT, TRAVELER_BELT_MODIFIER
+                entityId, modifierSystem.AttrType.STEP_HEIGHT, TRAVELER_BELT_MODIFIER
             )
