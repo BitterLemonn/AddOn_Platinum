@@ -1,5 +1,6 @@
 # coding=utf-8
 import math
+import time
 
 try:
     integerTypes = (int, long)
@@ -18,6 +19,14 @@ AttrType = minecraftEnum.AttrType
 PlayerExhauseRatioType = getattr(minecraftEnum, "PlayerExhauseRatioType", None)
 ItemPosType = getattr(minecraftEnum, "ItemPosType", None)
 ArmorSlotType = getattr(minecraftEnum, "ArmorSlotType", None)
+ActorDamageCause = getattr(minecraftEnum, "ActorDamageCause", None)
+
+BYPASS_INVULNERABLE_CAUSES = (
+    getattr(ActorDamageCause, "Void", "void") if ActorDamageCause else "void",
+    getattr(ActorDamageCause, "Suicide", "self_destruct") if ActorDamageCause else "self_destruct",
+    getattr(ActorDamageCause, "SelfDestruct", "self_destruct") if ActorDamageCause else "self_destruct",
+    getattr(ActorDamageCause, "Override", "override") if ActorDamageCause else "override",
+)
 
 
 class PlatinumAttributeType(object):
@@ -30,6 +39,10 @@ class PlatinumAttributeType(object):
     ATTACK_SPEED_AMPLIFIER = "attack_speed_amplifier"
     PICKUP_AREA_HORIZONTAL = "pickup_area_horizontal"
     PICKUP_AREA_VERTICAL = "pickup_area_vertical"
+    INVULNERABLE_TIME = "invulnerable_time"
+    INVULNERABILITY_TIME = INVULNERABLE_TIME
+    LIFESTEAL_MELEE = "lifesteal_melee"
+    LIFESTEAL_PROJECTILE = "lifesteal_projectile"
     ARMOR = AttrType.ARMOR
     NATURAL_REGEN = "natural_regen"
     NATURAL_REGEN_LEVEL = "natural_regen_level"
@@ -54,6 +67,9 @@ class PlatinumAttributeType(object):
         ATTACK_SPEED_AMPLIFIER,
         PICKUP_AREA_HORIZONTAL,
         PICKUP_AREA_VERTICAL,
+        INVULNERABLE_TIME,
+        LIFESTEAL_MELEE,
+        LIFESTEAL_PROJECTILE,
         ARMOR,
         NATURAL_REGEN,
         NATURAL_REGEN_LEVEL,
@@ -80,6 +96,7 @@ class PlatinumAttributeModifierService(BaseService):
         BaseService.__init__(self)
         self._modifierMap = {}  # type: dict[tuple[str, str | int], dict[str, dict]]
         self._baseValueMap = {}  # type: dict[tuple[str, str | int], float]
+        self._invulnerableUntil = {}  # type: dict[str, float]
 
     def addModifier(self, entityId, attributeType, modifierId, amount, operation, operand):
         if not self._validateModifier(entityId, attributeType, modifierId, amount, operation, operand):
@@ -155,6 +172,59 @@ class PlatinumAttributeModifierService(BaseService):
         modifiers = self._modifierMap.get((entityId, attributeType), {})
         return [dict(modifiers[modifierId]) for modifierId in sorted(modifiers)]
 
+    @BaseService.Listen("DamageEvent")
+    def onDamageEvent(self, data):
+        entityId = data.get("entityId")
+        if not entityId:
+            return
+        now = time.time()
+        # 清理过期记录
+        expired = [eid for eid, exp in self._invulnerableUntil.items() if exp <= now]
+        for eid in expired:
+            self._invulnerableUntil.pop(eid, None)
+        # 旁路不可无敌伤害
+        cause = data.get("cause")
+        if cause in BYPASS_INVULNERABLE_CAUSES:
+            return
+        # 处于生效中的无敌保护期 -> 免疫伤害与击退
+        if entityId in self._invulnerableUntil and now < self._invulnerableUntil[entityId]:
+            data["damage"] = 0
+            data["knock"] = False
+            return
+        # 未在保护期 -> 检查是否有无敌时间修饰符，若有则计算保护时长并激活
+        key = (entityId, PlatinumAttributeType.INVULNERABLE_TIME)
+        if key in self._modifierMap and self._modifierMap[key]:
+            invulnerableDuration = self._getCalculatedValue(entityId, PlatinumAttributeType.INVULNERABLE_TIME)
+            if invulnerableDuration > 0.0:
+                self._invulnerableUntil[entityId] = now + invulnerableDuration
+
+    @BaseService.Listen("ActuallyHurtServerEvent")
+    def onActuallyHurt(self, data):
+        attacker = data.get("srcId")
+        if not attacker:
+            return
+        damage = data.get("damage", 0.0)
+        if damage <= 0.0:
+            return
+        projectileId = data.get("projectileId")
+        cause = data.get("cause")
+        isProjectile = bool(projectileId) or cause == getattr(ActorDamageCause, "Projectile", "projectile")
+        if isProjectile:
+            rateKey = (attacker, PlatinumAttributeType.LIFESTEAL_PROJECTILE)
+        else:
+            rateKey = (attacker, PlatinumAttributeType.LIFESTEAL_MELEE)
+        if rateKey in self._modifierMap and self._modifierMap[rateKey]:
+            lifestealRate = max(0.0, self._getCalculatedValue(attacker, rateKey[1]))
+            if lifestealRate > 0.0:
+                healAmount = damage * lifestealRate
+                attrComp = compFactory.CreateAttr(attacker)
+                if attrComp:
+                    currentHealth = attrComp.GetAttrValue(AttrType.HEALTH)
+                    maxHealth = attrComp.GetAttrMaxValue(AttrType.HEALTH)
+                    if currentHealth >= 0 and maxHealth > 0 and currentHealth < maxHealth:
+                        newHealth = min(maxHealth, currentHealth + healAmount)
+                        attrComp.SetAttrValue(AttrType.HEALTH, float(newHealth))
+
     @BaseService.Listen("OnNewArmorExchangeServerEvent")
     def onNewArmorExchange(self, data):
         playerId = data.get("playerId")
@@ -179,14 +249,24 @@ class PlatinumAttributeModifierService(BaseService):
     def onEntityRemove(self, data):
         self.clearEntity(data["id"], False)
 
+    @BaseService.Listen("PlayerDieEvent")
+    def onPlayerDie(self, data):
+        self._invulnerableUntil.pop(data.get("id"), None)
+
+    @BaseService.Listen("MobDieEvent")
+    def onMobDie(self, data):
+        self._invulnerableUntil.pop(data.get("id"), None)
+
     def onServiceStop(self):
         BaseService.onServiceStop(self)
         for key in self._modifierMap.keys():
             self._restore(key)
         self._modifierMap.clear()
         self._baseValueMap.clear()
+        self._invulnerableUntil.clear()
 
     def clearEntity(self, entityId, restore):
+        self._invulnerableUntil.pop(entityId, None)
         keys = [key for key in self._modifierMap if key[0] == entityId]
         for key in keys:
             if restore:
@@ -289,6 +369,14 @@ class PlatinumAttributeModifierService(BaseService):
         if attributeType in (
             PlatinumAttributeType.PICKUP_AREA_HORIZONTAL,
             PlatinumAttributeType.PICKUP_AREA_VERTICAL,
+        ):
+            return 0.0
+        if attributeType == PlatinumAttributeType.INVULNERABLE_TIME:
+            # 原版无懈可击时间（Damage Immunity / Invulnerability Frames）为 10 游戏刻（0.5 秒）。
+            return 0.5
+        if attributeType in (
+            PlatinumAttributeType.LIFESTEAL_MELEE,
+            PlatinumAttributeType.LIFESTEAL_PROJECTILE,
         ):
             return 0.0
         if attributeType == PlatinumAttributeType.ARMOR:
@@ -423,6 +511,13 @@ class PlatinumAttributeModifierService(BaseService):
                 v = max(0.0, float(value))
             playerComp = compFactory.CreatePlayer(entityId)
             return bool(playerComp and playerComp.SetPickUpArea((h, v, h)))
+        if attributeType == PlatinumAttributeType.INVULNERABLE_TIME:
+            return value >= 0.0
+        if attributeType in (
+            PlatinumAttributeType.LIFESTEAL_MELEE,
+            PlatinumAttributeType.LIFESTEAL_PROJECTILE,
+        ):
+            return value >= 0.0
         if attributeType == PlatinumAttributeType.ARMOR:
             # 装备护甲通过 _getBaseValue 参与乘算/加算，SetAttrValue 仅写入额外护甲差值（总护甲 - 装备护甲）。
             extraArmor = int(round(value - baseValue))
