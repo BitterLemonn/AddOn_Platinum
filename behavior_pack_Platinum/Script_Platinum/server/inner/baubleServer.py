@@ -3,7 +3,6 @@ from mod.server import extraServerApi as serverApi
 
 from Script_Platinum import commonConfig
 
-
 TRAVELER_BELT_MODIFIER = "lemon_platinum:traveler_belt_step_height"
 
 
@@ -81,6 +80,4 @@ class BaubleServer(serverApi.GetServerSystemCls()):
             modifierSystem = serverApi.GetSystem(
                 commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
             )
-            modifierSystem.RemoveModifier(
-                entityId, modifierSystem.AttrType.STEP_HEIGHT, TRAVELER_BELT_MODIFIER
-            )
+            modifierSystem.RemoveModifier(entityId, modifierSystem.AttrType.STEP_HEIGHT, TRAVELER_BELT_MODIFIER)

@@ -357,9 +357,9 @@ class PlayerBaubleInfoServerService(BaseService):
         for slotId, itemStack in entityBaubleInfo.baubleInfo.items():
             if itemStack is not None and not itemStack.isEmpty():
                 entityBaubleInfo.boardcastTakeOffEvent(slotId, itemStack)
-        from Script_Platinum.server.player.playerAttributeModifier import PlatinumAttributeModifierService
+        from Script_Platinum.server.attribute.attributeModifier import PlatinumAttributeModifierService
 
-        PlatinumAttributeModifierService.access().clearPlayer(entityId, False)
+        PlatinumAttributeModifierService.access().clearEntity(entityId, False)
 
     @BaseService.Listen("ClientLoadAddonsFinishServerEvent")
     def onClientLoadAddonsFinishServerEvent(self, data):

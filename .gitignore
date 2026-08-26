@@ -15,4 +15,6 @@ build_release.py
 *.zip
 .mcp.json
 AGENTS.md
+CLAUDE.md
 .codegraph
+*.pyc

@@ -348,7 +348,7 @@ engineSystem.BroadcastEvent("MobDieEvent", {"id": entityId})
 
 #### 10. 特殊属性修饰符
 
-组件为飞行能力、台阶高度、盔甲值、饥饿值和自然回血提供服务端修饰符接口。接口参数和操作枚举与网易引擎属性修饰符保持一致：
+组件为飞行能力、台阶高度、盔甲值、饥饿值和自然回血提供服务端修饰符接口。接口允许玩家或非玩家实体使用，参数和操作枚举与网易引擎属性修饰符保持一致：
 
 ```python
 # coding=utf-8
@@ -357,7 +357,7 @@ import mod.server.extraServerApi as serverApi
 modifierSystem = serverApi.GetSystem("platinum", "broadcasterServer")
 
 modifierSystem.AddModifier(
-    playerId,
+    entityId,
     modifierSystem.AttrType.STEP_HEIGHT,
     "example:step_height",
     0.5,
@@ -365,9 +365,9 @@ modifierSystem.AddModifier(
     modifierSystem.AttributeOperands.OperandCurrent,
 )
 
-# 更新、查询和移除使用相同的 playerId、属性类型与 modifierId。
+# 更新、查询和移除使用相同的 entityId、属性类型与 modifierId。
 modifierSystem.UpdateModifier(
-    playerId,
+    entityId,
     modifierSystem.AttrType.STEP_HEIGHT,
     "example:step_height",
     1.0,
@@ -375,27 +375,37 @@ modifierSystem.UpdateModifier(
     modifierSystem.AttributeOperands.OperandCurrent,
 )
 modifierSystem.HasModifier(
-    playerId, modifierSystem.AttrType.STEP_HEIGHT, "example:step_height"
+    entityId, modifierSystem.AttrType.STEP_HEIGHT, "example:step_height"
 )
-modifierSystem.GetAllModifiers(playerId, modifierSystem.AttrType.STEP_HEIGHT)
+modifierSystem.GetAllModifiers(entityId, modifierSystem.AttrType.STEP_HEIGHT)
 modifierSystem.RemoveModifier(
-    playerId, modifierSystem.AttrType.STEP_HEIGHT, "example:step_height"
+    entityId, modifierSystem.AttrType.STEP_HEIGHT, "example:step_height"
 )
 ```
 
 支持的属性类型：
 
-- `modifierSystem.AttrType.FLYING_ABILITY`：计算结果大于 `0` 时允许飞行。
-- `modifierSystem.AttrType.STEP_HEIGHT`：计算结果必须大于 `0`。
-- `modifierSystem.AttrType.ARMOR`：复用网易 `AttrType.ARMOR`，结果必须为非负整数；设置的是额外护甲值，装备护甲由引擎叠加。
-- `modifierSystem.AttrType.HUNGER`：复用网易 `AttrType.HUNGER`，委托引擎修饰动态饥饿值。
-- `modifierSystem.AttrType.NATURAL_REGEN`：计算结果大于 `0` 时开启自然回血。
-- `modifierSystem.AttrType.NATURAL_REGEN_LEVEL`：自然回血饥饿值阈值，结果必须为非负整数，且不能低于当前饥饿掉血阈值。
-- `modifierSystem.AttrType.NATURAL_REGEN_TICK`：每次自然回血的间隔，单位为游戏刻，结果必须为大于等于 `1` 的整数。
+- `modifierSystem.AttrType.FLYING_ABILITY`：计算结果大于 `0` 时允许飞行（仅玩家生效）。
+- `modifierSystem.AttrType.STEP_HEIGHT`：计算结果必须大于 `0`（仅玩家生效）。
+- `modifierSystem.AttrType.ARMOR`：复用网易 `AttrType.ARMOR`，将实体当前身上穿戴装备的总护甲作为基数（baseValue）参与加算与乘算修饰，计算出的总护甲与装备护甲的差值作为额外护甲写入引擎；玩家换装时自动重新计算。
+- `modifierSystem.AttrType.HUNGER_MAX`：饥饿值上限（`AttrType.HUNGER` 最大值，仅玩家生效），结果必须大于 `0`。
+- `modifierSystem.AttrType.MAX_EXHAUSTION`：玩家最大消耗度（`foodExhaustionLevel` 归零阈值，默认 `4.0`，仅玩家生效），结果必须大于 `0`。
+- `modifierSystem.AttrType.EXHAUSTION_RATIO_GLOBAL`：全局饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
+- `modifierSystem.AttrType.EXHAUSTION_RATIO_HEAL`：自然回血饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
+- `modifierSystem.AttrType.EXHAUSTION_RATIO_JUMP`：跳跃饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
+- `modifierSystem.AttrType.EXHAUSTION_RATIO_SPRINT_JUMP`：疾跑跳跃饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
+- `modifierSystem.AttrType.EXHAUSTION_RATIO_MINE`：挖掘方块饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
+- `modifierSystem.AttrType.EXHAUSTION_RATIO_ATTACK`：攻击饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
+- `modifierSystem.AttrType.NATURAL_REGEN`：计算结果大于 `0` 时开启自然回血（仅玩家生效）。
+- `modifierSystem.AttrType.NATURAL_REGEN_LEVEL`：自然回血饥饿值阈值（仅玩家生效），结果必须为非负整数，且不能低于当前饥饿掉血阈值。
+- `modifierSystem.AttrType.NATURAL_REGEN_TICK`：每次自然回血的间隔（仅玩家生效），单位为游戏刻，结果必须为大于等于 `1` 的整数。
+- `modifierSystem.AttrType.NATURAL_STARVE`：计算结果大于 `0` 时开启饥饿掉血（仅玩家生效）。
+- `modifierSystem.AttrType.STARVE_LEVEL`：饥饿掉血阈值（仅玩家生效），结果必须为非负整数，且不能高于当前自然回血阈值。
+- `modifierSystem.AttrType.STARVE_TICK`：每次饥饿掉血的间隔（仅玩家生效），单位为游戏刻，结果必须为大于等于 `1` 的整数。
 
-`HUNGER` 委托网易引擎，支持 `OperandMin`、`OperandMax` 和 `OperandCurrent`；其余属性仅支持 `OperandCurrent`。自定义属性修饰符按 `OperationAddition`、`OperationMultiplyBase`、`OperationMultiplyTotal`、`OperationCap` 顺序计算。`AddModifier` 遇到重复 `modifierId` 返回 `False`，已有修饰符必须使用 `UpdateModifier`。修饰符只保存在当前服务端运行期；玩家数据加载或饰品恢复时应重新添加。自定义属性存在修饰符期间，不要绕过本接口直接修改同一属性。
+特殊属性修饰符统一仅支持 `OperandCurrent`。自定义属性修饰符按 `OperationAddition`、`OperationMultiplyBase`、`OperationMultiplyTotal`、`OperationCap` 顺序计算。`AddModifier` 遇到重复 `modifierId` 返回 `False`，已有修饰符必须使用 `UpdateModifier`。修饰符只保存在当前服务端运行期；实体或玩家数据加载、饰品恢复时应重新添加。自定义属性存在修饰符期间，不要绕过本接口直接修改同一属性。
 
-**⚠️注意: 使用特殊属性修饰符进行的属性不存盘，所有修饰的属性将会在系统关闭或该玩家退出后移除，建议在穿脱饰品事件中使用保持正常的生命周期**
+**⚠️注意: 使用特殊属性修饰符进行的属性不存盘，所有修饰的属性将会在系统关闭、玩家退出或实体移除后自动清理，建议在穿脱饰品事件中使用保持正常的生命周期**
 
 ### 六、示例代码
 
