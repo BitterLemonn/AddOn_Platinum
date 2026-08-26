@@ -387,6 +387,11 @@ modifierSystem.RemoveModifier(
 
 - `modifierSystem.AttrType.FLYING_ABILITY`：计算结果大于 `0` 时允许飞行（仅玩家生效）。
 - `modifierSystem.AttrType.STEP_HEIGHT`：计算结果必须大于 `0`（仅玩家生效）。
+- `modifierSystem.AttrType.GRAVITY`：实体重力因子（负数，表示每帧向下的速度；为 `0` 时取世界重力因子，默认 `-0.08`）。
+- `modifierSystem.AttrType.SCALE`：实体模型放缩比例（基准值 `1.0`，结果必须大于 `0`）。
+- `modifierSystem.AttrType.ATTACK_SPEED_AMPLIFIER`：玩家攻击速度倍率（仅玩家生效，基准值 `1.0`，有效范围 `[0.5, 2.0]`，`0.8` 表示提速 20%）。
+- `modifierSystem.AttrType.PICKUP_AREA_HORIZONTAL`：玩家水平方向拾取物品增加距离（仅玩家生效，基准值 `0.0`，对应 X/Z 轴额外范围，结果不能为负数）。
+- `modifierSystem.AttrType.PICKUP_AREA_VERTICAL`：玩家纵向/垂直方向拾取物品增加距离（仅玩家生效，基准值 `0.0`，对应 Y 轴额外范围，结果不能为负数）。
 - `modifierSystem.AttrType.ARMOR`：复用网易 `AttrType.ARMOR`，将实体当前身上穿戴装备的总护甲作为基数（baseValue）参与加算与乘算修饰，计算出的总护甲与装备护甲的差值作为额外护甲写入引擎；玩家换装时自动重新计算。
 - `modifierSystem.AttrType.HUNGER_MAX`：饥饿值上限（`AttrType.HUNGER` 最大值，仅玩家生效），结果必须大于 `0`。
 - `modifierSystem.AttrType.MAX_EXHAUSTION`：玩家最大消耗度（`foodExhaustionLevel` 归零阈值，默认 `4.0`，仅玩家生效），结果必须大于 `0`。

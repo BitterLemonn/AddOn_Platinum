@@ -7,7 +7,7 @@ except NameError:
     integerTypes = (int,)
 
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService
-from Script_Platinum.QuModLibs.Server import Entity, compFactory, serverApi
+from Script_Platinum.QuModLibs.Server import Entity, compFactory, levelId, serverApi
 from Script_Platinum.data.attributeModifier import calculateModifiedValue
 from Script_Platinum.utils import developLogging as logging
 
@@ -25,6 +25,11 @@ class PlatinumAttributeType(object):
 
     FLYING_ABILITY = "flying_ability"
     STEP_HEIGHT = "step_height"
+    GRAVITY = "gravity"
+    SCALE = "scale"
+    ATTACK_SPEED_AMPLIFIER = "attack_speed_amplifier"
+    PICKUP_AREA_HORIZONTAL = "pickup_area_horizontal"
+    PICKUP_AREA_VERTICAL = "pickup_area_vertical"
     ARMOR = AttrType.ARMOR
     NATURAL_REGEN = "natural_regen"
     NATURAL_REGEN_LEVEL = "natural_regen_level"
@@ -44,6 +49,11 @@ class PlatinumAttributeType(object):
     VALUES = (
         FLYING_ABILITY,
         STEP_HEIGHT,
+        GRAVITY,
+        SCALE,
+        ATTACK_SPEED_AMPLIFIER,
+        PICKUP_AREA_HORIZONTAL,
+        PICKUP_AREA_VERTICAL,
         ARMOR,
         NATURAL_REGEN,
         NATURAL_REGEN_LEVEL,
@@ -264,6 +274,23 @@ class PlatinumAttributeModifierService(BaseService):
         if attributeType == PlatinumAttributeType.STEP_HEIGHT:
             value = compFactory.CreateAttr(entityId).GetStepHeight()
             return float(value) if isinstance(value, integerTypes + (float,)) and value > 0 else None
+        if attributeType == PlatinumAttributeType.GRAVITY:
+            gravityComp = compFactory.CreateGravity(entityId)
+            value = gravityComp.GetGravity() if gravityComp else 0.0
+            if isinstance(value, integerTypes + (float,)) and value != 0.0:
+                return float(value)
+            gameComp = compFactory.CreateGame(levelId)
+            levelGravity = gameComp.GetLevelGravity() if gameComp else -0.08
+            return float(levelGravity) if isinstance(levelGravity, integerTypes + (float,)) else -0.08
+        if attributeType == PlatinumAttributeType.SCALE:
+            return 1.0
+        if attributeType == PlatinumAttributeType.ATTACK_SPEED_AMPLIFIER:
+            return 1.0
+        if attributeType in (
+            PlatinumAttributeType.PICKUP_AREA_HORIZONTAL,
+            PlatinumAttributeType.PICKUP_AREA_VERTICAL,
+        ):
+            return 0.0
         if attributeType == PlatinumAttributeType.ARMOR:
             return self._getEquippedArmorValue(entityId)
         if attributeType == PlatinumAttributeType.HUNGER_MAX:
@@ -327,16 +354,20 @@ class PlatinumAttributeModifierService(BaseService):
         baseValue = self._baseValueMap[key]
         return self._setValue(key[0], key[1], baseValue, baseValue)
 
-    def _getDebugAttributeValue(self, key):
-        if not logging.isEnabledFor("DEBUG"):
-            return None
-        entityId, attributeType = key
+    def _getCalculatedValue(self, entityId, attributeType):
+        key = (entityId, attributeType)
         if key not in self._baseValueMap:
-            return self._getBaseValue(entityId, attributeType)
+            baseValue = self._getBaseValue(entityId, attributeType)
+            return float(baseValue) if baseValue is not None else 0.0
         modifiers = self._modifierMap.get(key, {})
         if not modifiers:
             return self._baseValueMap[key]
         return calculateModifiedValue(self._baseValueMap[key], modifiers.values(), AttributeModifierOperation)
+
+    def _getDebugAttributeValue(self, key):
+        if not logging.isEnabledFor("DEBUG"):
+            return None
+        return self._getCalculatedValue(key[0], key[1])
 
     def _logModifierChange(self, action, key, modifier, oldValue):
         if not logging.isEnabledFor("DEBUG"):
@@ -358,8 +389,7 @@ class PlatinumAttributeModifierService(BaseService):
             )
         )
 
-    @staticmethod
-    def _setValue(entityId, attributeType, value, baseValue=0.0):
+    def _setValue(self, entityId, attributeType, value, baseValue=0.0):
         if math.isnan(value) or math.isinf(value):
             return False
         if attributeType == PlatinumAttributeType.FLYING_ABILITY:
@@ -368,6 +398,31 @@ class PlatinumAttributeModifierService(BaseService):
             return flyComp.ChangePlayerFlyState(canFly, canFly and flyComp.IsPlayerFlying())
         if attributeType == PlatinumAttributeType.STEP_HEIGHT:
             return value > 0.0 and compFactory.CreateAttr(entityId).SetStepHeight(value)
+        if attributeType == PlatinumAttributeType.GRAVITY:
+            gravityComp = compFactory.CreateGravity(entityId)
+            return bool(gravityComp and gravityComp.SetGravity(float(value)))
+        if attributeType == PlatinumAttributeType.SCALE:
+            if value <= 0.0:
+                return False
+            scaleComp = compFactory.CreateScale(entityId)
+            return bool(scaleComp and scaleComp.SetEntityScale(entityId, float(value)) == 1)
+        if attributeType == PlatinumAttributeType.ATTACK_SPEED_AMPLIFIER:
+            if value < 0.5 or value > 2.0:
+                return False
+            playerComp = compFactory.CreatePlayer(entityId)
+            return bool(playerComp and playerComp.SetPlayerAttackSpeedAmplifier(float(value)))
+        if attributeType in (
+            PlatinumAttributeType.PICKUP_AREA_HORIZONTAL,
+            PlatinumAttributeType.PICKUP_AREA_VERTICAL,
+        ):
+            if attributeType == PlatinumAttributeType.PICKUP_AREA_HORIZONTAL:
+                h = max(0.0, float(value))
+                v = max(0.0, float(self._getCalculatedValue(entityId, PlatinumAttributeType.PICKUP_AREA_VERTICAL)))
+            else:
+                h = max(0.0, float(self._getCalculatedValue(entityId, PlatinumAttributeType.PICKUP_AREA_HORIZONTAL)))
+                v = max(0.0, float(value))
+            playerComp = compFactory.CreatePlayer(entityId)
+            return bool(playerComp and playerComp.SetPickUpArea((h, v, h)))
         if attributeType == PlatinumAttributeType.ARMOR:
             # 装备护甲通过 _getBaseValue 参与乘算/加算，SetAttrValue 仅写入额外护甲差值（总护甲 - 装备护甲）。
             extraArmor = int(round(value - baseValue))
