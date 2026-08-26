@@ -4,8 +4,10 @@ import time
 
 try:
     integerTypes = (int, long)
+    stringTypes = (str, unicode)
 except NameError:
     integerTypes = (int,)
+    stringTypes = (str,)
 
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService
 from Script_Platinum.QuModLibs.Server import Entity, compFactory, levelId, serverApi
@@ -16,16 +18,17 @@ minecraftEnum = serverApi.GetMinecraftEnum()
 AttributeModifierOperation = minecraftEnum.AttributeModifierOperation
 AttributeOperands = minecraftEnum.AttributeOperands
 AttrType = minecraftEnum.AttrType
-PlayerExhauseRatioType = getattr(minecraftEnum, "PlayerExhauseRatioType", None)
-ItemPosType = getattr(minecraftEnum, "ItemPosType", None)
-ArmorSlotType = getattr(minecraftEnum, "ArmorSlotType", None)
-ActorDamageCause = getattr(minecraftEnum, "ActorDamageCause", None)
+PlayerExhauseRatioType = minecraftEnum.PlayerExhauseRatioType
+ItemPosType = minecraftEnum.ItemPosType
+ArmorSlotType = minecraftEnum.ArmorSlotType
+ActorDamageCause = minecraftEnum.ActorDamageCause
 
 BYPASS_INVULNERABLE_CAUSES = (
-    getattr(ActorDamageCause, "Void", "void") if ActorDamageCause else "void",
-    getattr(ActorDamageCause, "Suicide", "self_destruct") if ActorDamageCause else "self_destruct",
-    getattr(ActorDamageCause, "SelfDestruct", "self_destruct") if ActorDamageCause else "self_destruct",
-    getattr(ActorDamageCause, "Override", "override") if ActorDamageCause else "override",
+    ActorDamageCause.Void,
+    ActorDamageCause.Suicide,
+    ActorDamageCause.SelfDestruct,
+    ActorDamageCause.Override,
+    ActorDamageCause.NONE,
 )
 
 
@@ -43,6 +46,8 @@ class PlatinumAttributeType(object):
     INVULNERABILITY_TIME = INVULNERABLE_TIME
     LIFESTEAL_MELEE = "lifesteal_melee"
     LIFESTEAL_PROJECTILE = "lifesteal_projectile"
+    KILL_EXP_MULTIPLIER = "kill_exp_multiplier"
+    EXP_MULTIPLIER = "exp_multiplier"
     ARMOR = AttrType.ARMOR
     NATURAL_REGEN = "natural_regen"
     NATURAL_REGEN_LEVEL = "natural_regen_level"
@@ -70,6 +75,8 @@ class PlatinumAttributeType(object):
         INVULNERABLE_TIME,
         LIFESTEAL_MELEE,
         LIFESTEAL_PROJECTILE,
+        KILL_EXP_MULTIPLIER,
+        EXP_MULTIPLIER,
         ARMOR,
         NATURAL_REGEN,
         NATURAL_REGEN_LEVEL,
@@ -225,6 +232,72 @@ class PlatinumAttributeModifierService(BaseService):
                         newHealth = min(maxHealth, currentHealth + healAmount)
                         attrComp.SetAttrValue(AttrType.HEALTH, float(newHealth))
 
+    @BaseService.Listen("ServerPlayerGetExperienceOrbEvent")
+    def onServerPlayerGetExperienceOrb(self, data):
+        playerId = data.get("playerId")
+        if not playerId:
+            return
+        baseExp = data.get("experienceValue", 0)
+        if baseExp <= 0:
+            return
+        key = (playerId, PlatinumAttributeType.EXP_MULTIPLIER)
+        if key in self._modifierMap and self._modifierMap[key]:
+            multiplier = max(0.0, self._getCalculatedValue(playerId, PlatinumAttributeType.EXP_MULTIPLIER))
+            if abs(multiplier - 1.0) > 1e-6:
+                # cancel 取消原版加经验逻辑，改由代码增加倍率后的经验值
+                data["cancel"] = True
+                finalExp = int(round(baseExp * multiplier))
+                if finalExp > 0:
+                    expComp = compFactory.CreateExp(playerId)
+                    if expComp:
+                        expComp.AddPlayerExperience(finalExp)
+
+    @BaseService.Listen("MobDieEvent")
+    def onMobDieExp(self, data):
+        attacker = data.get("attacker")
+        if not attacker:
+            return
+        deadEntityId = data.get("id")
+        if not deadEntityId or deadEntityId in serverApi.GetPlayerList():
+            return
+        key = (attacker, PlatinumAttributeType.KILL_EXP_MULTIPLIER)
+        if key in self._modifierMap and self._modifierMap[key]:
+            multiplier = max(0.0, self._getCalculatedValue(attacker, PlatinumAttributeType.KILL_EXP_MULTIPLIER))
+            extraMultiplier = multiplier - 1.0
+            if extraMultiplier > 1e-6:
+                # 读取原版生物经验掉落定义并生成额外经验球
+                comp = compFactory.CreateEntityEvent(deadEntityId)
+                components = comp.GetComponents() if comp else None
+                if not isinstance(components, dict):
+                    return
+                rewardComp = components.get("minecraft:experience_reward")
+                if not isinstance(rewardComp, dict):
+                    return
+                onDeath = rewardComp.get("on_death")
+                if not onDeath:
+                    return
+                # 使用 EvalMolangExpression 计算经验奖励表达式
+                baseReward = 0.0
+                if isinstance(onDeath, (int, float)):
+                    baseReward = float(onDeath)
+                elif isinstance(onDeath, stringTypes):
+                    queryComp = compFactory.CreateQueryVariable(deadEntityId)
+                    if queryComp:
+                        res = queryComp.EvalMolangExpression(str(onDeath))
+                        if isinstance(res, dict) and "value" in res and res["value"] is not None:
+                            try:
+                                baseReward = float(res["value"])
+                            except (ValueError, TypeError):
+                                baseReward = 0.0
+                if baseReward > 0.0:
+                    extraExp = int(round(baseReward * extraMultiplier))
+                    if extraExp > 0:
+                        pos = Entity(deadEntityId).Pos
+                        if pos:
+                            expComp = compFactory.CreateExp(attacker)
+                            if expComp:
+                                expComp.CreateExperienceOrb(extraExp, pos)
+
     @BaseService.Listen("OnNewArmorExchangeServerEvent")
     def onNewArmorExchange(self, data):
         playerId = data.get("playerId")
@@ -379,6 +452,11 @@ class PlatinumAttributeModifierService(BaseService):
             PlatinumAttributeType.LIFESTEAL_PROJECTILE,
         ):
             return 0.0
+        if attributeType in (
+            PlatinumAttributeType.KILL_EXP_MULTIPLIER,
+            PlatinumAttributeType.EXP_MULTIPLIER,
+        ):
+            return 1.0
         if attributeType == PlatinumAttributeType.ARMOR:
             return self._getEquippedArmorValue(entityId)
         if attributeType == PlatinumAttributeType.HUNGER_MAX:
@@ -516,6 +594,8 @@ class PlatinumAttributeModifierService(BaseService):
         if attributeType in (
             PlatinumAttributeType.LIFESTEAL_MELEE,
             PlatinumAttributeType.LIFESTEAL_PROJECTILE,
+            PlatinumAttributeType.KILL_EXP_MULTIPLIER,
+            PlatinumAttributeType.EXP_MULTIPLIER,
         ):
             return value >= 0.0
         if attributeType == PlatinumAttributeType.ARMOR:

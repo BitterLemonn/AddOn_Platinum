@@ -395,6 +395,8 @@ modifierSystem.RemoveModifier(
 - `modifierSystem.AttrType.INVULNERABLE_TIME`（别名 `INVULNERABILITY_TIME`）：实体受击后获得的无敌保护时长（单位：秒，基准值 `0.5` 即原版 10 游戏刻，结果不能为负数；生效期内免疫后续伤害与击退，虚空/自杀/override除外）。
 - `modifierSystem.AttrType.LIFESTEAL_MELEE`：近战攻击吸血比例（基准值 `0.0`，即 0%；如 `0.2` 表示近战造成伤害后为攻击者恢复实际造成伤害 20% 的生命值，不超过生命上限）。
 - `modifierSystem.AttrType.LIFESTEAL_PROJECTILE`：投射物/远程攻击吸血比例（基准值 `0.0`，即 0%；如 `0.15` 表示远程造成伤害后为攻击者恢复实际造成伤害 15% 的生命值，不超过生命上限）。
+- `modifierSystem.AttrType.KILL_EXP_MULTIPLIER`：击杀生物经验倍率（基准值 `1.0`，结果不能为负数；如 `1.5` 表示击杀生物时额外掉落相当于原版经验 50% 的经验球）。
+- `modifierSystem.AttrType.EXP_MULTIPLIER`：获取经验倍率（仅玩家生效，基准值 `1.0`，结果不能为负数；如 `2.0` 表示拾取经验球或增加经验时最终获得 2 倍经验）。
 - `modifierSystem.AttrType.ARMOR`：复用网易 `AttrType.ARMOR`，将实体当前身上穿戴装备的总护甲作为基数（baseValue）参与加算与乘算修饰，计算出的总护甲与装备护甲的差值作为额外护甲写入引擎；玩家换装时自动重新计算。
 - `modifierSystem.AttrType.HUNGER_MAX`：饥饿值上限（`AttrType.HUNGER` 最大值，仅玩家生效），结果必须大于 `0`。
 - `modifierSystem.AttrType.MAX_EXHAUSTION`：玩家最大消耗度（`foodExhaustionLevel` 归零阈值，默认 `4.0`，仅玩家生效），结果必须大于 `0`。
