@@ -55,7 +55,6 @@ class PlatinumAttributeType(object):
     NATURAL_STARVE = "natural_starve"
     STARVE_LEVEL = "starve_level"
     STARVE_TICK = "starve_tick"
-    HUNGER_MAX = "hunger_max"
     MAX_EXHAUSTION = "max_exhaustion"
     EXHAUSTION_RATIO_GLOBAL = "exhaustion_ratio_global"
     EXHAUSTION_RATIO_HEAL = "exhaustion_ratio_heal"
@@ -84,7 +83,6 @@ class PlatinumAttributeType(object):
         NATURAL_STARVE,
         STARVE_LEVEL,
         STARVE_TICK,
-        HUNGER_MAX,
         MAX_EXHAUSTION,
         EXHAUSTION_RATIO_GLOBAL,
         EXHAUSTION_RATIO_HEAL,
@@ -105,15 +103,16 @@ class PlatinumAttributeModifierService(BaseService):
         self._baseValueMap = {}  # type: dict[tuple[str, str | int], float]
         self._invulnerableUntil = {}  # type: dict[str, float]
 
-    def addModifier(self, entityId, attributeType, modifierId, amount, operation, operand):
-        if not self._validateModifier(entityId, attributeType, modifierId, amount, operation, operand):
+    def addModifier(self, entityId, attributeType, *modifierArgs):
+        if not self._validateModifier(entityId, attributeType, modifierArgs):
             return False
+        modifierId = modifierArgs[0]
         key = (entityId, attributeType)
         modifiers = self._modifierMap.setdefault(key, {})
         if modifierId in modifiers:
             logging.warning("实体 {} 已存在修饰符 {}".format(Entity(entityId).Identifier, modifierId))
             return False
-        modifier = self._createModifier(modifierId, amount, operation, operand)
+        modifier = self._createModifier(*modifierArgs)
         oldValue = self._getDebugAttributeValue(key)
         if key not in self._baseValueMap:
             baseValue = self._getBaseValue(entityId, attributeType)
@@ -131,8 +130,9 @@ class PlatinumAttributeModifierService(BaseService):
         logging.error("实体 {} 添加修饰符 {} 失败".format(Entity(entityId).Identifier, modifierId))
         return False
 
-    def updateModifier(self, entityId, attributeType, modifierId, amount, operation, operand):
-        if not self._validateModifier(entityId, attributeType, modifierId, amount, operation, operand):
+    def updateModifier(self, entityId, attributeType, *modifierArgs):
+        modifierId = modifierArgs[0] if modifierArgs else None
+        if not self._validateModifier(entityId, attributeType, modifierArgs):
             logging.warning("实体 {} 无效的修饰符 {}".format(Entity(entityId).Identifier, modifierId))
             return False
         key = (entityId, attributeType)
@@ -141,7 +141,7 @@ class PlatinumAttributeModifierService(BaseService):
             logging.warning("实体 {} 不存在修饰符 {}".format(Entity(entityId).Identifier, modifierId))
             return False
         oldModifier = modifiers[modifierId]
-        modifier = self._createModifier(modifierId, amount, operation, operand)
+        modifier = self._createModifier(*modifierArgs)
         modifiers[modifierId] = modifier
         if self._apply(key):
             return True
@@ -262,7 +262,7 @@ class PlatinumAttributeModifierService(BaseService):
             return
         key = (attacker, PlatinumAttributeType.KILL_EXP_MULTIPLIER)
         if key in self._modifierMap and self._modifierMap[key]:
-            multiplier = max(0.0, self._getCalculatedValue(attacker, PlatinumAttributeType.KILL_EXP_MULTIPLIER))
+            multiplier = max(1.0, self._getCalculatedValue(attacker, PlatinumAttributeType.KILL_EXP_MULTIPLIER))
             extraMultiplier = multiplier - 1.0
             if extraMultiplier > 1e-6:
                 # 读取原版生物经验掉落定义并生成额外经验球
@@ -367,7 +367,10 @@ class PlatinumAttributeModifierService(BaseService):
     def _validateKey(self, entityId, attributeType, modifierId):
         return self._validateAttribute(entityId, attributeType) and isinstance(modifierId, str) and bool(modifierId)
 
-    def _validateModifier(self, entityId, attributeType, modifierId, amount, operation, operand):
+    def _validateModifier(self, entityId, attributeType, modifierArgs):
+        if len(modifierArgs) != 4:
+            return False
+        modifierId, amount, operation, operand = modifierArgs
         if not self._validateKey(entityId, attributeType, modifierId):
             return False
         if isinstance(amount, bool) or not isinstance(amount, integerTypes + (float,)):
@@ -459,9 +462,10 @@ class PlatinumAttributeModifierService(BaseService):
             return 1.0
         if attributeType == PlatinumAttributeType.ARMOR:
             return self._getEquippedArmorValue(entityId)
-        if attributeType == PlatinumAttributeType.HUNGER_MAX:
-            value = compFactory.CreateAttr(entityId).GetAttrMaxValue(AttrType.HUNGER)
-            return float(value) if isinstance(value, integerTypes + (float,)) and value > 0 else None
+        return self._getPlayerBaseValue(entityId, attributeType)
+
+    @staticmethod
+    def _getPlayerBaseValue(entityId, attributeType):
         playerComp = compFactory.CreatePlayer(entityId)
         if attributeType == PlatinumAttributeType.NATURAL_REGEN:
             value = playerComp.IsPlayerNaturalRegen()
@@ -594,20 +598,21 @@ class PlatinumAttributeModifierService(BaseService):
         if attributeType in (
             PlatinumAttributeType.LIFESTEAL_MELEE,
             PlatinumAttributeType.LIFESTEAL_PROJECTILE,
-            PlatinumAttributeType.KILL_EXP_MULTIPLIER,
             PlatinumAttributeType.EXP_MULTIPLIER,
         ):
             return value >= 0.0
+        if attributeType == PlatinumAttributeType.KILL_EXP_MULTIPLIER:
+            return value >= 1.0
         if attributeType == PlatinumAttributeType.ARMOR:
             # 装备护甲通过 _getBaseValue 参与乘算/加算，SetAttrValue 仅写入额外护甲差值（总护甲 - 装备护甲）。
             extraArmor = int(round(value - baseValue))
             if extraArmor < 0:
                 extraArmor = 0
             return compFactory.CreateAttr(entityId).SetAttrValue(AttrType.ARMOR, extraArmor, 0)
-        if attributeType == PlatinumAttributeType.HUNGER_MAX:
-            if value <= 0.0:
-                return False
-            return compFactory.CreateAttr(entityId).SetAttrMaxValue(AttrType.HUNGER, float(value))
+        return self._setPlayerValue(entityId, attributeType, value)
+
+    @staticmethod
+    def _setPlayerValue(entityId, attributeType, value):
         playerComp = compFactory.CreatePlayer(entityId)
         if attributeType == PlatinumAttributeType.NATURAL_REGEN:
             return playerComp.SetPlayerNaturalRegen(value > 0.0)
