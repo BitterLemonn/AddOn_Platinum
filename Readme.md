@@ -409,13 +409,11 @@ modifierSystem.RemoveModifier(
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_SPRINT_JUMP`：疾跑跳跃饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_MINE`：挖掘方块饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_ATTACK`：攻击饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
-- `modifierSystem.AttrType.FORTUNE_LEVEL`（别名 `FORTUNE`）：时运等级（基准值 `0`，小数截断，结果不能为负数）。玩家带时运等级破坏已注册方块时取消引擎掉落，改用引擎模拟挖掘接口（`SpawnResources` 的 `bonusLootLevel`）按原版掉落表带时运等级重新生成掉落。仅对通过时运管理器注册的方块生效；创造模式或手持精准采集时交回引擎处理。管理器默认预注册原版吃时运的矿石（煤/钻石/绿宝石/青金石/红石/铜矿石及深板岩变种、下界金矿/石英矿；铁矿与主世界金矿掉落本体不吃时运，不在默认表内）。扩展注册方式（只注册方块名，掉落物由引擎掉落表决定）：
+- `modifierSystem.AttrType.FORTUNE_LEVEL`（别名 `FORTUNE`）：时运等级（基准值 `0`，小数截断，结果不能为负数）。玩家带时运等级破坏已注册方块时，引擎掉落照常生成，另按原版时运算法。扩展注册方式（只注册方块名）：
   ```python
-  from Script_Platinum.server.attribute.attributeModifier import PlatinumAttributeModifierService
-
-  manager = PlatinumAttributeModifierService.access().fortuneManager
-  manager.registerBlock("custom:ore_block")
-  manager.unregisterBlock("minecraft:diamond_ore")
+  modifierSystem.RegisterFortuneBlock("custom:ore_block")
+  modifierSystem.UnregisterFortuneBlock("minecraft:diamond_ore")
+  fortuneBlockList = modifierSystem.GetFortuneBlockList()
   ```
 - `modifierSystem.AttrType.LOOTING_LEVEL`（别名 `LOOTING`）：抢夺等级（仅玩家击杀者生效，基准值 `0`，小数截断，结果不能为负数）。击杀生物时按原版抢夺算法对生物掉落表模拟出的每种物品额外掉落 `0~等级` 个（抢夺 III 即等级 `3` 时每种额外 0~3 个）。不影响引擎自身掉落，与武器抢夺附魔效果叠加。
 - `modifierSystem.AttrType.NATURAL_REGEN`：计算结果大于 `0` 时开启自然回血（仅玩家生效）。

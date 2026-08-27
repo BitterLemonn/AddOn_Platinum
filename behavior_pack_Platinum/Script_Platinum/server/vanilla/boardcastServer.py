@@ -46,6 +46,22 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         """返回实体属性全部修饰符的副本列表。"""
         return PlatinumAttributeModifierService.access().getAllModifiers(entityId, attributeType)
 
+    def RegisterFortuneBlock(self, blockName):
+        """注册由时运属性接管掉落的方块，并返回操作结果。"""
+        if not isinstance(blockName, str) or not blockName:
+            return False
+        return PlatinumAttributeModifierService.access().fortuneManager.registerBlock(blockName)
+
+    def UnregisterFortuneBlock(self, blockName):
+        """反注册由时运属性接管掉落的方块，并返回操作结果。"""
+        if not isinstance(blockName, str) or not blockName:
+            return False
+        return PlatinumAttributeModifierService.access().fortuneManager.unregisterBlock(blockName)
+
+    def GetFortuneBlockList(self):
+        """返回已注册时运方块的有序副本列表。"""
+        return PlatinumAttributeModifierService.access().fortuneManager.getRegisteredBlocks()
+
     def BaubleRegister(self, data):
         """
         饰品注册事件

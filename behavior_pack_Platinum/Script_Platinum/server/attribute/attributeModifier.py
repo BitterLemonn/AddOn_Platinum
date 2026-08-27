@@ -11,10 +11,11 @@ except NameError:
     stringTypes = (str,)
 
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
-from Script_Platinum.QuModLibs.Server import Entity, System, compFactory, levelId, serverApi
+from Script_Platinum.QuModLibs.Server import Entity, compFactory, levelId, serverApi
 from Script_Platinum.data.attributeModifier import calculateModifiedValue
 from Script_Platinum.server.attribute.fortuneManager import FortuneManager
 from Script_Platinum.utils import developLogging as logging
+from Script_Platinum.utils.ItemFactory import ItemFactory
 
 minecraftEnum = serverApi.GetMinecraftEnum()
 AttributeModifierOperation = minecraftEnum.AttributeModifierOperation
@@ -347,9 +348,13 @@ class PlatinumAttributeModifierService(BaseService):
         if not self.fortuneManager.isRegistered(data.get("fullName", "")):
             return
         playerId = data.get("playerId")
-        if not playerId or self._isBlockDropHandled(playerId):
+        if not playerId:
             return
-        # 取消引擎掉落，破坏完成后用模拟挖掘接口带时运等级重新掉落
+        heldFactory = self._getHeldItemFactory(playerId)
+        level = self._getFortuneLevel(playerId, heldFactory)
+        if self._isBlockDropHandled(playerId, heldFactory, level):
+            return
+        # 取消引擎原始掉落；破坏完成后按自定义时运倍率独立重掷掉落表。
         data["spawnResources"] = False
 
     @BaseService.Listen("DestroyBlockEvent")
@@ -357,65 +362,55 @@ class PlatinumAttributeModifierService(BaseService):
         if not self.fortuneManager.isRegistered(data.get("fullName", "")):
             return
         playerId = data.get("playerId")
-        if not playerId or self._isBlockDropHandled(playerId):
+        if not playerId:
             return
+        heldFactory = self._getHeldItemFactory(playerId)
+        level = self._getFortuneLevel(playerId, heldFactory)
+        if self._isBlockDropHandled(playerId, heldFactory, level):
+            return
+        multiplier = FortuneManager.rollFortuneMultiplier(level)
         blockComp = compFactory.CreateBlockInfo(levelId)
         if not blockComp:
             return
-        level = self._getIntegerLevel(playerId, PlatinumAttributeType.FORTUNE_LEVEL)
-        blockComp.SpawnResources(
-            data["fullName"],
-            (data["x"], data["y"], data["z"]),
-            data.get("auxData", 0),
-            1.0,
-            level,
-            data.get("dimensionId", 0),
-        )
+        for i in range(multiplier):
+            blockComp.SpawnResources(
+                data["fullName"],
+                (data["x"], data["y"], data["z"]),
+                data.get("auxData", 0),
+                probability=1.0,
+                dimensionId=data.get("dimensionId", 0),
+                spawnOrb=i == 0,
+            )
 
-    @BaseService.Listen("MobDieEvent")
+    @BaseService.Listen("EntityDieLoottableServerEvent")
     def onMobDieLooting(self, data):
         attacker = data.get("attacker")
-        if not attacker or attacker not in serverApi.GetPlayerList():
+        if not attacker or not Entity(attacker).IsPlayer:
             return
+        heldFactory = self._getHeldItemFactory(attacker)
         level = self._getIntegerLevel(attacker, PlatinumAttributeType.LOOTING_LEVEL)
+        if heldFactory:
+            level += heldFactory.getEnchantLevel(EnchantType.WeaponLoot)
         if level <= 0:
             return
-        deadEntityId = data.get("id")
+        deadEntityId = data.get("dieEntityId")
         if not deadEntityId or deadEntityId in serverApi.GetPlayerList():
             return
-        comp = compFactory.CreateEntityEvent(deadEntityId)
-        components = comp.GetComponents() if comp else None
-        if not isinstance(components, dict):
-            return
-        lootDefine = components.get("minecraft:loot")
-        if not isinstance(lootDefine, dict):
-            return
-        lootPath = lootDefine.get("table")
-        if not lootPath or not isinstance(lootPath, stringTypes):
-            return
-        # ponytail: 模拟一次掉落表获取物品集合，与引擎实际掉落独立 roll；精确同步需拦截引擎掉落结果。
-        lootComp = compFactory.CreateLoot(attacker)
-        lootItems = lootComp.GetLootItems(lootPath, deadEntityId, attacker) if lootComp else None
-        if not isinstance(lootItems, list) or not lootItems:
-            return
         pos = Entity(deadEntityId).Pos
-        dimension = Entity(deadEntityId).Dm
         if not pos:
             return
-        for item in lootItems:
-            if not isinstance(item, dict):
-                continue
-            itemName = item.get("itemName")
-            if not itemName or not isinstance(itemName, str):
-                continue
-            # 原版抢夺算法：每级额外掉落 0~1 个
-            extraCount = random.randint(0, level)
-            if extraCount > 0:
-                System.CreateEngineItemEntity(
-                    {"itemName": itemName, "count": extraCount, "auxValue": item.get("auxValue", 0)},
-                    dimension,
-                    pos,
-                )
+        lootComp = compFactory.CreateActorLoot(attacker)
+        if not lootComp:
+            return
+        originalItemList = data.get("itemList", [])
+        data["itemList"] = []
+        data["dirty"] = True
+        if not lootComp.SpawnLootTableWithActor(pos, deadEntityId, attacker):
+            data["itemList"] = originalItemList
+            return
+        # ponytail: 以整表独立重掷模拟通用抢夺；精确还原需解析各掉落表的抢夺函数和条件。
+        for _ in range(random.randint(0, level)):
+            lootComp.SpawnLootTableWithActor(pos, deadEntityId, attacker)
 
     @BaseService.Listen("OnNewArmorExchangeServerEvent")
     def onNewArmorExchange(self, data):
@@ -522,19 +517,27 @@ class PlatinumAttributeModifierService(BaseService):
         """等级型修饰符：小数部分截断，负值归零。"""
         return max(0, int(self._getCalculatedValue(entityId, attributeType)))
 
-    def _isBlockDropHandled(self, playerId):
-        """时运接管判定：无时运等级、创造模式或手持精准采集时交回引擎处理。"""
-        if self._getIntegerLevel(playerId, PlatinumAttributeType.FORTUNE_LEVEL) <= 0:
-            return True
-        playerComp = compFactory.CreatePlayer(playerId)
-        if playerComp and playerComp.GetPlayerGameType() == GameType.Creative:
-            return True
+    def _getHeldItemFactory(self, playerId):
+        """获取玩家主手物品的 ItemFactory（含 userData 附魔数据），空手返回 None。"""
         itemComp = compFactory.CreateItem(playerId)
-        slot = itemComp.GetSelectSlotId() if itemComp else None
-        if itemComp and isinstance(slot, integerTypes):
-            for enchantType, _level in itemComp.GetInvItemEnchantData(slot) or []:
-                if enchantType == EnchantType.MiningSilkTouch:
-                    return True
+        if not itemComp:
+            return None
+        itemDict = itemComp.GetPlayerItem(ItemPosType.CARRIED, 0, True)
+        return ItemFactory.fromDict(itemDict) if itemDict else None
+
+    def _getFortuneLevel(self, playerId, heldFactory):
+        level = self._getIntegerLevel(playerId, PlatinumAttributeType.FORTUNE_LEVEL)
+        return level + (heldFactory.getEnchantLevel(EnchantType.MiningLoot) if heldFactory else 0)
+
+    def _isBlockDropHandled(self, playerId, heldFactory, fortuneLevel):
+        """时运接管判定：无总时运等级、创造模式或手持精准采集时交回引擎处理。"""
+        if fortuneLevel <= 0:
+            return True
+        gameComp = compFactory.CreateGame(levelId)
+        if gameComp and gameComp.GetPlayerGameType(playerId) == GameType.Creative:
+            return True
+        if heldFactory and heldFactory.getEnchantLevel(EnchantType.MiningSilkTouch) > 0:
+            return True
         return False
 
     @staticmethod

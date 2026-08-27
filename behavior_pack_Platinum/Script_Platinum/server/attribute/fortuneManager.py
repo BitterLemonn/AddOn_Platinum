@@ -1,26 +1,32 @@
 # coding=utf-8
+import random
 
 
 class FortuneManager(object):
-    """时运掉落管理器：注册方块到修饰符时运掉落计算中（掉落由引擎模拟挖掘接口按原版掉落表 + 时运等级生成）。"""
+    """时运掉落管理器：注册方块后按自定义时运倍率重复模拟原始掉落。"""
 
-    # 原版吃时运的矿石；铁矿/主世界金矿掉落本体不吃时运，不注册
-    DEFAULT_FORTUNE_BLOCKS = frozenset((
-        "minecraft:coal_ore",
-        "minecraft:deepslate_coal_ore",
-        "minecraft:diamond_ore",
-        "minecraft:deepslate_diamond_ore",
-        "minecraft:emerald_ore",
-        "minecraft:deepslate_emerald_ore",
-        "minecraft:lapis_ore",
-        "minecraft:deepslate_lapis_ore",
-        "minecraft:redstone_ore",
-        "minecraft:deepslate_redstone_ore",
-        "minecraft:nether_gold_ore",
-        "minecraft:nether_quartz_ore",
-        "minecraft:copper_ore",
-        "minecraft:deepslate_copper_ore",
-    ))
+    DEFAULT_FORTUNE_BLOCKS = frozenset(
+        (
+            "minecraft:coal_ore",
+            "minecraft:deepslate_coal_ore",
+            "minecraft:diamond_ore",
+            "minecraft:deepslate_diamond_ore",
+            "minecraft:emerald_ore",
+            "minecraft:deepslate_emerald_ore",
+            "minecraft:gold_ore",
+            "minecraft:deepslate_gold_ore",
+            "minecraft:iron_ore",
+            "minecraft:deepslate_iron_ore",
+            "minecraft:lapis_ore",
+            "minecraft:deepslate_lapis_ore",
+            "minecraft:redstone_ore",
+            "minecraft:deepslate_redstone_ore",
+            "minecraft:nether_gold_ore",
+            "minecraft:nether_quartz_ore",
+            "minecraft:copper_ore",
+            "minecraft:deepslate_copper_ore",
+        )
+    )
 
     def __init__(self, registerDefaults=True):
         # type: (bool) -> None
@@ -28,7 +34,7 @@ class FortuneManager(object):
 
     def registerBlock(self, blockName):
         # type: (str) -> bool
-        """注册方块：玩家带时运等级破坏时取消引擎掉落，改用引擎模拟挖掘接口带时运等级重新掉落。"""
+        """注册方块：玩家带时运等级破坏时取消引擎掉落，按自定义倍率独立重掷原始掉落表。"""
         if not isinstance(blockName, str) or not blockName:
             return False
         self._blockSet.add(blockName)
@@ -44,3 +50,17 @@ class FortuneManager(object):
     def isRegistered(self, blockName):
         # type: (str) -> bool
         return blockName in self._blockSet
+
+    def getRegisteredBlocks(self):
+        # type: () -> list[str]
+        """返回已注册时运方块的有序副本。"""
+        return sorted(self._blockSet)
+
+    @staticmethod
+    def rollFortuneMultiplier(level):
+        # type: (int) -> int
+        """原版时运算法 random(level + 2) - 1 结果 > 0 时倍率为 (结果 + 1)，否则 1。"""
+        if level <= 0:
+            return 1
+        bonus = random.randint(0, level + 1) - 1
+        return bonus + 1 if bonus > 0 else 1

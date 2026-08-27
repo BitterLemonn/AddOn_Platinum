@@ -128,6 +128,10 @@ class InnerServerRegistry(serverApi.GetServerSystemCls()):
             )
         # 注册饰品
         system.BaubleRegister({"baubleName": "lemon_platinum:traveler_belt", "baubleSlot": "belt"})
+        # 测试饰品：原版不死图腾（堆叠数 1）带时运 III
+        system.BaubleRegister(
+            {"baubleName": "minecraft:totem_of_undying", "baubleSlot": "belt", "customTips": "§9装备时:\n时运 III§r"}
+        )
 
     # def onLoadServerAddonScriptsAfter(self, data):
     #     def actualLogic():
