@@ -1,5 +1,6 @@
 # coding=utf-8
 import math
+import random
 import time
 
 try:
@@ -10,8 +11,9 @@ except NameError:
     stringTypes = (str,)
 
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
-from Script_Platinum.QuModLibs.Server import Entity, compFactory, levelId, serverApi
+from Script_Platinum.QuModLibs.Server import Entity, System, compFactory, levelId, serverApi
 from Script_Platinum.data.attributeModifier import calculateModifiedValue
+from Script_Platinum.server.attribute.fortuneManager import FortuneManager
 from Script_Platinum.utils import developLogging as logging
 
 minecraftEnum = serverApi.GetMinecraftEnum()
@@ -22,6 +24,8 @@ PlayerExhauseRatioType = minecraftEnum.PlayerExhauseRatioType
 ItemPosType = minecraftEnum.ItemPosType
 ArmorSlotType = minecraftEnum.ArmorSlotType
 ActorDamageCause = minecraftEnum.ActorDamageCause
+EnchantType = minecraftEnum.EnchantType
+GameType = minecraftEnum.GameType
 
 BYPASS_INVULNERABLE_CAUSES = (
     ActorDamageCause.Void,
@@ -69,6 +73,10 @@ class PlatinumAttributeType(object):
     EXHAUSTION_RATIO_SPRINT_JUMP = "exhaustion_ratio_sprint_jump"  # 疾跑跳跃饥饿消耗倍率
     EXHAUSTION_RATIO_MINE = "exhaustion_ratio_mine"  # 挖掘饥饿消耗倍率
     EXHAUSTION_RATIO_ATTACK = "exhaustion_ratio_attack"  # 攻击饥饿消耗倍率
+    FORTUNE_LEVEL = "fortune_level"  # 时运等级
+    FORTUNE = FORTUNE_LEVEL  # 时运等级别名
+    LOOTING_LEVEL = "looting_level"  # 抢夺等级
+    LOOTING = LOOTING_LEVEL  # 抢夺等级别名
 
     VALUES = (
         FLYING_ABILITY,
@@ -101,6 +109,8 @@ class PlatinumAttributeType(object):
         EXHAUSTION_RATIO_SPRINT_JUMP,
         EXHAUSTION_RATIO_MINE,
         EXHAUSTION_RATIO_ATTACK,
+        FORTUNE_LEVEL,
+        LOOTING_LEVEL,
     )
 
 
@@ -114,6 +124,7 @@ class PlatinumAttributeModifierService(BaseService):
         self._baseValueMap = {}  # type: dict[tuple[str, str | int], float]
         self._invulnerableUntil = {}  # type: dict[str, float]
         self._burningMultiplier = {}  # type: dict[str, float]
+        self.fortuneManager = FortuneManager()
 
     def addModifier(self, entityId, attributeType, *modifierArgs):
         if not self._validateModifier(entityId, attributeType, modifierArgs):
@@ -331,6 +342,81 @@ class PlatinumAttributeModifierService(BaseService):
                             if expComp:
                                 expComp.CreateExperienceOrb(extraExp, pos)
 
+    @BaseService.Listen("ServerPlayerTryDestroyBlockEvent")
+    def onPlayerTryDestroyBlock(self, data):
+        if not self.fortuneManager.isRegistered(data.get("fullName", "")):
+            return
+        playerId = data.get("playerId")
+        if not playerId or self._isBlockDropHandled(playerId):
+            return
+        # 取消引擎掉落，破坏完成后用模拟挖掘接口带时运等级重新掉落
+        data["spawnResources"] = False
+
+    @BaseService.Listen("DestroyBlockEvent")
+    def onDestroyBlock(self, data):
+        if not self.fortuneManager.isRegistered(data.get("fullName", "")):
+            return
+        playerId = data.get("playerId")
+        if not playerId or self._isBlockDropHandled(playerId):
+            return
+        blockComp = compFactory.CreateBlockInfo(levelId)
+        if not blockComp:
+            return
+        level = self._getIntegerLevel(playerId, PlatinumAttributeType.FORTUNE_LEVEL)
+        blockComp.SpawnResources(
+            data["fullName"],
+            (data["x"], data["y"], data["z"]),
+            data.get("auxData", 0),
+            1.0,
+            level,
+            data.get("dimensionId", 0),
+        )
+
+    @BaseService.Listen("MobDieEvent")
+    def onMobDieLooting(self, data):
+        attacker = data.get("attacker")
+        if not attacker or attacker not in serverApi.GetPlayerList():
+            return
+        level = self._getIntegerLevel(attacker, PlatinumAttributeType.LOOTING_LEVEL)
+        if level <= 0:
+            return
+        deadEntityId = data.get("id")
+        if not deadEntityId or deadEntityId in serverApi.GetPlayerList():
+            return
+        comp = compFactory.CreateEntityEvent(deadEntityId)
+        components = comp.GetComponents() if comp else None
+        if not isinstance(components, dict):
+            return
+        lootDefine = components.get("minecraft:loot")
+        if not isinstance(lootDefine, dict):
+            return
+        lootPath = lootDefine.get("table")
+        if not lootPath or not isinstance(lootPath, stringTypes):
+            return
+        # ponytail: 模拟一次掉落表获取物品集合，与引擎实际掉落独立 roll；精确同步需拦截引擎掉落结果。
+        lootComp = compFactory.CreateLoot(attacker)
+        lootItems = lootComp.GetLootItems(lootPath, deadEntityId, attacker) if lootComp else None
+        if not isinstance(lootItems, list) or not lootItems:
+            return
+        pos = Entity(deadEntityId).Pos
+        dimension = Entity(deadEntityId).Dm
+        if not pos:
+            return
+        for item in lootItems:
+            if not isinstance(item, dict):
+                continue
+            itemName = item.get("itemName")
+            if not itemName or not isinstance(itemName, str):
+                continue
+            # 原版抢夺算法：每级额外掉落 0~1 个
+            extraCount = random.randint(0, level)
+            if extraCount > 0:
+                System.CreateEngineItemEntity(
+                    {"itemName": itemName, "count": extraCount, "auxValue": item.get("auxValue", 0)},
+                    dimension,
+                    pos,
+                )
+
     @BaseService.Listen("OnNewArmorExchangeServerEvent")
     def onNewArmorExchange(self, data):
         playerId = data.get("playerId")
@@ -432,6 +518,25 @@ class PlatinumAttributeModifierService(BaseService):
             and operand == AttributeOperands.OperandCurrent
         )
 
+    def _getIntegerLevel(self, entityId, attributeType):
+        """等级型修饰符：小数部分截断，负值归零。"""
+        return max(0, int(self._getCalculatedValue(entityId, attributeType)))
+
+    def _isBlockDropHandled(self, playerId):
+        """时运接管判定：无时运等级、创造模式或手持精准采集时交回引擎处理。"""
+        if self._getIntegerLevel(playerId, PlatinumAttributeType.FORTUNE_LEVEL) <= 0:
+            return True
+        playerComp = compFactory.CreatePlayer(playerId)
+        if playerComp and playerComp.GetPlayerGameType() == GameType.Creative:
+            return True
+        itemComp = compFactory.CreateItem(playerId)
+        slot = itemComp.GetSelectSlotId() if itemComp else None
+        if itemComp and isinstance(slot, integerTypes):
+            for enchantType, _level in itemComp.GetInvItemEnchantData(slot) or []:
+                if enchantType == EnchantType.MiningSilkTouch:
+                    return True
+        return False
+
     @staticmethod
     def _getEquippedArmorValue(entityId):
         itemComp = compFactory.CreateItem(entityId)
@@ -489,6 +594,12 @@ class PlatinumAttributeModifierService(BaseService):
             PlatinumAttributeType.LIFESTEAL_MELEE,
             PlatinumAttributeType.LIFESTEAL_PROJECTILE,
         ):
+            return 0.0
+        if attributeType in (
+            PlatinumAttributeType.FORTUNE_LEVEL,
+            PlatinumAttributeType.LOOTING_LEVEL,
+        ):
+            # 原版无附魔时等级为 0
             return 0.0
         if attributeType in (
             PlatinumAttributeType.KILL_EXP_MULTIPLIER,
@@ -645,6 +756,8 @@ class PlatinumAttributeModifierService(BaseService):
             PlatinumAttributeType.LIFESTEAL_MELEE,
             PlatinumAttributeType.LIFESTEAL_PROJECTILE,
             PlatinumAttributeType.EXP_MULTIPLIER,
+            PlatinumAttributeType.FORTUNE_LEVEL,
+            PlatinumAttributeType.LOOTING_LEVEL,
         ):
             return value >= 0.0
         if attributeType == PlatinumAttributeType.BURNING_TIME:
