@@ -9,7 +9,7 @@ except NameError:
     integerTypes = (int,)
     stringTypes = (str,)
 
-from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService
+from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
 from Script_Platinum.QuModLibs.Server import Entity, compFactory, levelId, serverApi
 from Script_Platinum.data.attributeModifier import calculateModifiedValue
 from Script_Platinum.utils import developLogging as logging
@@ -35,33 +35,40 @@ BYPASS_INVULNERABLE_CAUSES = (
 class PlatinumAttributeType(object):
     """实体属性修饰符类型。"""
 
-    FLYING_ABILITY = "flying_ability"
-    STEP_HEIGHT = "step_height"
-    GRAVITY = "gravity"
-    SCALE = "scale"
-    ATTACK_SPEED_AMPLIFIER = "attack_speed_amplifier"
-    PICKUP_AREA_HORIZONTAL = "pickup_area_horizontal"
-    PICKUP_AREA_VERTICAL = "pickup_area_vertical"
-    INVULNERABLE_TIME = "invulnerable_time"
-    INVULNERABILITY_TIME = INVULNERABLE_TIME
-    LIFESTEAL_MELEE = "lifesteal_melee"
-    LIFESTEAL_PROJECTILE = "lifesteal_projectile"
-    KILL_EXP_MULTIPLIER = "kill_exp_multiplier"
-    EXP_MULTIPLIER = "exp_multiplier"
-    ARMOR = AttrType.ARMOR
-    NATURAL_REGEN = "natural_regen"
-    NATURAL_REGEN_LEVEL = "natural_regen_level"
-    NATURAL_REGEN_TICK = "natural_regen_tick"
-    NATURAL_STARVE = "natural_starve"
-    STARVE_LEVEL = "starve_level"
-    STARVE_TICK = "starve_tick"
-    MAX_EXHAUSTION = "max_exhaustion"
-    EXHAUSTION_RATIO_GLOBAL = "exhaustion_ratio_global"
-    EXHAUSTION_RATIO_HEAL = "exhaustion_ratio_heal"
-    EXHAUSTION_RATIO_JUMP = "exhaustion_ratio_jump"
-    EXHAUSTION_RATIO_SPRINT_JUMP = "exhaustion_ratio_sprint_jump"
-    EXHAUSTION_RATIO_MINE = "exhaustion_ratio_mine"
-    EXHAUSTION_RATIO_ATTACK = "exhaustion_ratio_attack"
+    FLYING_ABILITY = "flying_ability"  # 创造飞行能力
+    STEP_HEIGHT = "step_height"  # 台阶高度
+    GRAVITY = "gravity"  # 重力
+    SCALE = "scale"  # 体型缩放
+    ATTACK_SPEED_AMPLIFIER = "attack_speed_amplifier"  # 攻击速度倍率
+    PICKUP_AREA_HORIZONTAL = "pickup_area_horizontal"  # 水平拾取范围
+    PICKUP_AREA_VERTICAL = "pickup_area_vertical"  # 垂直拾取范围
+    INVULNERABLE_TIME = "invulnerable_time"  # 无敌时间(秒)
+    INVULNERABILITY_TIME = INVULNERABLE_TIME  # 无敌时间别名
+    LIFESTEAL_MELEE = "lifesteal_melee"  # 近战吸血比例
+    LIFESTEAL_PROJECTILE = "lifesteal_projectile"  # 投射物吸血比例
+    KILL_EXP_MULTIPLIER = "kill_exp_multiplier"  # 击杀生物经验倍率
+    EXP_MULTIPLIER = "exp_multiplier"  # 获取经验球倍率
+    INTERACT_RANGE = "interact_range"  # 交互范围/触及距离
+    PICK_RANGE = INTERACT_RANGE  # 交互范围别名
+    BURNING_TIME = "burning_time"  # 燃烧时间倍率
+    BURN_TIME = BURNING_TIME  # 燃烧时间别名
+    ARMOR = AttrType.ARMOR  # 护甲值
+    MAX_AIR_SUPPLY = "max_air_supply"  # 最大氧气值(刻)
+    MAX_OXYGEN = MAX_AIR_SUPPLY  # 最大氧气值别名
+    RECOVER_TOTAL_AIR_SUPPLY_TIME = "recover_total_air_supply_time"  # 恢复最大氧气量时间(秒)
+    NATURAL_REGEN = "natural_regen"  # 自然生命恢复开关
+    NATURAL_REGEN_LEVEL = "natural_regen_level"  # 自然生命恢复饥饿门槛
+    NATURAL_REGEN_TICK = "natural_regen_tick"  # 自然生命恢复间隔(刻)
+    NATURAL_STARVE = "natural_starve"  # 饥饿扣血开关
+    STARVE_LEVEL = "starve_level"  # 饥饿扣血门槛
+    STARVE_TICK = "starve_tick"  # 饥饿扣血间隔(刻)
+    MAX_EXHAUSTION = "max_exhaustion"  # 最大消耗度
+    EXHAUSTION_RATIO_GLOBAL = "exhaustion_ratio_global"  # 全局饥饿消耗倍率
+    EXHAUSTION_RATIO_HEAL = "exhaustion_ratio_heal"  # 回血饥饿消耗倍率
+    EXHAUSTION_RATIO_JUMP = "exhaustion_ratio_jump"  # 跳跃饥饿消耗倍率
+    EXHAUSTION_RATIO_SPRINT_JUMP = "exhaustion_ratio_sprint_jump"  # 疾跑跳跃饥饿消耗倍率
+    EXHAUSTION_RATIO_MINE = "exhaustion_ratio_mine"  # 挖掘饥饿消耗倍率
+    EXHAUSTION_RATIO_ATTACK = "exhaustion_ratio_attack"  # 攻击饥饿消耗倍率
 
     VALUES = (
         FLYING_ABILITY,
@@ -76,7 +83,11 @@ class PlatinumAttributeType(object):
         LIFESTEAL_PROJECTILE,
         KILL_EXP_MULTIPLIER,
         EXP_MULTIPLIER,
+        INTERACT_RANGE,
+        BURNING_TIME,
         ARMOR,
+        MAX_AIR_SUPPLY,
+        RECOVER_TOTAL_AIR_SUPPLY_TIME,
         NATURAL_REGEN,
         NATURAL_REGEN_LEVEL,
         NATURAL_REGEN_TICK,
@@ -102,6 +113,7 @@ class PlatinumAttributeModifierService(BaseService):
         self._modifierMap = {}  # type: dict[tuple[str, str | int], dict[str, dict]]
         self._baseValueMap = {}  # type: dict[tuple[str, str | int], float]
         self._invulnerableUntil = {}  # type: dict[str, float]
+        self._burningMultiplier = {}  # type: dict[str, float]
 
     def addModifier(self, entityId, attributeType, *modifierArgs):
         if not self._validateModifier(entityId, attributeType, modifierArgs):
@@ -204,6 +216,27 @@ class PlatinumAttributeModifierService(BaseService):
             invulnerableDuration = self._getCalculatedValue(entityId, PlatinumAttributeType.INVULNERABLE_TIME)
             if invulnerableDuration > 0.0:
                 self._invulnerableUntil[entityId] = now + invulnerableDuration
+
+    @BaseService.Listen("OnFireHurtEvent")
+    def onFireHurt(self, data):
+        victim = data.get("victim")
+        if not victim or victim not in self._burningMultiplier:
+            return
+        multiplier = self._burningMultiplier[victim]
+        if multiplier <= 0.0:
+            data["cancel"] = True
+            data["cancelIgnite"] = True
+            attrComp = compFactory.CreateAttr(victim)
+            if attrComp:
+                attrComp.SetEntityOnFire(0)
+        elif multiplier < 1.0:
+            fireTime = data.get("fireTime", 0.0)
+            if fireTime > 0.0:
+                newFireTime = fireTime * multiplier
+                # 缩短着火时间：若剩余着火时间超过按倍率计算后的时长，则重设着火秒数
+                attrComp = compFactory.CreateAttr(victim)
+                if attrComp:
+                    attrComp.SetEntityOnFire(int(math.ceil(newFireTime)))
 
     @BaseService.Listen("ActuallyHurtServerEvent")
     def onActuallyHurt(self, data):
@@ -337,9 +370,11 @@ class PlatinumAttributeModifierService(BaseService):
         self._modifierMap.clear()
         self._baseValueMap.clear()
         self._invulnerableUntil.clear()
+        self._burningMultiplier.clear()
 
     def clearEntity(self, entityId, restore):
         self._invulnerableUntil.pop(entityId, None)
+        self._burningMultiplier.pop(entityId, None)
         keys = [key for key in self._modifierMap if key[0] == entityId]
         for key in keys:
             if restore:
@@ -458,15 +493,26 @@ class PlatinumAttributeModifierService(BaseService):
         if attributeType in (
             PlatinumAttributeType.KILL_EXP_MULTIPLIER,
             PlatinumAttributeType.EXP_MULTIPLIER,
+            PlatinumAttributeType.BURNING_TIME,
         ):
             return 1.0
         if attributeType == PlatinumAttributeType.ARMOR:
             return self._getEquippedArmorValue(entityId)
+        if attributeType == PlatinumAttributeType.MAX_AIR_SUPPLY:
+            breathComp = compFactory.CreateBreath(entityId)
+            value = breathComp.GetMaxAirSupply() if breathComp else None
+            return float(value) if isinstance(value, integerTypes) and value >= 0 else None
+        if attributeType == PlatinumAttributeType.RECOVER_TOTAL_AIR_SUPPLY_TIME:
+            # 原版恢复全部氧气时间基准为 0.0 秒（即出水立即按恢复率全速回满）
+            return 0.0
         return self._getPlayerBaseValue(entityId, attributeType)
 
     @staticmethod
     def _getPlayerBaseValue(entityId, attributeType):
         playerComp = compFactory.CreatePlayer(entityId)
+        if attributeType == PlatinumAttributeType.INTERACT_RANGE:
+            value = playerComp.GetPlayerInteracteRange()
+            return float(value) if isinstance(value, integerTypes + (float,)) and value > 0 else None
         if attributeType == PlatinumAttributeType.NATURAL_REGEN:
             value = playerComp.IsPlayerNaturalRegen()
             return float(value) if isinstance(value, bool) else None
@@ -601,6 +647,14 @@ class PlatinumAttributeModifierService(BaseService):
             PlatinumAttributeType.EXP_MULTIPLIER,
         ):
             return value >= 0.0
+        if attributeType == PlatinumAttributeType.BURNING_TIME:
+            if value < 0.0:
+                return False
+            if abs(value - 1.0) < 1e-6:
+                self._burningMultiplier.pop(entityId, None)
+            else:
+                self._burningMultiplier[entityId] = float(value)
+            return True
         if attributeType == PlatinumAttributeType.KILL_EXP_MULTIPLIER:
             return value >= 1.0
         if attributeType == PlatinumAttributeType.ARMOR:
@@ -609,11 +663,32 @@ class PlatinumAttributeModifierService(BaseService):
             if extraArmor < 0:
                 extraArmor = 0
             return compFactory.CreateAttr(entityId).SetAttrValue(AttrType.ARMOR, extraArmor, 0)
+        if attributeType == PlatinumAttributeType.MAX_AIR_SUPPLY:
+            if value < 0.0:
+                return False
+            breathComp = compFactory.CreateBreath(entityId)
+            return bool(breathComp and breathComp.SetMaxAirSupply(int(round(value))))
+        if attributeType == PlatinumAttributeType.RECOVER_TOTAL_AIR_SUPPLY_TIME:
+            if value < 0.0:
+                return False
+            breathComp = compFactory.CreateBreath(entityId)
+            return bool(breathComp and breathComp.SetRecoverTotalAirSupplyTime(float(value)))
         return self._setPlayerValue(entityId, attributeType, value)
 
     @staticmethod
     def _setPlayerValue(entityId, attributeType, value):
         playerComp = compFactory.CreatePlayer(entityId)
+        if attributeType == PlatinumAttributeType.INTERACT_RANGE:
+            if value <= 0.0:
+                return False
+            success = bool(playerComp.SetPlayerInteracteRange(float(value)))
+            if success:
+                BaseService().syncRequest(
+                    entityId,
+                    "client/attribute/syncPickRange",
+                    QRequests.Args({"playerId": entityId, "pickRange": float(value)}),
+                )
+            return success
         if attributeType == PlatinumAttributeType.NATURAL_REGEN:
             return playerComp.SetPlayerNaturalRegen(value > 0.0)
         if attributeType == PlatinumAttributeType.NATURAL_REGEN_LEVEL:

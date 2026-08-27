@@ -397,7 +397,11 @@ modifierSystem.RemoveModifier(
 - `modifierSystem.AttrType.LIFESTEAL_PROJECTILE`：投射物/远程攻击吸血比例（基准值 `0.0`，即 0%；如 `0.15` 表示远程造成伤害后为攻击者恢复实际造成伤害 15% 的生命值，不超过生命上限）。
 - `modifierSystem.AttrType.KILL_EXP_MULTIPLIER`：击杀生物经验倍率（基准值 `1.0`，结果必须大于等于 `1.0`；通过额外掉落经验球实现，如 `1.5` 表示额外掉落相当于原版经验 50% 的经验球）。
 - `modifierSystem.AttrType.EXP_MULTIPLIER`：拾取经验球倍率（仅玩家生效，基准值 `1.0`，结果不能为负数；如 `2.0` 表示拾取经验球时最终获得 2 倍经验，不影响其他方式直接增加的经验）。
+- `modifierSystem.AttrType.INTERACT_RANGE`（别名 `PICK_RANGE`）：玩家交互范围/触及距离（单位：格，仅玩家生效，结果必须大于 `0`；服务端修改 `SetPlayerInteracteRange` 并自动向客户端同步更新 `SetPickRange`）。
+- `modifierSystem.AttrType.BURNING_TIME`（别名 `BURN_TIME`）：实体受到点燃/火焰伤害时的燃烧时间倍率（基准值 `1.0`，结果不能为负数；为 `0.0` 时免疫火焰伤害与点燃效果，小于 `1.0` 时按比例缩短着火持续时间）。
 - `modifierSystem.AttrType.ARMOR`：复用网易 `AttrType.ARMOR`，将实体当前身上穿戴装备的总护甲作为基数（baseValue）参与加算与乘算修饰，计算出的总护甲与装备护甲的差值作为额外护甲写入引擎；玩家换装时自动重新计算。
+- `modifierSystem.AttrType.MAX_AIR_SUPPLY`（别名 `MAX_OXYGEN`）：实体最大氧气储备值（单位：游戏刻，原版基准值通常为 `300` 刻即 15 秒，结果不能为负数）。
+- `modifierSystem.AttrType.RECOVER_TOTAL_AIR_SUPPLY_TIME`：实体恢复最大氧气量所需时间（单位：秒，基准值 `0.0` 秒，结果不能为负数）。
 - `modifierSystem.AttrType.MAX_EXHAUSTION`：玩家最大消耗度（`foodExhaustionLevel` 归零阈值，默认 `4.0`，仅玩家生效），结果必须大于 `0`。
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_GLOBAL`：全局饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_HEAL`：自然回血饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。

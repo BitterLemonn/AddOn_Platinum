@@ -40,6 +40,7 @@ platinum.regNativePyServer(
 # -------------------client-------------------
 platinum.Client("client.player.playerBaubleInfo")
 platinum.Client("client.player.playerBaubleSlot")
+platinum.Client("client.attribute.playerAttributeClientService")
 platinum.Client("client.ui.baubleUi")
 # -----------
 platinum.regNativePyClient(
