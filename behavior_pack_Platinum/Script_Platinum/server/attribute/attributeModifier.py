@@ -1,4 +1,5 @@
 # coding=utf-8
+import json
 import math
 import random
 import time
@@ -12,7 +13,10 @@ except NameError:
 
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
 from Script_Platinum.QuModLibs.Server import Entity, compFactory, levelId, serverApi
-from Script_Platinum.data.attributeModifier import calculateModifiedValue
+from Script_Platinum.data.attributeModifier import (
+    calculateModifiedValue,
+    calculateProtectionMultiplier,
+)
 from Script_Platinum.server.attribute.fortuneManager import FortuneManager
 from Script_Platinum.utils import developLogging as logging
 from Script_Platinum.utils.ItemFactory import ItemFactory
@@ -30,6 +34,13 @@ GameType = minecraftEnum.GameType
 
 BYPASS_INVULNERABLE_CAUSES = (
     ActorDamageCause.Void,
+    ActorDamageCause.Suicide,
+    ActorDamageCause.SelfDestruct,
+    ActorDamageCause.Override,
+    ActorDamageCause.NONE,
+)
+
+BYPASS_PROTECTION_CAUSES = (
     ActorDamageCause.Suicide,
     ActorDamageCause.SelfDestruct,
     ActorDamageCause.Override,
@@ -78,6 +89,71 @@ class PlatinumAttributeType(object):
     FORTUNE = FORTUNE_LEVEL  # 时运等级别名
     LOOTING_LEVEL = "looting_level"  # 抢夺等级
     LOOTING = LOOTING_LEVEL  # 抢夺等级别名
+    PROTECTION_ALL = "protection_all"
+    PROTECTION_CONTACT = "protection_contact"
+    PROTECTION_ENTITY_ATTACK = "protection_entity_attack"
+    PROTECTION_PROJECTILE = "protection_projectile"
+    PROTECTION_SUFFOCATION = "protection_suffocation"
+    PROTECTION_FALL = "protection_fall"
+    PROTECTION_FIRE = "protection_fire"
+    PROTECTION_FIRE_TICK = "protection_fire_tick"
+    PROTECTION_LAVA = "protection_lava"
+    PROTECTION_DROWNING = "protection_drowning"
+    PROTECTION_VOID = "protection_void"
+    PROTECTION_BLOCK_EXPLOSION = "protection_block_explosion"
+    PROTECTION_ENTITY_EXPLOSION = "protection_entity_explosion"
+    PROTECTION_STARVE = "protection_starve"
+    PROTECTION_ANVIL = "protection_anvil"
+    PROTECTION_THORNS = "protection_thorns"
+    PROTECTION_FALLING_BLOCK = "protection_falling_block"
+    PROTECTION_PISTON = "protection_piston"
+    PROTECTION_FLY_INTO_WALL = "protection_fly_into_wall"
+    PROTECTION_MAGMA = "protection_magma"
+    PROTECTION_FIREWORKS = "protection_fireworks"
+    PROTECTION_LIGHTNING = "protection_lightning"
+    PROTECTION_FREEZING = "protection_freezing"
+    PROTECTION_STALACTITE = "protection_stalactite"
+    PROTECTION_STALAGMITE = "protection_stalagmite"
+    PROTECTION_RAM_ATTACK = "protection_ram_attack"
+    PROTECTION_CUSTOM = "protection_custom"
+    PROTECTION_SONIC_BOOM = "protection_sonic_boom"
+    PROTECTION_CAMPFIRE = "protection_campfire"
+    PROTECTION_SOUL_CAMPFIRE = "protection_soul_campfire"
+    PROTECTION_MACE_SMASH = "protection_mace_smash"
+    PROTECTION_MAGIC = "protection_magic"
+
+    PROTECTION_DAMAGE_EVENT_TYPES = (
+        PROTECTION_CONTACT,
+        PROTECTION_ENTITY_ATTACK,
+        PROTECTION_PROJECTILE,
+        PROTECTION_SUFFOCATION,
+        PROTECTION_FALL,
+        PROTECTION_FIRE,
+        PROTECTION_FIRE_TICK,
+        PROTECTION_LAVA,
+        PROTECTION_DROWNING,
+        PROTECTION_VOID,
+        PROTECTION_BLOCK_EXPLOSION,
+        PROTECTION_ENTITY_EXPLOSION,
+        PROTECTION_STARVE,
+        PROTECTION_ANVIL,
+        PROTECTION_THORNS,
+        PROTECTION_FALLING_BLOCK,
+        PROTECTION_PISTON,
+        PROTECTION_FLY_INTO_WALL,
+        PROTECTION_MAGMA,
+        PROTECTION_FIREWORKS,
+        PROTECTION_LIGHTNING,
+        PROTECTION_FREEZING,
+        PROTECTION_STALACTITE,
+        PROTECTION_STALAGMITE,
+        PROTECTION_RAM_ATTACK,
+        PROTECTION_CUSTOM,
+        PROTECTION_SONIC_BOOM,
+        PROTECTION_CAMPFIRE,
+        PROTECTION_SOUL_CAMPFIRE,
+        PROTECTION_MACE_SMASH,
+    )
 
     VALUES = (
         FLYING_ABILITY,
@@ -112,7 +188,41 @@ class PlatinumAttributeType(object):
         EXHAUSTION_RATIO_ATTACK,
         FORTUNE_LEVEL,
         LOOTING_LEVEL,
-    )
+    ) + PROTECTION_DAMAGE_EVENT_TYPES + (PROTECTION_ALL, PROTECTION_MAGIC)
+
+
+PROTECTION_CAUSE_ATTRIBUTE_MAP = {
+    "contact": PlatinumAttributeType.PROTECTION_CONTACT,
+    "entity_attack": PlatinumAttributeType.PROTECTION_ENTITY_ATTACK,
+    "projectile": PlatinumAttributeType.PROTECTION_PROJECTILE,
+    "suffocation": PlatinumAttributeType.PROTECTION_SUFFOCATION,
+    "fall": PlatinumAttributeType.PROTECTION_FALL,
+    "fire": PlatinumAttributeType.PROTECTION_FIRE,
+    "fire_tick": PlatinumAttributeType.PROTECTION_FIRE_TICK,
+    "lava": PlatinumAttributeType.PROTECTION_LAVA,
+    "drowning": PlatinumAttributeType.PROTECTION_DROWNING,
+    "void": PlatinumAttributeType.PROTECTION_VOID,
+    "block_explosion": PlatinumAttributeType.PROTECTION_BLOCK_EXPLOSION,
+    "entity_explosion": PlatinumAttributeType.PROTECTION_ENTITY_EXPLOSION,
+    "starve": PlatinumAttributeType.PROTECTION_STARVE,
+    "anvil": PlatinumAttributeType.PROTECTION_ANVIL,
+    "thorns": PlatinumAttributeType.PROTECTION_THORNS,
+    "falling_block": PlatinumAttributeType.PROTECTION_FALLING_BLOCK,
+    "piston": PlatinumAttributeType.PROTECTION_PISTON,
+    "fly_into_wall": PlatinumAttributeType.PROTECTION_FLY_INTO_WALL,
+    "magma": PlatinumAttributeType.PROTECTION_MAGMA,
+    "fireworks": PlatinumAttributeType.PROTECTION_FIREWORKS,
+    "lightning": PlatinumAttributeType.PROTECTION_LIGHTNING,
+    "freezing": PlatinumAttributeType.PROTECTION_FREEZING,
+    "stalactite": PlatinumAttributeType.PROTECTION_STALACTITE,
+    "stalagmite": PlatinumAttributeType.PROTECTION_STALAGMITE,
+    "ram_attack": PlatinumAttributeType.PROTECTION_RAM_ATTACK,
+    "custom": PlatinumAttributeType.PROTECTION_CUSTOM,
+    "sonic_boom": PlatinumAttributeType.PROTECTION_SONIC_BOOM,
+    "campfire": PlatinumAttributeType.PROTECTION_CAMPFIRE,
+    "soul_campfire": PlatinumAttributeType.PROTECTION_SOUL_CAMPFIRE,
+    "mace_smash": PlatinumAttributeType.PROTECTION_MACE_SMASH,
+}
 
 
 @BaseService.Init
@@ -125,6 +235,7 @@ class PlatinumAttributeModifierService(BaseService):
         self._baseValueMap = {}  # type: dict[tuple[str, str | int], float]
         self._invulnerableUntil = {}  # type: dict[str, float]
         self._burningMultiplier = {}  # type: dict[str, float]
+        self._protectionMagicBaseMap = {}  # type: dict[str, dict | None]
         self.fortuneManager = FortuneManager()
 
     def addModifier(self, entityId, attributeType, *modifierArgs):
@@ -215,6 +326,7 @@ class PlatinumAttributeModifierService(BaseService):
             self._invulnerableUntil.pop(eid, None)
         # 旁路不可无敌伤害
         cause = data.get("cause")
+        self._applyDamageProtection(data, entityId, cause)
         if cause in BYPASS_INVULNERABLE_CAUSES:
             return
         # 处于生效中的无敌保护期 -> 免疫伤害与击退
@@ -228,6 +340,30 @@ class PlatinumAttributeModifierService(BaseService):
             invulnerableDuration = self._getCalculatedValue(entityId, PlatinumAttributeType.INVULNERABLE_TIME)
             if invulnerableDuration > 0.0:
                 self._invulnerableUntil[entityId] = now + invulnerableDuration
+
+    def _applyDamageProtection(self, data, entityId, cause):
+        if cause == "magic" or cause in BYPASS_PROTECTION_CAUSES:
+            return
+        attributeType = PROTECTION_CAUSE_ATTRIBUTE_MAP.get(cause)
+        allKey = (entityId, PlatinumAttributeType.PROTECTION_ALL)
+        typeKey = (entityId, attributeType)
+        hasAllProtection = bool(self._modifierMap.get(allKey))
+        hasTypeProtection = attributeType is not None and bool(self._modifierMap.get(typeKey))
+        if not hasAllProtection and not hasTypeProtection:
+            return
+        damage = data.get("damage")
+        if isinstance(damage, bool) or not isinstance(damage, integerTypes + (float,)):
+            return
+        multiplier = 1.0
+        if hasAllProtection:
+            multiplier *= calculateProtectionMultiplier(
+                self._getCalculatedValue(entityId, PlatinumAttributeType.PROTECTION_ALL)
+            )
+        if hasTypeProtection:
+            multiplier *= calculateProtectionMultiplier(
+                self._getCalculatedValue(entityId, attributeType)
+            )
+        data["damage"] = float(damage) * multiplier
 
     @BaseService.Listen("OnFireHurtEvent")
     def onFireHurt(self, data):
@@ -446,22 +582,36 @@ class PlatinumAttributeModifierService(BaseService):
 
     def onServiceStop(self):
         BaseService.onServiceStop(self)
+        for entityId in list(self._protectionMagicBaseMap.keys()):
+            self._restoreProtectionMagicValue(entityId)
         for key in self._modifierMap.keys():
+            if key[1] in (
+                PlatinumAttributeType.PROTECTION_ALL,
+                PlatinumAttributeType.PROTECTION_MAGIC,
+            ):
+                continue
             self._restore(key)
         self._modifierMap.clear()
         self._baseValueMap.clear()
         self._invulnerableUntil.clear()
         self._burningMultiplier.clear()
+        self._protectionMagicBaseMap.clear()
 
     def clearEntity(self, entityId, restore):
         self._invulnerableUntil.pop(entityId, None)
         self._burningMultiplier.pop(entityId, None)
+        if restore and entityId in self._protectionMagicBaseMap:
+            self._restoreProtectionMagicValue(entityId)
         keys = [key for key in self._modifierMap if key[0] == entityId]
         for key in keys:
-            if restore:
+            if restore and key[1] not in (
+                PlatinumAttributeType.PROTECTION_ALL,
+                PlatinumAttributeType.PROTECTION_MAGIC,
+            ):
                 self._restore(key)
             self._modifierMap.pop(key, None)
             self._baseValueMap.pop(key, None)
+        self._protectionMagicBaseMap.pop(entityId, None)
 
     # 兼容旧方法
     def clearPlayer(self, entityId, restore):
@@ -524,6 +674,85 @@ class PlatinumAttributeModifierService(BaseService):
             return None
         itemDict = itemComp.GetPlayerItem(ItemPosType.CARRIED, 0, True)
         return ItemFactory.fromDict(itemDict) if itemDict else None
+
+    def _getProtectionMagicBaseValue(self, entityId):
+        if entityId in self._protectionMagicBaseMap:
+            return 0.0
+        entityComp = compFactory.CreateEntityEvent(entityId)
+        components = entityComp.GetComponents() if entityComp else None
+        if not isinstance(components, dict):
+            return None
+        damageSensor = components.get("minecraft:damage_sensor")
+        if damageSensor is not None and not isinstance(damageSensor, dict):
+            return None
+        self._protectionMagicBaseMap[entityId] = damageSensor
+        return 0.0
+
+    def _syncProtectionMagicValue(self, entityId):
+        allKey = (entityId, PlatinumAttributeType.PROTECTION_ALL)
+        magicKey = (entityId, PlatinumAttributeType.PROTECTION_MAGIC)
+        hasAllProtection = bool(self._modifierMap.get(allKey))
+        hasMagicProtection = bool(self._modifierMap.get(magicKey))
+        if not hasAllProtection and not hasMagicProtection:
+            return self._restoreProtectionMagicValue(entityId)
+        multiplier = 1.0
+        if hasAllProtection:
+            multiplier *= calculateProtectionMultiplier(
+                self._getCalculatedValue(entityId, PlatinumAttributeType.PROTECTION_ALL)
+            )
+        if hasMagicProtection:
+            multiplier *= calculateProtectionMultiplier(
+                self._getCalculatedValue(entityId, PlatinumAttributeType.PROTECTION_MAGIC)
+            )
+        return self._setProtectionMagicMultiplier(entityId, multiplier)
+
+    def _setProtectionMagicMultiplier(self, entityId, multiplier):
+        entityComp = compFactory.CreateEntityEvent(entityId)
+        if not entityComp or entityId not in self._protectionMagicBaseMap:
+            return False
+        damageSensor = self._protectionMagicBaseMap[entityId] or {}
+        if not isinstance(damageSensor, dict):
+            return False
+        triggers = damageSensor.get("triggers", [])
+        if not isinstance(triggers, list):
+            return False
+        hasMagicTrigger = False
+        targetTriggers = []
+        for trigger in triggers:
+            if not isinstance(trigger, dict):
+                return False
+            trigger = dict(trigger)
+            if trigger.get("cause") == "magic":
+                baseMultiplier = trigger.get("damage_multiplier", 1.0)
+                if isinstance(baseMultiplier, bool) or not isinstance(
+                    baseMultiplier, integerTypes + (float,)
+                ):
+                    return False
+                trigger["damage_multiplier"] = float(baseMultiplier) * multiplier
+                hasMagicTrigger = True
+            targetTriggers.append(trigger)
+        if not hasMagicTrigger:
+            targetTriggers.append({"cause": "magic", "damage_multiplier": multiplier})
+        damageSensor = dict(damageSensor)
+        damageSensor["triggers"] = targetTriggers
+        return bool(entityComp.AddActorComponent("minecraft:damage_sensor", json.dumps(damageSensor)))
+
+    def _restoreProtectionMagicValue(self, entityId):
+        if entityId not in self._protectionMagicBaseMap:
+            return False
+        entityComp = compFactory.CreateEntityEvent(entityId)
+        if not entityComp:
+            return False
+        damageSensor = self._protectionMagicBaseMap[entityId]
+        if damageSensor is None:
+            success = bool(entityComp.RemoveActorComponent("minecraft:damage_sensor"))
+        else:
+            success = bool(
+                entityComp.AddActorComponent("minecraft:damage_sensor", json.dumps(damageSensor))
+            )
+        if success:
+            self._protectionMagicBaseMap.pop(entityId, None)
+        return success
 
     def _getFortuneLevel(self, playerId, heldFactory):
         level = self._getIntegerLevel(playerId, PlatinumAttributeType.FORTUNE_LEVEL)
@@ -605,6 +834,13 @@ class PlatinumAttributeModifierService(BaseService):
             # 原版无附魔时等级为 0
             return 0.0
         if attributeType in (
+            PlatinumAttributeType.PROTECTION_ALL,
+            PlatinumAttributeType.PROTECTION_MAGIC,
+        ):
+            return self._getProtectionMagicBaseValue(entityId)
+        if attributeType in PlatinumAttributeType.PROTECTION_DAMAGE_EVENT_TYPES:
+            return 0.0
+        if attributeType in (
             PlatinumAttributeType.KILL_EXP_MULTIPLIER,
             PlatinumAttributeType.EXP_MULTIPLIER,
             PlatinumAttributeType.BURNING_TIME,
@@ -681,6 +917,11 @@ class PlatinumAttributeModifierService(BaseService):
     def _restore(self, key):
         if key not in self._baseValueMap:
             return True
+        if key[1] in (
+            PlatinumAttributeType.PROTECTION_ALL,
+            PlatinumAttributeType.PROTECTION_MAGIC,
+        ):
+            return self._syncProtectionMagicValue(key[0])
         baseValue = self._baseValueMap[key]
         return self._setValue(key[0], key[1], baseValue, baseValue)
 
@@ -763,6 +1004,13 @@ class PlatinumAttributeModifierService(BaseService):
             PlatinumAttributeType.LOOTING_LEVEL,
         ):
             return value >= 0.0
+        if attributeType in (
+            PlatinumAttributeType.PROTECTION_ALL,
+            PlatinumAttributeType.PROTECTION_MAGIC,
+        ):
+            return self._syncProtectionMagicValue(entityId)
+        if attributeType in PlatinumAttributeType.PROTECTION_DAMAGE_EVENT_TYPES:
+            return True
         if attributeType == PlatinumAttributeType.BURNING_TIME:
             if value < 0.0:
                 return False
@@ -855,3 +1103,11 @@ class PlatinumAttributeModifierService(BaseService):
             return
         self._modifierMap.pop(key, None)
         self._baseValueMap.pop(key, None)
+        if key[1] in (
+            PlatinumAttributeType.PROTECTION_ALL,
+            PlatinumAttributeType.PROTECTION_MAGIC,
+        ):
+            allKey = (key[0], PlatinumAttributeType.PROTECTION_ALL)
+            magicKey = (key[0], PlatinumAttributeType.PROTECTION_MAGIC)
+            if not self._modifierMap.get(allKey) and not self._modifierMap.get(magicKey):
+                self._protectionMagicBaseMap.pop(key[0], None)

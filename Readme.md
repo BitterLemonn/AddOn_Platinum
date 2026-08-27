@@ -348,7 +348,7 @@ engineSystem.BroadcastEvent("MobDieEvent", {"id": entityId})
 
 #### 10. 特殊属性修饰符
 
-组件为飞行能力、台阶高度、盔甲值、饥饿值和自然回血提供服务端修饰符接口。接口允许玩家或非玩家实体使用，参数和操作枚举与网易引擎属性修饰符保持一致：
+组件为飞行能力、台阶高度、盔甲值、分类伤害保护、饥饿值和自然回血提供服务端修饰符接口。接口允许玩家或非玩家实体使用，参数和操作枚举与网易引擎属性修饰符保持一致：
 
 ```python
 # coding=utf-8
@@ -416,6 +416,15 @@ modifierSystem.RemoveModifier(
   fortuneBlockList = modifierSystem.GetFortuneBlockList()
   ```
 - `modifierSystem.AttrType.LOOTING_LEVEL`（别名 `LOOTING`）：抢夺等级（仅玩家击杀者生效，基准值 `0`，小数截断，结果不能为负数）。击杀生物时按原版抢夺算法对生物掉落表模拟出的每种物品额外掉落 `0~等级` 个（抢夺 III 即等级 `3` 时每种额外 0~3 个）。不影响引擎自身掉落，与武器抢夺附魔效果叠加。
+- `modifierSystem.AttrType.PROTECTION_MAGIC`：魔法减伤比例（基准值 `0.0`，允许负数）。通过实体 `minecraft:damage_sensor` 的 `magic` 触发器修改魔法伤害倍率；最后一个修饰符移除时恢复实体原有组件。
+- `PROTECTION_*` 分类伤害修饰符：其余正常伤害通过服务端 `DamageEvent` 的 `cause` 匹配并修改事件 `damage`。支持：
+  - `PROTECTION_CONTACT`、`PROTECTION_ENTITY_ATTACK`、`PROTECTION_PROJECTILE`、`PROTECTION_SUFFOCATION`、`PROTECTION_FALL`
+  - `PROTECTION_FIRE`、`PROTECTION_FIRE_TICK`、`PROTECTION_LAVA`、`PROTECTION_DROWNING`、`PROTECTION_VOID`、`PROTECTION_MAGMA`、`PROTECTION_CAMPFIRE`、`PROTECTION_SOUL_CAMPFIRE`
+  - `PROTECTION_BLOCK_EXPLOSION`、`PROTECTION_ENTITY_EXPLOSION`、`PROTECTION_FIREWORKS`、`PROTECTION_LIGHTNING`
+  - `PROTECTION_STARVE`、`PROTECTION_ANVIL`、`PROTECTION_THORNS`、`PROTECTION_FALLING_BLOCK`、`PROTECTION_PISTON`
+  - `PROTECTION_FLY_INTO_WALL`、`PROTECTION_FREEZING`、`PROTECTION_STALACTITE`、`PROTECTION_STALAGMITE`、`PROTECTION_RAM_ATTACK`、`PROTECTION_SONIC_BOOM`、`PROTECTION_MACE_SMASH`、`PROTECTION_CUSTOM`
+- `PROTECTION_ALL`：对全部可修改伤害生效；普通类型与 `PROTECTION_VOID` 通过 `DamageEvent` 处理，魔法类型与 `PROTECTION_MAGIC` 共用 `minecraft:damage_sensor`。`PROTECTION_ALL` 与分类保护同时存在时，两个伤害倍率相乘。
+- 所有 `PROTECTION_*` 使用自由减伤比例：`-0.2` 表示额外受到 `20%` 对应伤害，`0.2` 表示减少 `20%`，`1.0` 及以上表示免疫。`none`、`override`、`self_destruct` 不可减免；`void` 可由 `PROTECTION_VOID` 或 `PROTECTION_ALL` 修改，但仍绕过 `INVULNERABLE_TIME`。网易文档注明药水与状态效果伤害不触发 `DamageEvent`；此类伤害只有实际触发对应事件或由魔法保护组件规则覆盖时才会生效。
 - `modifierSystem.AttrType.NATURAL_REGEN`：计算结果大于 `0` 时开启自然回血（仅玩家生效）。
 - `modifierSystem.AttrType.NATURAL_REGEN_LEVEL`：自然回血饥饿值阈值（仅玩家生效），结果必须为非负整数，且不能低于当前饥饿掉血阈值。
 - `modifierSystem.AttrType.NATURAL_REGEN_TICK`：每次自然回血的间隔（仅玩家生效），单位为游戏刻，结果必须为大于等于 `1` 的整数。
