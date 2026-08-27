@@ -12,7 +12,7 @@ except NameError:
     stringTypes = (str,)
 
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
-from Script_Platinum.QuModLibs.Server import Entity, compFactory, levelId, serverApi
+from Script_Platinum.QuModLibs.Server import Entity, System, compFactory, levelId, serverApi
 from Script_Platinum.data.attributeModifier import (
     calculateModifiedValue,
     calculateProtectionMultiplier,
@@ -156,39 +156,43 @@ class PlatinumAttributeType(object):
     )
 
     VALUES = (
-        FLYING_ABILITY,
-        STEP_HEIGHT,
-        GRAVITY,
-        SCALE,
-        ATTACK_SPEED_AMPLIFIER,
-        PICKUP_AREA_HORIZONTAL,
-        PICKUP_AREA_VERTICAL,
-        INVULNERABLE_TIME,
-        LIFESTEAL_MELEE,
-        LIFESTEAL_PROJECTILE,
-        KILL_EXP_MULTIPLIER,
-        EXP_MULTIPLIER,
-        INTERACT_RANGE,
-        BURNING_TIME,
-        ARMOR,
-        MAX_AIR_SUPPLY,
-        RECOVER_TOTAL_AIR_SUPPLY_TIME,
-        NATURAL_REGEN,
-        NATURAL_REGEN_LEVEL,
-        NATURAL_REGEN_TICK,
-        NATURAL_STARVE,
-        STARVE_LEVEL,
-        STARVE_TICK,
-        MAX_EXHAUSTION,
-        EXHAUSTION_RATIO_GLOBAL,
-        EXHAUSTION_RATIO_HEAL,
-        EXHAUSTION_RATIO_JUMP,
-        EXHAUSTION_RATIO_SPRINT_JUMP,
-        EXHAUSTION_RATIO_MINE,
-        EXHAUSTION_RATIO_ATTACK,
-        FORTUNE_LEVEL,
-        LOOTING_LEVEL,
-    ) + PROTECTION_DAMAGE_EVENT_TYPES + (PROTECTION_ALL, PROTECTION_MAGIC)
+        (
+            FLYING_ABILITY,
+            STEP_HEIGHT,
+            GRAVITY,
+            SCALE,
+            ATTACK_SPEED_AMPLIFIER,
+            PICKUP_AREA_HORIZONTAL,
+            PICKUP_AREA_VERTICAL,
+            INVULNERABLE_TIME,
+            LIFESTEAL_MELEE,
+            LIFESTEAL_PROJECTILE,
+            KILL_EXP_MULTIPLIER,
+            EXP_MULTIPLIER,
+            INTERACT_RANGE,
+            BURNING_TIME,
+            ARMOR,
+            MAX_AIR_SUPPLY,
+            RECOVER_TOTAL_AIR_SUPPLY_TIME,
+            NATURAL_REGEN,
+            NATURAL_REGEN_LEVEL,
+            NATURAL_REGEN_TICK,
+            NATURAL_STARVE,
+            STARVE_LEVEL,
+            STARVE_TICK,
+            MAX_EXHAUSTION,
+            EXHAUSTION_RATIO_GLOBAL,
+            EXHAUSTION_RATIO_HEAL,
+            EXHAUSTION_RATIO_JUMP,
+            EXHAUSTION_RATIO_SPRINT_JUMP,
+            EXHAUSTION_RATIO_MINE,
+            EXHAUSTION_RATIO_ATTACK,
+            FORTUNE_LEVEL,
+            LOOTING_LEVEL,
+        )
+        + PROTECTION_DAMAGE_EVENT_TYPES
+        + (PROTECTION_ALL, PROTECTION_MAGIC)
+    )
 
 
 PROTECTION_CAUSE_ATTRIBUTE_MAP = {
@@ -360,9 +364,7 @@ class PlatinumAttributeModifierService(BaseService):
                 self._getCalculatedValue(entityId, PlatinumAttributeType.PROTECTION_ALL)
             )
         if hasTypeProtection:
-            multiplier *= calculateProtectionMultiplier(
-                self._getCalculatedValue(entityId, attributeType)
-            )
+            multiplier *= calculateProtectionMultiplier(self._getCalculatedValue(entityId, attributeType))
         data["damage"] = float(damage) * multiplier
 
     @BaseService.Listen("OnFireHurtEvent")
@@ -377,14 +379,13 @@ class PlatinumAttributeModifierService(BaseService):
             attrComp = compFactory.CreateAttr(victim)
             if attrComp:
                 attrComp.SetEntityOnFire(0)
-        elif multiplier < 1.0:
+        elif multiplier != 1.0:
             fireTime = data.get("fireTime", 0.0)
             if fireTime > 0.0:
                 newFireTime = fireTime * multiplier
-                # 缩短着火时间：若剩余着火时间超过按倍率计算后的时长，则重设着火秒数
                 attrComp = compFactory.CreateAttr(victim)
-                if attrComp:
-                    attrComp.SetEntityOnFire(int(math.ceil(newFireTime)))
+                if attrComp and attrComp.SetEntityOnFire(int(math.ceil(newFireTime))):
+                    data["cancelIgnite"] = True
 
     @BaseService.Listen("ActuallyHurtServerEvent")
     def onActuallyHurt(self, data):
@@ -479,20 +480,6 @@ class PlatinumAttributeModifierService(BaseService):
                             if expComp:
                                 expComp.CreateExperienceOrb(extraExp, pos)
 
-    @BaseService.Listen("ServerPlayerTryDestroyBlockEvent")
-    def onPlayerTryDestroyBlock(self, data):
-        if not self.fortuneManager.isRegistered(data.get("fullName", "")):
-            return
-        playerId = data.get("playerId")
-        if not playerId:
-            return
-        heldFactory = self._getHeldItemFactory(playerId)
-        level = self._getFortuneLevel(playerId, heldFactory)
-        if self._isBlockDropHandled(playerId, heldFactory, level):
-            return
-        # 取消引擎原始掉落；破坏完成后按自定义时运倍率独立重掷掉落表。
-        data["spawnResources"] = False
-
     @BaseService.Listen("DestroyBlockEvent")
     def onDestroyBlock(self, data):
         if not self.fortuneManager.isRegistered(data.get("fullName", "")):
@@ -504,19 +491,27 @@ class PlatinumAttributeModifierService(BaseService):
         level = self._getFortuneLevel(playerId, heldFactory)
         if self._isBlockDropHandled(playerId, heldFactory, level):
             return
-        multiplier = FortuneManager.rollFortuneMultiplier(level)
-        blockComp = compFactory.CreateBlockInfo(levelId)
-        if not blockComp:
+        dropEntityIds = data.get("dropEntityIds")
+        if not dropEntityIds:
             return
-        for i in range(multiplier):
-            blockComp.SpawnResources(
-                data["fullName"],
-                (data["x"], data["y"], data["z"]),
-                data.get("auxData", 0),
-                probability=1.0,
-                dimensionId=data.get("dimensionId", 0),
-                spawnOrb=i == 0,
-            )
+        multiplier = FortuneManager.rollFortuneMultiplier(level)
+        if multiplier <= 1:
+            return
+        itemComp = compFactory.CreateItem(levelId)
+        if not itemComp:
+            return
+        dimensionId = data.get("dimensionId", 0)
+        pos = (data["x"] + 0.5, data["y"] + 0.5, data["z"] + 0.5)
+        for itemEntityId in dropEntityIds:
+            itemDict = itemComp.GetDroppedItem(itemEntityId, True)
+            if not isinstance(itemDict, dict):
+                continue
+            count = itemDict.get("count", 0)
+            if isinstance(count, bool) or not isinstance(count, integerTypes) or count <= 0:
+                continue
+            extraItemDict = dict(itemDict)
+            extraItemDict["count"] = count * (multiplier - 1)
+            System.CreateEngineItemEntity(extraItemDict, dimensionId, pos)
 
     @BaseService.Listen("EntityDieLoottableServerEvent")
     def onMobDieLooting(self, data):
@@ -532,21 +527,22 @@ class PlatinumAttributeModifierService(BaseService):
         deadEntityId = data.get("dieEntityId")
         if not deadEntityId or deadEntityId in serverApi.GetPlayerList():
             return
-        pos = Entity(deadEntityId).Pos
-        if not pos:
+        itemList = data.get("itemList")
+        if not isinstance(itemList, list):
             return
-        lootComp = compFactory.CreateActorLoot(attacker)
-        if not lootComp:
-            return
-        originalItemList = data.get("itemList", [])
-        data["itemList"] = []
-        data["dirty"] = True
-        if not lootComp.SpawnLootTableWithActor(pos, deadEntityId, attacker):
-            data["itemList"] = originalItemList
-            return
-        # ponytail: 以整表独立重掷模拟通用抢夺；精确还原需解析各掉落表的抢夺函数和条件。
-        for _ in range(random.randint(0, level)):
-            lootComp.SpawnLootTableWithActor(pos, deadEntityId, attacker)
+        extraItems = []
+        for itemDict in itemList:
+            if not isinstance(itemDict, dict):
+                continue
+            extraCount = random.randint(0, level)
+            if extraCount <= 0:
+                continue
+            extraItemDict = dict(itemDict)
+            extraItemDict["count"] = extraCount
+            extraItems.append(extraItemDict)
+        if extraItems:
+            data["itemList"] = itemList + extraItems
+            data["dirty"] = True
 
     @BaseService.Listen("OnNewArmorExchangeServerEvent")
     def onNewArmorExchange(self, data):
@@ -612,10 +608,6 @@ class PlatinumAttributeModifierService(BaseService):
             self._modifierMap.pop(key, None)
             self._baseValueMap.pop(key, None)
         self._protectionMagicBaseMap.pop(entityId, None)
-
-    # 兼容旧方法
-    def clearPlayer(self, entityId, restore):
-        return self.clearEntity(entityId, restore)
 
     @staticmethod
     def _createModifier(modifierId, amount, operation, operand):
@@ -724,9 +716,7 @@ class PlatinumAttributeModifierService(BaseService):
             trigger = dict(trigger)
             if trigger.get("cause") == "magic":
                 baseMultiplier = trigger.get("damage_multiplier", 1.0)
-                if isinstance(baseMultiplier, bool) or not isinstance(
-                    baseMultiplier, integerTypes + (float,)
-                ):
+                if isinstance(baseMultiplier, bool) or not isinstance(baseMultiplier, integerTypes + (float,)):
                     return False
                 trigger["damage_multiplier"] = float(baseMultiplier) * multiplier
                 hasMagicTrigger = True
@@ -747,9 +737,7 @@ class PlatinumAttributeModifierService(BaseService):
         if damageSensor is None:
             success = bool(entityComp.RemoveActorComponent("minecraft:damage_sensor"))
         else:
-            success = bool(
-                entityComp.AddActorComponent("minecraft:damage_sensor", json.dumps(damageSensor))
-            )
+            success = bool(entityComp.AddActorComponent("minecraft:damage_sensor", json.dumps(damageSensor)))
         if success:
             self._protectionMagicBaseMap.pop(entityId, None)
         return success

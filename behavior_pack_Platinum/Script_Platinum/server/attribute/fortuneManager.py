@@ -59,8 +59,10 @@ class FortuneManager(object):
     @staticmethod
     def rollFortuneMultiplier(level):
         # type: (int) -> int
-        """原版时运算法 random(level + 2) - 1 结果 > 0 时倍率为 (结果 + 1)，否则 1。"""
+        """原版矿石时运算法：掷 randint(0, level + 1)。
+        结果 < level 时倍率为 (结果 + 2)；结果 >= level（权重 2，倍率 2..level+1 各权重 1）时倍率为 1。"""
         if level <= 0:
             return 1
-        bonus = random.randint(0, level + 1) - 1
-        return bonus + 1 if bonus > 0 else 1
+        # 权重展开：1 有两份（index level 与虚拟 index level+1），2..level+1 各一份
+        roll = random.randint(0, level + 1)
+        return roll + 2 if roll < level else 1
