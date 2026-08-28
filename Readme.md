@@ -381,15 +381,19 @@ modifierSystem.GetAllModifiers(entityId, modifierSystem.AttrType.STEP_HEIGHT)
 modifierSystem.RemoveModifier(
     entityId, modifierSystem.AttrType.STEP_HEIGHT, "example:step_height"
 )
+# 查询属性当前生效值（基础值 + 全部修饰符合成；无修饰符时返回实时基础值，查询失败返回 None）
+modifierSystem.GetAttributeValue(entityId, modifierSystem.AttrType.STEP_HEIGHT)
 ```
 
 支持的属性类型：
 
+> 修饰符计算结果越过属性**下界**时，直接收敛到下界值生效（如负数时运收敛到 `0`、低于 `0.5` 的攻击速度收敛到 `0.5`）。"必须大于 `0`"的开区间约束（如 `SCALE`、`INTERACT_RANGE`、`RECOVER_TOTAL_AIR_SUPPLY_TIME`、`MAX_EXHAUSTION`）、整数性校验、跨属性联动约束（回血/掉血阈值互斥）以及 `ATTACK_SPEED_AMPLIFIER` 的上界仍会拒绝。
+
 - `modifierSystem.AttrType.FLYING_ABILITY`：计算结果大于 `0` 时允许飞行（仅玩家生效）。
 - `modifierSystem.AttrType.STEP_HEIGHT`：无需跳跃最大跨越高度，计算结果必须大于 `0`（仅玩家生效）。
 - `modifierSystem.AttrType.GRAVITY`：实体重力因子（负数，表示每帧向下的速度；为 `0` 时取世界重力因子，默认 `-0.08`）。
-- `modifierSystem.AttrType.SCALE`：实体模型放缩比例（基准值 `1.0`，结果必须大于 `0`）。
-- `modifierSystem.AttrType.ATTACK_SPEED_AMPLIFIER`：玩家攻击速度倍率（仅玩家生效，基准值 `1.0`，有效范围 `[0.5, 2.0]`，`0.8` 表示提速 20%）。
+- `modifierSystem.AttrType.SCALE`：实体模型放缩比例（基准值 `1.0`，结果必须大于 `0`）**当用于修改玩家模型大小时, 请注意处理摄像机位置**。
+- `modifierSystem.AttrType.ATTACK_SPEED_AMPLIFIER`：玩家攻击速度倍率（仅玩家生效，基准值 `1.0`，有效范围 `[0.5, 2.0]`，低于 `0.5` 收敛到 `0.5`、超过 `2.0` 拒绝，`0.8` 表示提速 20%）。
 - `modifierSystem.AttrType.PICKUP_AREA_HORIZONTAL`：玩家水平方向拾取物品增加距离（仅玩家生效，基准值 `0.0`，对应 X/Z 轴额外范围，结果不能为负数）。
 - `modifierSystem.AttrType.PICKUP_AREA_VERTICAL`：玩家纵向/垂直方向拾取物品增加距离（仅玩家生效，基准值 `0.0`，对应 Y 轴额外范围，结果不能为负数）。
 - `modifierSystem.AttrType.INVULNERABLE_TIME`（别名 `INVULNERABILITY_TIME`）：实体受击后获得的无敌保护时长（单位：秒，基准值 `0.5` 即原版 10 游戏刻，结果不能为负数；生效期内免疫后续伤害与击退，虚空/自杀/override除外）。
@@ -397,11 +401,11 @@ modifierSystem.RemoveModifier(
 - `modifierSystem.AttrType.LIFESTEAL_PROJECTILE`：投射物/远程攻击吸血比例（基准值 `0.0`，即 0%；如 `0.15` 表示远程造成伤害后为攻击者恢复实际造成伤害 15% 的生命值，不超过生命上限）。
 - `modifierSystem.AttrType.KILL_EXP_MULTIPLIER`：击杀生物经验倍率（基准值 `1.0`，结果必须大于等于 `1.0`；通过额外掉落经验球实现，如 `1.5` 表示额外掉落相当于原版经验 50% 的经验球）。
 - `modifierSystem.AttrType.EXP_MULTIPLIER`：拾取经验球倍率（仅玩家生效，基准值 `1.0`，结果不能为负数；如 `2.0` 表示拾取经验球时最终获得 2 倍经验，不影响其他方式直接增加的经验）。
-- `modifierSystem.AttrType.INTERACT_RANGE`（别名 `PICK_RANGE`）：玩家交互范围/触及距离（单位：格，仅玩家生效，结果必须大于 `0`；服务端修改 `SetPlayerInteracteRange` 并自动向客户端同步更新 `SetPickRange`）。
+- `modifierSystem.AttrType.INTERACT_RANGE`（别名 `PICK_RANGE`）：玩家交互范围/触及距离（单位：格，仅玩家生效，结果必须大于 `0`；服务端 `SetPlayerInteracteRange` 生效，并向客户端同步修饰符列表，客户端在自身设备基准交互距离上重放相同加算/乘算后 `SetPickRange`，两端的基准值可以不同；`GetAttributeValue` 返回服务端计算值，与各客户端实际生效值可能不同）。
 - `modifierSystem.AttrType.BURNING_TIME`（别名 `BURN_TIME`）：实体受到点燃/火焰伤害时的燃烧时间倍率（基准值 `1.0`，结果不能为负数；为 `0.0` 时免疫火焰伤害与点燃效果，小于 `1.0` 时按比例缩短、大于 `1.0` 时按比例延长着火持续时间）。
 - `modifierSystem.AttrType.ARMOR`：复用网易 `AttrType.ARMOR`，将实体当前身上穿戴装备的总护甲作为基数（baseValue）参与加算与乘算修饰，计算出的总护甲与装备护甲的差值作为额外护甲写入引擎；玩家换装时自动重新计算。
 - `modifierSystem.AttrType.MAX_AIR_SUPPLY`（别名 `MAX_OXYGEN`）：实体最大氧气储备值（单位：游戏刻，原版基准值通常为 `300` 刻即 15 秒，结果不能为负数）。
-- `modifierSystem.AttrType.RECOVER_TOTAL_AIR_SUPPLY_TIME`：实体恢复最大氧气量所需时间（单位：秒，基准值 `0.0` 秒，结果不能为负数）。
+- `modifierSystem.AttrType.RECOVER_TOTAL_AIR_SUPPLY_TIME`：实体恢复满氧气量所需时间（单位：秒；基准值按 wiki 原版恢复速率"可呼吸时每刻 +4"推导，为 `maxAir/80` 秒，普通生物 300 刻即 `3.75` 秒；结果必须大于 `0`。注意引擎特性：当结果满足 `timeSec*10 >= maxAir` 时每帧恢复量取整为 `0`，即永不回氧。
 - `modifierSystem.AttrType.MAX_EXHAUSTION`：玩家最大消耗度（`foodExhaustionLevel` 归零阈值，默认 `4.0`，仅玩家生效），结果必须大于 `0`。
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_GLOBAL`：全局饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_HEAL`：自然回血饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
@@ -430,10 +434,10 @@ modifierSystem.RemoveModifier(
 - 所有 `PROTECTION_*` 使用自由减伤比例：`-0.2` 表示额外受到 `20%` 对应伤害，`0.2` 表示减少 `20%`，`1.0` 及以上表示免疫。`none`、`override`、`self_destruct` 不可减免；`void` 伤害仍绕过 `INVULNERABLE_TIME`。网易文档注明药水与状态效果伤害不触发 `DamageEvent`；此类伤害只有实际触发对应事件或由魔法保护组件规则覆盖时才会生效。
 - `modifierSystem.AttrType.NATURAL_REGEN`：计算结果大于 `0` 时开启自然回血（仅玩家生效）。
 - `modifierSystem.AttrType.NATURAL_REGEN_LEVEL`：自然回血饥饿值阈值（仅玩家生效），结果必须为非负整数，且不能低于当前饥饿掉血阈值。
-- `modifierSystem.AttrType.NATURAL_REGEN_TICK`：每次自然回血的间隔（仅玩家生效），单位为游戏刻，结果必须为大于等于 `1` 的整数。
+- `modifierSystem.AttrType.NATURAL_REGEN_TICK`：每次自然回血的间隔（仅玩家生效），单位为游戏刻，结果必须为整数，低于 `1` 收敛到 `1`。
 - `modifierSystem.AttrType.NATURAL_STARVE`：计算结果大于 `0` 时开启饥饿掉血（仅玩家生效）。
 - `modifierSystem.AttrType.STARVE_LEVEL`：饥饿掉血阈值（仅玩家生效），结果必须为非负整数，且不能高于当前自然回血阈值。
-- `modifierSystem.AttrType.STARVE_TICK`：每次饥饿掉血的间隔（仅玩家生效），单位为游戏刻，结果必须为大于等于 `1` 的整数。
+- `modifierSystem.AttrType.STARVE_TICK`：每次饥饿掉血的间隔（仅玩家生效），单位为游戏刻，结果必须为整数，低于 `1` 收敛到 `1`。
 
 特殊属性修饰符统一仅支持 `OperandCurrent`。自定义属性修饰符按 `OperationAddition`、`OperationMultiplyBase`、`OperationMultiplyTotal`、`OperationCap` 顺序计算。`AddModifier` 遇到重复 `modifierId` 返回 `False`，已有修饰符必须使用 `UpdateModifier`。修饰符只保存在当前服务端运行期；实体或玩家数据加载、饰品恢复时应重新添加。自定义属性存在修饰符期间，不要绕过本接口直接修改同一属性。
 

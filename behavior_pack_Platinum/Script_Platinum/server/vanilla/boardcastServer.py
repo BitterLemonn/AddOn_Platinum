@@ -46,6 +46,10 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         """返回实体属性全部修饰符的副本列表。"""
         return PlatinumAttributeModifierService.access().getAllModifiers(entityId, attributeType)
 
+    def GetAttributeValue(self, entityId, attributeType):
+        """返回实体属性当前生效值(基础值+全部修饰符合成);无修饰符时返回实时基础值,查询失败返回 None。"""
+        return PlatinumAttributeModifierService.access().getAttributeValue(entityId, attributeType)
+
     def RegisterFortuneBlock(self, blockName):
         """注册由时运属性接管掉落的方块，并返回操作结果。"""
         if not isinstance(blockName, str) or not blockName:

@@ -59,6 +59,7 @@ class PlatinumAttributeModifierService(BaseService):
         self._baseValueMap = {}  # type: dict[tuple[str, str | int], float]
         self._invulnerableUntil = {}  # type: dict[str, float]
         self._burningMultiplier = {}  # type: dict[str, float]
+        self._burningBoostUntil = {}  # type: dict[str, float]
         self._protectionMagicBaseMap = {}  # type: dict[str, dict | None]
         self.fortuneManager = FortuneManager()
 
@@ -138,6 +139,16 @@ class PlatinumAttributeModifierService(BaseService):
         modifiers = self._modifierMap.get((entityId, attributeType), {})
         return [dict(modifiers[modifierId]) for modifierId in sorted(modifiers)]
 
+    def getAttributeValue(self, entityId, attributeType):
+        """获取实体属性当前生效值(基础值+全部修饰符合成);无修饰符时返回实时基础值,查询失败返回 None。"""
+        if not self._validateAttribute(entityId, attributeType):
+            return None
+        key = (entityId, attributeType)
+        if self._modifierMap.get(key):
+            return self._getCalculatedValue(entityId, attributeType)
+        baseValue = self._getBaseValue(entityId, attributeType)
+        return float(baseValue) if baseValue is not None else None
+
     @BaseService.Listen("DamageEvent")
     def onDamageEvent(self, data):
         entityId = data.get("entityId")
@@ -204,10 +215,20 @@ class PlatinumAttributeModifierService(BaseService):
         elif multiplier != 1.0:
             fireTime = data.get("fireTime", 0.0)
             if fireTime > 0.0:
+                # 不取消原版点燃；每秒火焰伤害会重复触发本事件，
+                # 用延长截止时间保证同一轮燃烧只乘算一次，避免滚雪球
+                now = time.time()
+                if now < self._burningBoostUntil.get(victim, 0.0):
+                    return
                 newFireTime = fireTime * multiplier
-                attrComp = compFactory.CreateAttr(victim)
-                if attrComp and attrComp.SetEntityOnFire(int(math.ceil(newFireTime))):
-                    data["cancelIgnite"] = True
+                self._burningBoostUntil[victim] = now + newFireTime
+                # 事件回调内设置着火会被引擎随后的点燃流程覆盖，延迟到下一帧再延长
+                compFactory.CreateGame(levelId).AddTimer(0.0, self._extendBurning, victim, newFireTime)
+
+    def _extendBurning(self, entityId, seconds):
+        attrComp = compFactory.CreateAttr(entityId)
+        if attrComp and attrComp.IsEntityOnFire():
+            attrComp.SetEntityOnFire(int(math.ceil(seconds)))
 
     @BaseService.Listen("ActuallyHurtServerEvent")
     def onActuallyHurt(self, data):
@@ -300,7 +321,7 @@ class PlatinumAttributeModifierService(BaseService):
                         if pos:
                             expComp = compFactory.CreateExp(attacker)
                             if expComp:
-                                expComp.CreateExperienceOrb(extraExp, pos)
+                                expComp.CreateExperienceOrb(extraExp, pos, False)
 
     @BaseService.Listen("DestroyBlockEvent")
     def onDestroyBlock(self, data):
@@ -413,11 +434,13 @@ class PlatinumAttributeModifierService(BaseService):
         self._baseValueMap.clear()
         self._invulnerableUntil.clear()
         self._burningMultiplier.clear()
+        self._burningBoostUntil.clear()
         self._protectionMagicBaseMap.clear()
 
     def clearEntity(self, entityId, restore):
         self._invulnerableUntil.pop(entityId, None)
         self._burningMultiplier.pop(entityId, None)
+        self._burningBoostUntil.pop(entityId, None)
         if restore and entityId in self._protectionMagicBaseMap:
             self._restoreProtectionMagicValue(entityId)
         keys = [key for key in self._modifierMap if key[0] == entityId]
@@ -663,8 +686,9 @@ class PlatinumAttributeModifierService(BaseService):
             value = breathComp.GetMaxAirSupply() if breathComp else None
             return float(value) if isinstance(value, integerTypes) and value >= 0 else None
         if attributeType == PlatinumAttributeType.RECOVER_TOTAL_AIR_SUPPLY_TIME:
-            # 原版恢复全部氧气时间基准为 0.0 秒（即出水立即按恢复率全速回满）
-            return 0.0
+            breathComp = compFactory.CreateBreath(entityId)
+            maxAir = breathComp.GetMaxAirSupply() if breathComp else None
+            return float(maxAir) / 80.0 if isinstance(maxAir, integerTypes) and maxAir > 0 else None
         return self._getPlayerBaseValue(entityId, attributeType)
 
     @staticmethod
@@ -788,8 +812,9 @@ class PlatinumAttributeModifierService(BaseService):
             scaleComp = compFactory.CreateScale(entityId)
             return bool(scaleComp and scaleComp.SetEntityScale(entityId, float(value)) == 1)
         if attributeType == PlatinumAttributeType.ATTACK_SPEED_AMPLIFIER:
-            if value < 0.5 or value > 2.0:
+            if value > 2.0:
                 return False
+            value = max(value, 0.5)
             playerComp = compFactory.CreatePlayer(entityId)
             return bool(playerComp and playerComp.SetPlayerAttackSpeedAmplifier(float(value)))
         if attributeType in (
@@ -805,7 +830,8 @@ class PlatinumAttributeModifierService(BaseService):
             playerComp = compFactory.CreatePlayer(entityId)
             return bool(playerComp and playerComp.SetPickUpArea((h, v, h)))
         if attributeType == PlatinumAttributeType.INVULNERABLE_TIME:
-            return value >= 0.0
+            # 负值在下界 0 收敛：使用点按 > 0 判定，负值等效 0（无无敌加成）
+            return True
         if attributeType in (
             PlatinumAttributeType.LIFESTEAL_MELEE,
             PlatinumAttributeType.LIFESTEAL_PROJECTILE,
@@ -813,7 +839,8 @@ class PlatinumAttributeModifierService(BaseService):
             PlatinumAttributeType.FORTUNE_LEVEL,
             PlatinumAttributeType.LOOTING_LEVEL,
         ):
-            return value >= 0.0
+            # 负值在下界 0 收敛：使用点均按 <= 0 / max(0, ...) 处理，负值等效 0
+            return True
         if attributeType in (
             PlatinumAttributeType.PROTECTION_ALL,
             PlatinumAttributeType.PROTECTION_MAGIC,
@@ -822,15 +849,16 @@ class PlatinumAttributeModifierService(BaseService):
         if attributeType in PlatinumAttributeType.PROTECTION_DAMAGE_EVENT_TYPES:
             return True
         if attributeType == PlatinumAttributeType.BURNING_TIME:
-            if value < 0.0:
-                return False
+            value = max(value, 0.0)
             if abs(value - 1.0) < 1e-6:
                 self._burningMultiplier.pop(entityId, None)
+                self._burningBoostUntil.pop(entityId, None)
             else:
                 self._burningMultiplier[entityId] = float(value)
             return True
         if attributeType == PlatinumAttributeType.KILL_EXP_MULTIPLIER:
-            return value >= 1.0
+            # 负值在下界 1.0 收敛：使用点按 max(1.0, ...) 处理
+            return True
         if attributeType == PlatinumAttributeType.ARMOR:
             # 装备护甲通过 _getBaseValue 参与乘算/加算，SetAttrValue 仅写入额外护甲差值（总护甲 - 装备护甲）。
             extraArmor = int(round(value - baseValue))
@@ -838,56 +866,75 @@ class PlatinumAttributeModifierService(BaseService):
                 extraArmor = 0
             return compFactory.CreateAttr(entityId).SetAttrValue(AttrType.ARMOR, extraArmor, 0)
         if attributeType == PlatinumAttributeType.MAX_AIR_SUPPLY:
-            if value < 0.0:
-                return False
+            value = max(value, 0.0)
             breathComp = compFactory.CreateBreath(entityId)
             return bool(breathComp and breathComp.SetMaxAirSupply(int(round(value))))
         if attributeType == PlatinumAttributeType.RECOVER_TOTAL_AIR_SUPPLY_TIME:
-            if value < 0.0:
+            if value <= 0.0:
                 return False
             breathComp = compFactory.CreateBreath(entityId)
             return bool(breathComp and breathComp.SetRecoverTotalAirSupplyTime(float(value)))
+        if attributeType == PlatinumAttributeType.INTERACT_RANGE:
+            if value <= 0.0 or baseValue <= 0.0:
+                return False
+            if not compFactory.CreatePlayer(entityId).SetPlayerInteracteRange(float(value)):
+                return False
+            # 各客户端设备交互距离基准不同：同步修饰符列表，客户端按自身基准重放相同计算
+            modifiers = self._modifierMap.get((entityId, attributeType), {})
+            self.syncRequest(
+                entityId,
+                "client/attribute/syncPickRange",
+                QRequests.Args({
+                    "playerId": entityId,
+                    "modifiers": [
+                        {"amount": m["amount"], "operation": m["operation"]}
+                        for m in modifiers.values()
+                    ],
+                }),
+            )
+            return True
         return self._setPlayerValue(entityId, attributeType, value)
 
     @staticmethod
     def _setPlayerValue(entityId, attributeType, value):
         playerComp = compFactory.CreatePlayer(entityId)
-        if attributeType == PlatinumAttributeType.INTERACT_RANGE:
-            if value <= 0.0:
-                return False
-            success = bool(playerComp.SetPlayerInteracteRange(float(value)))
-            if success:
-                BaseService().syncRequest(
-                    entityId,
-                    "client/attribute/syncPickRange",
-                    QRequests.Args({"playerId": entityId, "pickRange": float(value)}),
-                )
-            return success
         if attributeType == PlatinumAttributeType.NATURAL_REGEN:
             return playerComp.SetPlayerNaturalRegen(value > 0.0)
         if attributeType == PlatinumAttributeType.NATURAL_REGEN_LEVEL:
             healthLevel = int(value)
             starveLevel = playerComp.GetPlayerStarveLevel()
-            if healthLevel < 0 or healthLevel != value or starveLevel < 0 or healthLevel < starveLevel:
+            if healthLevel != value or starveLevel < 0:
+                return False
+            # 下界非法值收敛到下界 0
+            healthLevel = max(healthLevel, 0)
+            if healthLevel < starveLevel:
                 return False
             return playerComp.SetPlayerHealthLevel(healthLevel)
         if attributeType == PlatinumAttributeType.NATURAL_REGEN_TICK:
             healthTick = int(value)
-            if healthTick < 1 or healthTick != value:
+            if healthTick != value:
                 return False
+            # 下界非法值收敛到下界 1
+            healthTick = max(healthTick, 1)
             return playerComp.SetPlayerHealthTick(healthTick)
         if attributeType == PlatinumAttributeType.NATURAL_STARVE:
             return playerComp.SetPlayerNaturalStarve(value > 0.0)
         if attributeType == PlatinumAttributeType.STARVE_LEVEL:
             starveLevel = int(value)
             healthLevel = playerComp.GetPlayerHealthLevel()
-            if starveLevel < 0 or starveLevel != value or (healthLevel >= 0 and starveLevel > healthLevel):
+            if starveLevel != value:
+                return False
+            # 下界非法值收敛到下界 0
+            starveLevel = max(starveLevel, 0)
+            if healthLevel >= 0 and starveLevel > healthLevel:
                 return False
             return playerComp.SetPlayerStarveLevel(starveLevel)
         if attributeType == PlatinumAttributeType.STARVE_TICK:
             starveTick = int(value)
-            if starveTick < 1 or starveTick != value:
+            if starveTick != value:
                 return False
+            # 下界非法值收敛到下界 1
+            starveTick = max(starveTick, 1)
             return playerComp.SetPlayerStarveTick(starveTick)
         if attributeType == PlatinumAttributeType.MAX_EXHAUSTION:
             if value <= 0.0:
@@ -903,8 +950,8 @@ class PlatinumAttributeModifierService(BaseService):
                 PlatinumAttributeType.EXHAUSTION_RATIO_ATTACK: PlayerExhauseRatioType.ATTACK,
             }
             if attributeType in ratioTypeMap:
-                if value < 0.0:
-                    return False
+                # 下界非法值收敛到下界 0
+                value = max(value, 0.0)
                 return playerComp.SetPlayerExhaustionRatioByType(ratioTypeMap[attributeType], float(value))
         return False
 
