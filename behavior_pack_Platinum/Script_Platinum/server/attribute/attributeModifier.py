@@ -17,6 +17,7 @@ from Script_Platinum.data.attributeModifier import (
     calculateModifiedValue,
     calculateProtectionMultiplier,
 )
+from Script_Platinum.server.attribute.attributeTypes import PlatinumAttributeType
 from Script_Platinum.server.attribute.fortuneManager import FortuneManager
 from Script_Platinum.utils import developLogging as logging
 from Script_Platinum.utils.ItemFactory import ItemFactory
@@ -46,187 +47,6 @@ BYPASS_PROTECTION_CAUSES = (
     ActorDamageCause.Override,
     ActorDamageCause.NONE,
 )
-
-
-class PlatinumAttributeType(object):
-    """实体属性修饰符类型。"""
-
-    FLYING_ABILITY = "flying_ability"  # 创造飞行能力
-    STEP_HEIGHT = "step_height"  # 台阶高度
-    GRAVITY = "gravity"  # 重力
-    SCALE = "scale"  # 体型缩放
-    ATTACK_SPEED_AMPLIFIER = "attack_speed_amplifier"  # 攻击速度倍率
-    PICKUP_AREA_HORIZONTAL = "pickup_area_horizontal"  # 水平拾取范围
-    PICKUP_AREA_VERTICAL = "pickup_area_vertical"  # 垂直拾取范围
-    INVULNERABLE_TIME = "invulnerable_time"  # 无敌时间(秒)
-    INVULNERABILITY_TIME = INVULNERABLE_TIME  # 无敌时间别名
-    LIFESTEAL_MELEE = "lifesteal_melee"  # 近战吸血比例
-    LIFESTEAL_PROJECTILE = "lifesteal_projectile"  # 投射物吸血比例
-    KILL_EXP_MULTIPLIER = "kill_exp_multiplier"  # 击杀生物经验倍率
-    EXP_MULTIPLIER = "exp_multiplier"  # 获取经验球倍率
-    INTERACT_RANGE = "interact_range"  # 交互范围/触及距离
-    PICK_RANGE = INTERACT_RANGE  # 交互范围别名
-    BURNING_TIME = "burning_time"  # 燃烧时间倍率
-    BURN_TIME = BURNING_TIME  # 燃烧时间别名
-    ARMOR = AttrType.ARMOR  # 护甲值
-    MAX_AIR_SUPPLY = "max_air_supply"  # 最大氧气值(刻)
-    MAX_OXYGEN = MAX_AIR_SUPPLY  # 最大氧气值别名
-    RECOVER_TOTAL_AIR_SUPPLY_TIME = "recover_total_air_supply_time"  # 恢复最大氧气量时间(秒)
-    NATURAL_REGEN = "natural_regen"  # 自然生命恢复开关
-    NATURAL_REGEN_LEVEL = "natural_regen_level"  # 自然生命恢复饥饿门槛
-    NATURAL_REGEN_TICK = "natural_regen_tick"  # 自然生命恢复间隔(刻)
-    NATURAL_STARVE = "natural_starve"  # 饥饿扣血开关
-    STARVE_LEVEL = "starve_level"  # 饥饿扣血门槛
-    STARVE_TICK = "starve_tick"  # 饥饿扣血间隔(刻)
-    MAX_EXHAUSTION = "max_exhaustion"  # 最大消耗度
-    EXHAUSTION_RATIO_GLOBAL = "exhaustion_ratio_global"  # 全局饥饿消耗倍率
-    EXHAUSTION_RATIO_HEAL = "exhaustion_ratio_heal"  # 回血饥饿消耗倍率
-    EXHAUSTION_RATIO_JUMP = "exhaustion_ratio_jump"  # 跳跃饥饿消耗倍率
-    EXHAUSTION_RATIO_SPRINT_JUMP = "exhaustion_ratio_sprint_jump"  # 疾跑跳跃饥饿消耗倍率
-    EXHAUSTION_RATIO_MINE = "exhaustion_ratio_mine"  # 挖掘饥饿消耗倍率
-    EXHAUSTION_RATIO_ATTACK = "exhaustion_ratio_attack"  # 攻击饥饿消耗倍率
-    FORTUNE_LEVEL = "fortune_level"  # 时运等级
-    FORTUNE = FORTUNE_LEVEL  # 时运等级别名
-    LOOTING_LEVEL = "looting_level"  # 抢夺等级
-    LOOTING = LOOTING_LEVEL  # 抢夺等级别名
-    PROTECTION_ALL = "protection_all"
-    PROTECTION_CONTACT = "protection_contact"
-    PROTECTION_ENTITY_ATTACK = "protection_entity_attack"
-    PROTECTION_PROJECTILE = "protection_projectile"
-    PROTECTION_SUFFOCATION = "protection_suffocation"
-    PROTECTION_FALL = "protection_fall"
-    PROTECTION_FIRE = "protection_fire"
-    PROTECTION_FIRE_TICK = "protection_fire_tick"
-    PROTECTION_LAVA = "protection_lava"
-    PROTECTION_DROWNING = "protection_drowning"
-    PROTECTION_VOID = "protection_void"
-    PROTECTION_BLOCK_EXPLOSION = "protection_block_explosion"
-    PROTECTION_ENTITY_EXPLOSION = "protection_entity_explosion"
-    PROTECTION_STARVE = "protection_starve"
-    PROTECTION_ANVIL = "protection_anvil"
-    PROTECTION_THORNS = "protection_thorns"
-    PROTECTION_FALLING_BLOCK = "protection_falling_block"
-    PROTECTION_PISTON = "protection_piston"
-    PROTECTION_FLY_INTO_WALL = "protection_fly_into_wall"
-    PROTECTION_MAGMA = "protection_magma"
-    PROTECTION_FIREWORKS = "protection_fireworks"
-    PROTECTION_LIGHTNING = "protection_lightning"
-    PROTECTION_FREEZING = "protection_freezing"
-    PROTECTION_STALACTITE = "protection_stalactite"
-    PROTECTION_STALAGMITE = "protection_stalagmite"
-    PROTECTION_RAM_ATTACK = "protection_ram_attack"
-    PROTECTION_CUSTOM = "protection_custom"
-    PROTECTION_SONIC_BOOM = "protection_sonic_boom"
-    PROTECTION_CAMPFIRE = "protection_campfire"
-    PROTECTION_SOUL_CAMPFIRE = "protection_soul_campfire"
-    PROTECTION_MACE_SMASH = "protection_mace_smash"
-    PROTECTION_MAGIC = "protection_magic"
-
-    PROTECTION_DAMAGE_EVENT_TYPES = (
-        PROTECTION_CONTACT,
-        PROTECTION_ENTITY_ATTACK,
-        PROTECTION_PROJECTILE,
-        PROTECTION_SUFFOCATION,
-        PROTECTION_FALL,
-        PROTECTION_FIRE,
-        PROTECTION_FIRE_TICK,
-        PROTECTION_LAVA,
-        PROTECTION_DROWNING,
-        PROTECTION_VOID,
-        PROTECTION_BLOCK_EXPLOSION,
-        PROTECTION_ENTITY_EXPLOSION,
-        PROTECTION_STARVE,
-        PROTECTION_ANVIL,
-        PROTECTION_THORNS,
-        PROTECTION_FALLING_BLOCK,
-        PROTECTION_PISTON,
-        PROTECTION_FLY_INTO_WALL,
-        PROTECTION_MAGMA,
-        PROTECTION_FIREWORKS,
-        PROTECTION_LIGHTNING,
-        PROTECTION_FREEZING,
-        PROTECTION_STALACTITE,
-        PROTECTION_STALAGMITE,
-        PROTECTION_RAM_ATTACK,
-        PROTECTION_CUSTOM,
-        PROTECTION_SONIC_BOOM,
-        PROTECTION_CAMPFIRE,
-        PROTECTION_SOUL_CAMPFIRE,
-        PROTECTION_MACE_SMASH,
-    )
-
-    VALUES = (
-        (
-            FLYING_ABILITY,
-            STEP_HEIGHT,
-            GRAVITY,
-            SCALE,
-            ATTACK_SPEED_AMPLIFIER,
-            PICKUP_AREA_HORIZONTAL,
-            PICKUP_AREA_VERTICAL,
-            INVULNERABLE_TIME,
-            LIFESTEAL_MELEE,
-            LIFESTEAL_PROJECTILE,
-            KILL_EXP_MULTIPLIER,
-            EXP_MULTIPLIER,
-            INTERACT_RANGE,
-            BURNING_TIME,
-            ARMOR,
-            MAX_AIR_SUPPLY,
-            RECOVER_TOTAL_AIR_SUPPLY_TIME,
-            NATURAL_REGEN,
-            NATURAL_REGEN_LEVEL,
-            NATURAL_REGEN_TICK,
-            NATURAL_STARVE,
-            STARVE_LEVEL,
-            STARVE_TICK,
-            MAX_EXHAUSTION,
-            EXHAUSTION_RATIO_GLOBAL,
-            EXHAUSTION_RATIO_HEAL,
-            EXHAUSTION_RATIO_JUMP,
-            EXHAUSTION_RATIO_SPRINT_JUMP,
-            EXHAUSTION_RATIO_MINE,
-            EXHAUSTION_RATIO_ATTACK,
-            FORTUNE_LEVEL,
-            LOOTING_LEVEL,
-        )
-        + PROTECTION_DAMAGE_EVENT_TYPES
-        + (PROTECTION_ALL, PROTECTION_MAGIC)
-    )
-
-
-PROTECTION_CAUSE_ATTRIBUTE_MAP = {
-    "contact": PlatinumAttributeType.PROTECTION_CONTACT,
-    "entity_attack": PlatinumAttributeType.PROTECTION_ENTITY_ATTACK,
-    "projectile": PlatinumAttributeType.PROTECTION_PROJECTILE,
-    "suffocation": PlatinumAttributeType.PROTECTION_SUFFOCATION,
-    "fall": PlatinumAttributeType.PROTECTION_FALL,
-    "fire": PlatinumAttributeType.PROTECTION_FIRE,
-    "fire_tick": PlatinumAttributeType.PROTECTION_FIRE_TICK,
-    "lava": PlatinumAttributeType.PROTECTION_LAVA,
-    "drowning": PlatinumAttributeType.PROTECTION_DROWNING,
-    "void": PlatinumAttributeType.PROTECTION_VOID,
-    "block_explosion": PlatinumAttributeType.PROTECTION_BLOCK_EXPLOSION,
-    "entity_explosion": PlatinumAttributeType.PROTECTION_ENTITY_EXPLOSION,
-    "starve": PlatinumAttributeType.PROTECTION_STARVE,
-    "anvil": PlatinumAttributeType.PROTECTION_ANVIL,
-    "thorns": PlatinumAttributeType.PROTECTION_THORNS,
-    "falling_block": PlatinumAttributeType.PROTECTION_FALLING_BLOCK,
-    "piston": PlatinumAttributeType.PROTECTION_PISTON,
-    "fly_into_wall": PlatinumAttributeType.PROTECTION_FLY_INTO_WALL,
-    "magma": PlatinumAttributeType.PROTECTION_MAGMA,
-    "fireworks": PlatinumAttributeType.PROTECTION_FIREWORKS,
-    "lightning": PlatinumAttributeType.PROTECTION_LIGHTNING,
-    "freezing": PlatinumAttributeType.PROTECTION_FREEZING,
-    "stalactite": PlatinumAttributeType.PROTECTION_STALACTITE,
-    "stalagmite": PlatinumAttributeType.PROTECTION_STALAGMITE,
-    "ram_attack": PlatinumAttributeType.PROTECTION_RAM_ATTACK,
-    "custom": PlatinumAttributeType.PROTECTION_CUSTOM,
-    "sonic_boom": PlatinumAttributeType.PROTECTION_SONIC_BOOM,
-    "campfire": PlatinumAttributeType.PROTECTION_CAMPFIRE,
-    "soul_campfire": PlatinumAttributeType.PROTECTION_SOUL_CAMPFIRE,
-    "mace_smash": PlatinumAttributeType.PROTECTION_MACE_SMASH,
-}
 
 
 @BaseService.Init
@@ -348,11 +168,13 @@ class PlatinumAttributeModifierService(BaseService):
     def _applyDamageProtection(self, data, entityId, cause):
         if cause == "magic" or cause in BYPASS_PROTECTION_CAUSES:
             return
-        attributeType = PROTECTION_CAUSE_ATTRIBUTE_MAP.get(cause)
+        attributeType = PlatinumAttributeType.PROTECTION_CAUSE_ATTRIBUTE_MAP.get(
+            cause, PlatinumAttributeType.PROTECTION_ENVIRONMENT
+        )
         allKey = (entityId, PlatinumAttributeType.PROTECTION_ALL)
         typeKey = (entityId, attributeType)
         hasAllProtection = bool(self._modifierMap.get(allKey))
-        hasTypeProtection = attributeType is not None and bool(self._modifierMap.get(typeKey))
+        hasTypeProtection = bool(self._modifierMap.get(typeKey))
         if not hasAllProtection and not hasTypeProtection:
             return
         damage = data.get("damage")

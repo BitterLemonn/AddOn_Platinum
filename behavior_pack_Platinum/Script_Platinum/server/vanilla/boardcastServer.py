@@ -5,8 +5,8 @@ from Script_Platinum.data.eventData import BaubleInfoData
 from Script_Platinum.data.slotData import BaubleSlotData
 from Script_Platinum.server.attribute.attributeModifier import (
     PlatinumAttributeModifierService,
-    PlatinumAttributeType,
 )
+from Script_Platinum.server.attribute.attributeTypes import PlatinumAttributeType
 from Script_Platinum.server.registry.baubleRegistry import BaubleRegistry
 from Script_Platinum.server.registry.slotRegistry import SlotRegistry
 from Script_Platinum.utils import developLogging as logging
