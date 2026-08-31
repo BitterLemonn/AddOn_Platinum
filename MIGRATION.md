@@ -129,6 +129,7 @@ if data["slotType"] == BaubleEnum.Helmet:
 | 设置全部饰品数据 | `SetPlayerBaubleInfo(...)` | 无变更 |
 | 设置槽位饰品数据 | `SetPlayerBaubleInfoWithSlot(...)` | 无变更 |
 | 减少饰品耐久度 | `DecreaseBaubleDurability(...)` | 无变更 |
+| 打开实体饰品栏界面 | `OpenEntityBaubleContainer(playerId, entityId)` | 新增函数 |
 
 ### 事件数据字段对照
 

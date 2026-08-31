@@ -4,6 +4,7 @@ from Script_Platinum.QuModLibs.Modules.Services.Client import BaseService, QRequ
 from Script_Platinum.client.player.playerBaubleInfo import PlayerBaubleInfoClientService
 from Script_Platinum.client.player.playerBaubleSlot import PlayerBaubleSlotClientService
 from Script_Platinum.data.responseData import ItemStack
+from Script_Platinum.data.slotData import BaubleSlotData
 from Script_Platinum.utils.clientUtils import compFactory
 
 ProxyCls = clientApi.GetUIScreenProxyCls()
@@ -19,26 +20,47 @@ BAUBLE_GRID_MAX_ROW_COUNT = 5
 BAUBLE_GRID_HORIZONTAL_PADDING = 14
 baubleContainerRules = {}
 _returnInventoryCategory = None
+# 查看其他实体饰品栏时的外部数据源 {entityId, slotList, baubleDict}; None 表示查看自己
+_entityContainerData = None
+
+
+@AllowCall
+def SyncEntityContainerData(data):
+    """服务端同步被查看实体的饰品栏数据; data 为 None 时退出查看模式并关闭界面。"""
+    global _entityContainerData
+    if data is None:
+        _entityContainerData = None
+        if clientApi.GetTopUI() == "bauble_reborn_screen.screen":
+            clientApi.PopTopUI()
+        return
+    _entityContainerData = {
+        "entityId": data["entityId"],
+        "slotList": [BaubleSlotData.fromDict(slot) for slot in data["slotList"]],
+        "baubleDict": {
+            slotId: (None if ItemStack.fromDict(item).isEmpty() else ItemStack.fromDict(item))
+            for slotId, item in data["baubleDict"].items()
+        },
+    }
+    baubleContainerRules.clear()
+    rules = data.get("rules")
+    if isinstance(rules, dict):
+        baubleContainerRules.update(rules)
 
 
 def _getVisibleSlotCount(slotCount):
     return min(max(slotCount, 0), RESERVED_UI_SLOT_INDEX)
-
+ 
 
 def _getBaubleGridLayout(slotCount):
     slotCount = _getVisibleSlotCount(slotCount)
     columnCount = max(
-        BAUBLE_GRID_BASE_COLUMN_COUNT,
-        (slotCount + BAUBLE_GRID_MAX_ROW_COUNT - 1) // BAUBLE_GRID_MAX_ROW_COUNT,
+        BAUBLE_GRID_BASE_COLUMN_COUNT, (slotCount + BAUBLE_GRID_MAX_ROW_COUNT - 1) // BAUBLE_GRID_MAX_ROW_COUNT
     )
     rowCount = (slotCount + columnCount - 1) // columnCount
     gridWidth = columnCount * BAUBLE_GRID_CELL_SIZE
     return (
         (columnCount, rowCount),
-        (
-            gridWidth,
-            rowCount * BAUBLE_GRID_CELL_SIZE,
-        ),
+        (gridWidth, rowCount * BAUBLE_GRID_CELL_SIZE),
         gridWidth + BAUBLE_GRID_HORIZONTAL_PADDING,
     )
 
@@ -69,8 +91,9 @@ def _onBaubleContainerOpened(data):
 
 
 def openBaubleContainer(returnCategory=None):
-    global _returnInventoryCategory
+    global _returnInventoryCategory, _entityContainerData
     _returnInventoryCategory = returnCategory
+    _entityContainerData = None
     baubleContainerRules.clear()
     if returnCategory is not None:
         clientApi.PopTopUI()
@@ -120,6 +143,7 @@ class BaubleContainerProxy(ProxyCls):
         self.screen = self.GetScreenNode()
         self.slotManager = PlayerBaubleSlotClientService.access()
         self.baubleInfoManager = PlayerBaubleInfoClientService.access()
+        self.isExternal = _entityContainerData is not None
         self.contentStackPath = (
             "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/"
             "safezone_screen_panel/root_screen_panel/root_panel/bauble_panel/content_stack"
@@ -128,17 +152,20 @@ class BaubleContainerProxy(ProxyCls):
         self.pendingSlotLayout = None
 
     def OnCreate(self):
-        self.slotManager.addPlayerSlotListener(self.onSlotListChanged)
-        self.baubleInfoManager.addBaubleInfoListener(self.onBaubleInfoChanged)
+        if not self.isExternal:
+            self.slotManager.addPlayerSlotListener(self.onSlotListChanged)
+            self.baubleInfoManager.addBaubleInfoListener(self.onBaubleInfoChanged)
         ListenForEvent("PlayerTryPutCustomContainerItemClientEvent", self, self.onTryPutItem)
         ListenForEvent("PlayerTryAddCustomContainerItemClientEvent", self, self.onTryPutItem)
-        self._updateBaubleLayout(len(self.slotManager.getPlayerSlotList()))
+        self._updateBaubleLayout(len(self._getSlotList()))
 
     def OnDestroy(self):
-        global _returnInventoryCategory
+        global _returnInventoryCategory, _entityContainerData
         self.pendingSlotLayout = None
-        self.slotManager.removePlayerSlotListener(self.onSlotListChanged)
-        self.baubleInfoManager.removeBaubleInfoListener(self.onBaubleInfoChanged)
+        if not self.isExternal:
+            self.slotManager.removePlayerSlotListener(self.onSlotListChanged)
+            self.baubleInfoManager.removeBaubleInfoListener(self.onBaubleInfoChanged)
+        _entityContainerData = None
         UnListenForEvent("PlayerTryPutCustomContainerItemClientEvent", self, self.onTryPutItem)
         UnListenForEvent("PlayerTryAddCustomContainerItemClientEvent", self, self.onTryPutItem)
         if _returnInventoryCategory is not None:
@@ -160,11 +187,21 @@ class BaubleContainerProxy(ProxyCls):
             data.get("collectionType") == "netease_ui_container" and data.get("collectionName") == BAUBLE_CONTAINER_NAME
         )
 
+    def _getSlotList(self):
+        if self.isExternal:
+            return _entityContainerData["slotList"]
+        return self.slotManager.getPlayerSlotList()
+
+    def _getBaubleInfoBySlot(self, identifier):
+        if self.isExternal:
+            return _entityContainerData["baubleDict"].get(identifier)
+        return self.baubleInfoManager.getBaubleInfoBySlot(identifier)
+
     def onTryPutItem(self, data):
         if not self._isBaubleContainer(data):
             return
         index = data.get("collectionIndex")
-        slotList = self.slotManager.getPlayerSlotList()
+        slotList = self._getSlotList()
         slotIndex = _getSlotIndex(index, len(slotList))
         if slotIndex is None:
             data["cancel"] = True
@@ -195,10 +232,7 @@ class BaubleContainerProxy(ProxyCls):
             self.screen.GetBaseUIControl(
                 self.baubleGridPath + "/bauble_ui_grid_item{}".format(containerIndex + 1)
             ).SetPosition(
-                (
-                    slotIndex % columnCount * BAUBLE_GRID_CELL_SIZE,
-                    slotIndex // columnCount * BAUBLE_GRID_CELL_SIZE,
-                )
+                (slotIndex % columnCount * BAUBLE_GRID_CELL_SIZE, slotIndex // columnCount * BAUBLE_GRID_CELL_SIZE)
             )
         self.pendingSlotLayout = None
 
@@ -226,15 +260,15 @@ class BaubleContainerProxy(ProxyCls):
 
     @Binding.binding(Binding.BF_BindInt, "#bauble_reborn.container.max_items_count")
     def bindingMaxItemsCount(self):
-        return _getContainerItemCount(len(self.slotManager.getPlayerSlotList()))
+        return _getContainerItemCount(len(self._getSlotList()))
 
     @Binding.binding_collection(Binding.BF_BindBool, "netease_ui_container", "#bauble_reborn.container.slot.visible")
     def bindingSlotVisible(self, index):
-        return _getSlotIndex(index, len(self.slotManager.getPlayerSlotList())) is not None
+        return _getSlotIndex(index, len(self._getSlotList())) is not None
 
     @Binding.binding_collection(Binding.BF_BindString, "netease_ui_container", "#bauble_reborn.container.slot_overlay")
     def bindingSlotOverlay(self, index):
-        slotList = self.slotManager.getPlayerSlotList()
+        slotList = self._getSlotList()
         slotIndex = _getSlotIndex(index, len(slotList))
         return slotList[slotIndex].placeholderPath if slotIndex is not None else ""
 
@@ -242,8 +276,6 @@ class BaubleContainerProxy(ProxyCls):
         Binding.BF_BindBool, "netease_ui_container", "#bauble_reborn.container.slot_overlay.visible"
     )
     def bindingSlotOverlayVisible(self, index):
-        slotList = self.slotManager.getPlayerSlotList()
+        slotList = self._getSlotList()
         slotIndex = _getSlotIndex(index, len(slotList))
-        return (
-            slotIndex is not None and self.baubleInfoManager.getBaubleInfoBySlot(slotList[slotIndex].identifier) is None
-        )
+        return slotIndex is not None and self._getBaubleInfoBySlot(slotList[slotIndex].identifier) is None

@@ -20,3 +20,4 @@ CLAUDE.md
 .codegraph
 *.pyc
 .codex/
+.prettierrc.json

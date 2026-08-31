@@ -180,7 +180,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         if not isinstance(entityId, str) or not entityId:
             return None
         baubleInfo = getEntityBaubleInfo(entityId)
-        return { 
+        return {
             "entityId": entityId,
             "baubleDict": {
                 slotId: itemStack.toDict()
@@ -188,6 +188,12 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
                 if itemStack is not None
             },
         }
+
+    def OpenEntityBaubleContainer(self, playerId, entityId):
+        """为玩家打开指定实体的饰品栏容器界面，支持直接拖动物品穿脱；entityId 可以是其他玩家。"""
+        from Script_Platinum.server.player.baubleContainer import BaubleContainerServerService
+
+        return BaubleContainerServerService.access().openEntityBaubleContainer(playerId, entityId)
 
     def DecreaseEntityBaubleDurability(self, entityId, slotName, num=1):
         """减少实体指定槽位饰品耐久度。"""

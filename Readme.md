@@ -346,6 +346,27 @@ engineSystem = serverApi.GetSystem(serverApi.GetEngineNamespace(), serverApi.Get
 engineSystem.BroadcastEvent("MobDieEvent", {"id": entityId})
 ```
 
+##### 打开实体饰品栏界面
+
+通过服务端接口可以为玩家打开指定实体（可以是其他玩家或非玩家生物）的饰品栏容器界面，玩家可直接在界面中拖动物品为其穿脱饰品：
+
+```python
+# coding=utf-8
+import mod.server.extraServerApi as serverApi
+
+registerSys = serverApi.GetSystem("platinum", "broadcasterServer")
+
+# 为玩家打开 entityId 的饰品栏界面; playerId 是操作者(查看者)
+registerSys.OpenEntityBaubleContainer("playerId", "entityId")
+```
+
+说明：
+
+- 返回 `True` 表示容器打开指令执行成功，不代表界面已渲染。
+- 非玩家实体使用全局默认槽位；目标为玩家时使用该玩家自己的槽位。
+- 界面内穿脱直接写入目标实体饰品数据，并触发对应穿脱事件（玩家触发 `BaubleEquipped`/`BaubleUnequipped`，非玩家触发 `EntityBaubleEquipped`/`EntityBaubleUnequipped`）。
+- 被查看实体被移除（`EntityRemoveEvent`）时，查看者的界面自动关闭。
+
 #### 10. 特殊属性修饰符
 
 组件为飞行能力、台阶高度、盔甲值、分类伤害保护、饥饿值和自然回血提供服务端修饰符接口。接口允许玩家或非玩家实体使用，参数和操作枚举与网易引擎属性修饰符保持一致：
