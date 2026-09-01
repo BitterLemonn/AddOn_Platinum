@@ -137,7 +137,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
 
     def SetEntityBaubleInfo(self, entityId, baubleDict, dropProbability=1.0):
         """设置非玩家实体全部饰品信息及掉落几率；数据只保留到实体移除。"""
-        from Script_Platinum.server.player.playerBaubleInfo import getEntityBaubleInfo
+        from Script_Platinum.server.entity.entityBaubleInfo import getEntityBaubleInfo
 
         if not isinstance(entityId, str) or not entityId:
             logging.error("铂: 设置实体饰品失败, entityId必须为非空str")
@@ -156,7 +156,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
     def SetEntityBaubleInfoWithSlot(self, entityId, baubleInfo, slotName, dropProbability=1.0):
         """设置非玩家实体指定槽位饰品及掉落几率。"""
         from Script_Platinum.data.itemStack import ItemStack
-        from Script_Platinum.server.player.playerBaubleInfo import getEntityBaubleInfo
+        from Script_Platinum.server.entity.entityBaubleInfo import getEntityBaubleInfo
         from Script_Platinum.utils.oldVersionFixer import oldSlotIdFixer
 
         if not isinstance(entityId, str) or not entityId:
@@ -175,7 +175,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
 
     def GetEntityBaubleInfo(self, entityId):
         """获取实体饰品信息。"""
-        from Script_Platinum.server.player.playerBaubleInfo import getEntityBaubleInfo
+        from Script_Platinum.server.entity.entityBaubleInfo import getEntityBaubleInfo
 
         if not isinstance(entityId, str) or not entityId:
             return None
@@ -197,7 +197,7 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
 
     def DecreaseEntityBaubleDurability(self, entityId, slotName, num=1):
         """减少实体指定槽位饰品耐久度。"""
-        from Script_Platinum.server.player.playerBaubleInfo import getEntityBaubleInfo
+        from Script_Platinum.server.entity.entityBaubleInfo import getEntityBaubleInfo
         from Script_Platinum.utils.oldVersionFixer import oldSlotIdFixer
 
         if not isinstance(entityId, str) or not entityId:

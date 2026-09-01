@@ -2,7 +2,8 @@
 from Script_Platinum.QuModLibs.Server import *
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService
 from Script_Platinum.data.itemStack import ItemStack
-from Script_Platinum.server.player.playerBaubleInfo import getPlayerBaubleInfo, getEntityBaubleInfo
+from Script_Platinum.server.player.playerBaubleInfo import getPlayerBaubleInfo
+from Script_Platinum.server.entity.entityBaubleInfo import getEntityBaubleInfo
 from Script_Platinum.server.player.playerBaubleSlot import getPlayerSlotList
 from Script_Platinum.server.registry.baubleRegistry import BaubleRegistry
 from Script_Platinum.server.registry.slotRegistry import SlotRegistry

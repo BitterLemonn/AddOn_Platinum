@@ -145,6 +145,10 @@ class SlotRegistry(object):
         return any(slot.identifier == slotId for slot in self._slots)
 
 
+def checkSlotValid(slotId):
+    return slotId in SlotRegistry().getBaubleSlotIdList()
+
+
 @BaseService.Init
 class SlotRegistryService(BaseService):
 

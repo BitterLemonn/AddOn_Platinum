@@ -4,18 +4,11 @@ from Script_Platinum.QuModLibs.Server import *
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
 from Script_Platinum.commonConfig import PLAYER_SLOT_DATA
 from Script_Platinum.data.slotData import BaubleSlotData
-from Script_Platinum.server.items.itemService import SlotRegistry
+from Script_Platinum.server.registry.slotRegistry import SlotRegistry, checkSlotValid
 from Script_Platinum.utils.serverUtils import compFactory
 from Script_Platinum.utils import developLogging as logging
 
 playerSlotList = {}  # type: dict[int, BaubleSlotData]
-
-
-def checkSlotValid(slotId):
-    from Script_Platinum.server.registry.slotRegistry import SlotRegistry
-
-    return slotId in SlotRegistry().getBaubleSlotIdList()
-
 
 def getPlayerSlotList(playerId):
     return playerSlotList.get(playerId, [])
