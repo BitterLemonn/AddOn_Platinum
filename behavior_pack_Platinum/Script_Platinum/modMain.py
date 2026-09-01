@@ -4,13 +4,6 @@ from Script_Platinum.QuModLibs.QuMod import *
 
 platinum = EasyMod()
 
-# 13829 11:24
-# 14735 12:17
-# 17433 14:51
-# 18249 15:36
-# 18643 15:55
-# 19119 16:52
-
 # -------------------server-------------------
 platinum.Server("server.server")
 platinum.Server("server.registry.slotRegistry")
@@ -40,6 +33,7 @@ platinum.regNativePyServer(
 
 # -------------------client-------------------
 platinum.Client("client.player.playerBaubleInfo")
+platinum.Client("client.entity.entityBaubleInfo")
 platinum.Client("client.player.playerBaubleSlot")
 platinum.Client("client.attribute.playerAttributeClientService")
 platinum.Client("client.ui.baubleUi")

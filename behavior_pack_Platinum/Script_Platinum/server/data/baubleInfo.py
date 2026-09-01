@@ -103,8 +103,8 @@ class BaubleInfo(object):
                 self._save()
                 return
             itemStack = self.baubleInfo[slotId]
-            itemDict = ItemFactory.fromDict(itemStack.toDict()).setDurability(durability).build()
-            self.baubleInfo[slotId] = ItemStack.fromDict(itemDict)
+            itemStack.setDurability(durability)
+            self.baubleInfo[slotId] = itemStack
             self._syncToClient()
         else:
             logging.warning("铂: 尝试设置目标{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self._getTargetId(), slotId))
@@ -138,9 +138,7 @@ class BaubleInfo(object):
         slotType = SlotRegistry().getSlotTypeById(slotId)
         oldSlotType = newSlotTypeToOld(slotType)
         slotIndex = SlotRegistry().getSlotIndexById(slotId)
-        baubleData, eventName = self._createTakeOffEventData(
-            slotId, oldSlotType, slotIndex, itemStack
-        )
+        baubleData, eventName = self._createTakeOffEventData(slotId, oldSlotType, slotIndex, itemStack)
         eventDict = baubleData.dumpToDict()
         system.BroadcastEvent(eventName, eventDict)
         self._syncBaubleEvent("client/bauble/unequipBaubleBoardcast", eventDict)
@@ -154,9 +152,7 @@ class BaubleInfo(object):
         slotType = SlotRegistry().getSlotTypeById(slotId)
         oldSlotType = newSlotTypeToOld(slotType)
         slotIndex = SlotRegistry().getSlotIndexById(slotId)
-        baubleData, eventName = self._createPutOnEventData(
-            slotId, oldSlotType, slotIndex, itemStack, isFirstLoad
-        )
+        baubleData, eventName = self._createPutOnEventData(slotId, oldSlotType, slotIndex, itemStack, isFirstLoad)
         eventDict = baubleData.dumpToDict()
         system.BroadcastEvent(eventName, eventDict)
         self._syncBaubleEvent("client/bauble/equipBaubleBoardcast", eventDict)

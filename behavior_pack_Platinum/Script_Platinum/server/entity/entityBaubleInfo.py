@@ -6,7 +6,7 @@ from Script_Platinum.data.eventData import EntityBaubleEventData, EntityBaubleDr
 from Script_Platinum.server.data.baubleInfo import BaubleInfo
 from Script_Platinum.utils import developLogging as logging
 from Script_Platinum.utils.serverUtils import compFactory
-from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService
+from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
 
 
 entityBaubleInfoDict = {}  # type: dict[str, EntityBaubleInfo]
@@ -26,6 +26,15 @@ def getEntityBaubleInfo(entityId):  # type: (str) -> BaubleInfo
 
 
 class EntityBaubleInfo(BaubleInfo):
+    def _syncBaubleEvent(self, requestName, eventDict):
+        requestName = {
+            "client/bauble/equipBaubleBoardcast": "client/bauble/equipEntityBaubleBoardcast",
+            "client/bauble/unequipBaubleBoardcast": "client/bauble/unequipEntityBaubleBoardcast",
+        }[requestName]
+        EntityBaubleInfoServerService.access().syncRequest(
+            "*", requestName, QRequests.Args(eventDict)
+        )
+
     def loadEntityDataInit(self):
         """从实体ModAttr加载饰品，并恢复穿戴事件。"""
         comp = compFactory.CreateModAttr(self.targetId)

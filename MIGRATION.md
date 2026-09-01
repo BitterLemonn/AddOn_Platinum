@@ -84,7 +84,17 @@ if data["slotType"] == BaubleEnum.Helmet:
 - **旧版本**：`buildInBaubleServer.py`（服务端）+ `buildInBaubleClient.py`（客户端）
 - **新版本**：`server/inner/baubleServer.py`（仅服务端）
 
-新版本中客户端的穿脱广播由组件内部自动完成，不再需要单独的客户端示例文件。
+新版本中玩家和非玩家实体的穿脱广播由组件内部自动完成，不再需要单独的客户端示例文件。
+
+### 7. 非玩家实体饰品生命周期变更
+
+新版本会区分非玩家实体的正常移除、区块卸载和死亡流程：
+
+- 实体因非死亡原因触发 `EntityRemoveEvent`，或因区块卸载触发 `ChunkAcquireDiscardedServerEvent` 时，会广播 `EntityBaubleUnequipped`，清理实体饰品数据和运行时属性修饰符。
+- 实体触发 `MobDieEvent` 时，先按各槽位掉落概率广播 `EntityBaubleDrop`，再在下一帧生成掉落物；实体被移除后的死亡清理不会重复广播 `EntityBaubleUnequipped`。
+- 如果其他模组拦截了原生死亡流程，必须自行补发至少包含 `{"id": entityId}` 的 `MobDieEvent`，否则不会触发饰品掉落计算。
+
+如果旧版逻辑依赖实体死亡时收到 `EntityBaubleUnequipped`，请改为监听 `EntityBaubleDrop` 处理掉落，或在非死亡移除/区块卸载场景监听 `EntityBaubleUnequipped`。
 
 ---
 
@@ -110,6 +120,7 @@ if data["slotType"] == BaubleEnum.Helmet:
 - [ ] **`isDefault` 参数清理**：检查 `AddGlobalBaubleSlot` 调用中的 `isDefault` 参数，可安全移除
 - [ ] **数据获取方式优化**：考虑将通过事件监听获取数据的方式改为直接使用方法返回值
 - [ ] **示例代码引用路径**：更新引用示例代码的路径为新路径 `server/inner/baubleServer.py`
+- [ ] **非玩家实体生命周期**：检查是否依赖死亡时重复触发 `EntityBaubleUnequipped`，并确保拦截死亡逻辑时补发 `MobDieEvent`
 
 ---
 

@@ -253,19 +253,3 @@ class BaubleContainerServerService(BaseService):
             if targetId == entityId:
                 self.viewerTargets.pop(viewerId, None)
                 Call(viewerId, "SyncEntityContainerData", None)
-
-    # ===== 调试代码: 木棍攻击实体打开其饰品栏, 验证后删除 =====
-    @BaseService.Listen("DamageEvent")
-    def onDebugDamageEvent(self, data):
-        srcId = data.get("srcId")
-        entityId = data.get("entityId")
-        if not srcId or not entityId or srcId == entityId:
-            return
-        itemDict = compFactory.CreateItem(srcId).GetPlayerItem(
-            serverApi.GetMinecraftEnum().ItemPosType.CARRIED, 0, True
-        )
-        if not itemDict or itemDict.get("itemName") != "minecraft:stick":
-            return
-        self.openEntityBaubleContainer(srcId, entityId)
-
-    # ===== 调试代码结束 =====
