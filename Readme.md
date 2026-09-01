@@ -309,7 +309,7 @@ entityBaubleInfo = registerSys.GetEntityBaubleInfo(entityId)
 registerSys.DecreaseEntityBaubleDurability(entityId, "slotId", 1)
 ```
 
-非玩家生物使用独立服务端穿脱事件：`EntityBaubleEquipped` 和 `EntityBaubleUnequipped`，事件参数使用 `entityId`。非玩家饰品不会同步饰品栏 UI，也不会写入世界存档；实体触发 `EntityRemoveEvent` 时自动卸下并清理。
+非玩家生物使用独立服务端穿脱事件：`EntityBaubleEquipped` 和 `EntityBaubleUnequipped`，事件参数使用 `entityId`。非玩家饰品不会同步饰品栏 UI，也不会写入世界存档；实体因非死亡原因触发 `EntityRemoveEvent`，或因区块卸载触发 `ChunkAcquireDiscardedServerEvent` 时会广播卸下事件并清理，死亡掉落后仅清理，不重复广播卸下事件。
 
 ##### 生物死亡掉落事件与拦截注意
 

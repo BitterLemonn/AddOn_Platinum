@@ -283,7 +283,7 @@ class PlatinumAttributeModifierService(BaseService):
         if not attacker:
             return
         deadEntityId = data.get("id")
-        if not deadEntityId or deadEntityId in serverApi.GetPlayerList():
+        if not deadEntityId or Entity(deadEntityId).IsPlayer:
             return
         key = (attacker, PlatinumAttributeType.KILL_EXP_MULTIPLIER)
         if key in self._modifierMap and self._modifierMap[key]:
@@ -368,7 +368,7 @@ class PlatinumAttributeModifierService(BaseService):
         if level <= 0:
             return
         deadEntityId = data.get("dieEntityId")
-        if not deadEntityId or deadEntityId in serverApi.GetPlayerList():
+        if not deadEntityId or Entity(deadEntityId).IsPlayer:
             return
         itemList = data.get("itemList")
         if not isinstance(itemList, list):
@@ -884,13 +884,12 @@ class PlatinumAttributeModifierService(BaseService):
             self.syncRequest(
                 entityId,
                 "client/attribute/syncPickRange",
-                QRequests.Args({
-                    "playerId": entityId,
-                    "modifiers": [
-                        {"amount": m["amount"], "operation": m["operation"]}
-                        for m in modifiers.values()
-                    ],
-                }),
+                QRequests.Args(
+                    {
+                        "playerId": entityId,
+                        "modifiers": [{"amount": m["amount"], "operation": m["operation"]} for m in modifiers.values()],
+                    }
+                ),
             )
             return True
         return self._setPlayerValue(entityId, attributeType, value)

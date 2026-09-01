@@ -31,8 +31,8 @@ def getPlayerBaubleInfo(playerId):  # type: (str) -> PlayerBaubleInfo
 
 
 def getEntityBaubleInfo(entityId):  # type: (str) -> PlayerBaubleInfo
-    """获取实体饰品信息；玩家沿用世界数据，非玩家使用实体ModAttr持久化。"""
-    if entityId in serverApi.GetPlayerList():
+    """获取实体饰品信息；目标沿用世界数据，非目标使用实体ModAttr持久化。"""
+    if entityId and Entity(entityId).IsPlayer:
         return getPlayerBaubleInfo(entityId)
     if entityId not in entityBaubleInfoDict:
         baubleInfo = PlayerBaubleInfo(entityId, False)
@@ -49,11 +49,11 @@ class PlayerBaubleInfo(object):
         self.dropProbability = {}  # type: dict[str, float]
 
     def _isPlayerTarget(self):
-        # 旧存档对象没有 isPlayer 字段，默认按玩家处理。
+        # 旧存档对象没有 isPlayer 字段，默认按目标处理。
         return getattr(self, "isPlayer", True)
 
     def loadFromDataInit(self):
-        """当从存档数据中加载玩家饰品信息时调用, 用于触发饰品的穿戴事件"""
+        """当从存档数据中加载目标饰品信息时调用, 用于触发饰品的穿戴事件"""
         for slotId, itemStack in self.baubleInfo.items():
             if itemStack is not None and not itemStack.isEmpty():
                 self.boardcastPutOnEvent(slotId, itemStack, True)
@@ -88,15 +88,15 @@ class PlayerBaubleInfo(object):
         return None
 
     def getBaubleInfoBySlotId(self, slotId):  # type: (str) -> ItemStack|None
-        """根据槽位ID获取玩家佩戴的饰品信息"""
+        """根据槽位ID获取目标佩戴的饰品信息"""
         return self.baubleInfo.get(slotId, None)
 
     def changeBaubleInfoBySlotId(
         self, slotId, itemStack, index=-1, isChanged=True, dropProbability=1.0
     ):  # type: (str, int, ItemStack, bool, float) -> None
-        """设置玩家佩戴的饰品信息"""
+        """设置目标佩戴的饰品信息"""
         if not checkSlotValid(slotId):
-            logging.w("铂: 尝试设置玩家{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
+            logging.w("铂: 尝试设置目标{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
             return
         oldItemStack = self.baubleInfo.get(slotId, None)
         if oldItemStack is not None and not oldItemStack.isEmpty() and isChanged and self._isPlayerTarget():
@@ -120,7 +120,7 @@ class PlayerBaubleInfo(object):
     def setBaubleDict(
         self, baubleDict, isFirstLoad=False, needSave=True, dropProbability=None
     ):  # type: (dict[str, dict], bool, bool, float|dict[str, float]|None) -> None
-        """直接设置玩家佩戴的饰品信息字典, 用于初始化玩家饰品信息"""
+        """直接设置目标佩戴的饰品信息字典, 用于初始化目标饰品信息"""
         if not isinstance(baubleDict, dict):
             return
         for slotId, itemDict in baubleDict.items():
@@ -144,16 +144,16 @@ class PlayerBaubleInfo(object):
                     self.boardcastTakeOffEvent(slotId, oldItemStack)
                 self.boardcastPutOnEvent(slotId, self.baubleInfo[slotId], isFirstLoad)
             else:
-                logging.warning("铂: 尝试设置玩家{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
+                logging.warning("铂: 尝试设置目标{}槽位{}的饰品信息,但该槽位ID无效".format(self.playerId, slotId))
         self._syncToClient()
         # 保存到世界信息中
         if needSave:
             self._save()
 
     def setBaubleDurabilityBySlotId(self, slotId, durability):  # type: (str, int) -> None
-        """设置玩家佩戴的饰品耐久度"""
+        """设置目标佩戴的饰品耐久度"""
         if not checkSlotValid(slotId):
-            logging.warning("铂: 尝试设置玩家{}槽位{}的饰品耐久度,但该槽位ID无效".format(self.playerId, slotId))
+            logging.warning("铂: 尝试设置目标{}槽位{}的饰品耐久度,但该槽位ID无效".format(self.playerId, slotId))
             return
         if slotId in self.baubleInfo:
             if durability <= 0:
@@ -171,14 +171,14 @@ class PlayerBaubleInfo(object):
             self.baubleInfo[slotId] = ItemStack.fromDict(itemDict)
             self._syncToClient()
         else:
-            logging.warning("铂: 尝试设置玩家{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self.playerId, slotId))
+            logging.warning("铂: 尝试设置目标{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self.playerId, slotId))
         # 保存到世界信息中
         self._save()
 
     def decreaseBaubleDurabilityBySlotId(self, slotId, decreaseAmount):  # type: (str, int) -> None
-        """减少玩家佩戴的饰品耐久度"""
+        """减少目标佩戴的饰品耐久度"""
         if not checkSlotValid(slotId):
-            logging.warning("铂: 尝试减少玩家{}槽位{}的饰品耐久度,但该槽位ID无效".format(self.playerId, slotId))
+            logging.warning("铂: 尝试减少目标{}槽位{}的饰品耐久度,但该槽位ID无效".format(self.playerId, slotId))
             return
         if slotId in self.baubleInfo:
             itemStack = self.baubleInfo[slotId]
@@ -194,7 +194,7 @@ class PlayerBaubleInfo(object):
                 pass
             self._syncToClient()
         else:
-            logging.warning("铂: 尝试减少玩家{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self.playerId, slotId))
+            logging.warning("铂: 尝试减少目标{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self.playerId, slotId))
 
         # 保存到世界信息中
         self._save()
@@ -226,7 +226,7 @@ class PlayerBaubleInfo(object):
         )
 
     def boardcastTakeOffEvent(self, slotId, itemStack):
-        """广播玩家饰品脱落事件"""
+        """广播目标饰品脱落事件"""
         from Script_Platinum.server.registry.slotRegistry import SlotRegistry
         from Script_Platinum.utils.oldVersionFixer import newSlotTypeToOld
 
@@ -250,7 +250,7 @@ class PlayerBaubleInfo(object):
             )
 
     def boardcastPutOnEvent(self, slotId, itemStack, isFirstLoad=False):
-        """广播玩家饰品佩戴事件"""
+        """广播目标饰品佩戴事件"""
         from Script_Platinum.server.registry.slotRegistry import SlotRegistry
         from Script_Platinum.utils.oldVersionFixer import newSlotTypeToOld
 
@@ -276,10 +276,11 @@ class PlayerBaubleInfo(object):
 
 @BaseService.Init
 class PlayerBaubleInfoServerService(BaseService):
-    """玩家饰品信息服务"""
+    """目标饰品信息服务"""
 
     def __init__(self):
         BaseService.__init__(self)
+        self.deathEntityIds = set()
 
     @BaseService.Listen("PlayerDieEvent")
     def onPlayerDieEvent(self, data):
@@ -287,7 +288,7 @@ class PlayerBaubleInfoServerService(BaseService):
         rule = compFactory.CreateGame(levelId).GetGameRulesInfoServer()
         isKeep = rule.get("cheat_info", {}).get("keep_inventory")
         if not isKeep:
-            # 移除玩家穿戴饰品
+            # 移除目标穿戴饰品
             playerId = data["id"]
             playerBaubleInfo = getPlayerBaubleInfo(playerId)
             for slotId, itemStack in playerBaubleInfo.baubleInfo.items():
@@ -304,7 +305,7 @@ class PlayerBaubleInfoServerService(BaseService):
     def onMobDieEvent(self, data):
         """生物死亡事件：根据概率计算掉落饰品，广播事件并在下一帧掉落。"""
         entityId = data.get("id")
-        if not entityId or entityId in serverApi.GetPlayerList():
+        if not entityId or Entity(entityId).IsPlayer:
             return
         entityBaubleInfo = entityBaubleInfoDict.get(entityId)
         if entityBaubleInfo is None:
@@ -322,6 +323,12 @@ class PlayerBaubleInfoServerService(BaseService):
         dropDict = dropData.dumpToDict()
         system = serverApi.GetSystem(commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER)
         system.BroadcastEvent(commonConfig.ENTITY_BAUBLE_DROP_BEFORE_EVENT, dropDict)
+        # 记录死亡实体ID
+        self.deathEntityIds.add(entityId)
+        # 广播脱下事件
+        for slotId, itemStack in entityBaubleInfo.baubleInfo.items():
+            if itemStack is not None and not itemStack.isEmpty():
+                entityBaubleInfo.boardcastTakeOffEvent(slotId, itemStack)
 
         pos = Entity(entityId).Pos
         dimension = Entity(entityId).Dm
@@ -352,6 +359,10 @@ class PlayerBaubleInfoServerService(BaseService):
         """清理非玩家实体的运行时饰品及属性修饰符。"""
         entityId = data["id"]
         entityBaubleInfo = entityBaubleInfoDict.pop(entityId, None)
+        # 检查实体是否已死亡
+        if entityId in self.deathEntityIds:
+            self.deathEntityIds.discard(entityId)
+            return
         if entityBaubleInfo is None:
             return
         for slotId, itemStack in entityBaubleInfo.baubleInfo.items():
@@ -361,13 +372,19 @@ class PlayerBaubleInfoServerService(BaseService):
 
         PlatinumAttributeModifierService.access().clearEntity(entityId, False)
 
+    @BaseService.Listen("ChunkAcquireDiscardedServerEvent")
+    def onChunkAcquireDiscardedServerEvent(self, data):
+        """区块卸载移除实体时，复用实体移除清理流程。"""
+        for entityId in data.get("entities", []):
+            self.onEntityRemoveEvent({"id": entityId})
+
     @BaseService.Listen("ClientLoadAddonsFinishServerEvent")
     def onClientLoadAddonsFinishServerEvent(self, data):
         global isInit
         if isInit:
             return
         isInit = True
-        # 从世界信息中加载玩家饰品信息
+        # 从世界信息中加载目标饰品信息
         import pickle
 
         playerBaubleInfoData = compFactory.CreateExtraData(levelId).GetExtraData(commonConfig.PLAYER_BAUBLE_INFO)
@@ -379,13 +396,13 @@ class PlayerBaubleInfoServerService(BaseService):
                 for _, baubleInfo in playerBaubleInfoDict.items():
                     baubleInfo.loadFromDataInit()
             except Exception as e:
-                logging.error("铂: 玩家饰品信息加载失败, 数据可能已损坏. 错误信息: {}".format(e))
+                logging.error("铂: 目标饰品信息加载失败, 数据可能已损坏. 错误信息: {}".format(e))
         else:
-            logging.info("铂: 玩家饰品信息加载完成, 无数据可加载")
+            logging.info("铂: 目标饰品信息加载完成, 无数据可加载")
 
     @BaseService.REG_API("server/player/requestBaubleInfo")
     def requestBaubleInfo(self, _=None):
-        """客户端请求玩家饰品信息"""
+        """客户端请求目标饰品信息"""
         playerId = getLoaderSystem().rpcPlayerId
         playerBaubleInfo = getPlayerBaubleInfo(playerId)
         baubleDict = {
@@ -452,7 +469,7 @@ class PlayerBaubleInfoServerService(BaseService):
         playerBaubleInfo.setBaubleDict(data, isFirstLoad=True)
 
     def savePlayerBaubleInfo(self):
-        """将玩家饰品信息保存到世界信息中"""
+        """将目标饰品信息保存到世界信息中"""
         import pickle
 
         baubleInfo = pickle.dumps(playerBaubleInfoDict)

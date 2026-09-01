@@ -40,13 +40,13 @@ def _getSlotIndex(slotList, containerIndex):
 
 def _getEntitySlotList(entityId):
     """获取实体的槽位列表；非玩家实体使用全局默认槽位。"""
-    if entityId in serverApi.GetPlayerList():
+    if entityId and Entity(entityId).IsPlayer:
         return getPlayerSlotList(entityId)
     return SlotRegistry().getBaubleSlotList(defaultFilter=True)
 
 
 def _getEntityBaubleInfo(entityId):
-    if entityId in serverApi.GetPlayerList():
+    if entityId and Entity(entityId).IsPlayer:
         return getPlayerBaubleInfo(entityId)
     return getEntityBaubleInfo(entityId)
 
