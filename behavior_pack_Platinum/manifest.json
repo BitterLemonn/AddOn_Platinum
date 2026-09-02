@@ -2,7 +2,7 @@
   "modules": [
     {
       "type": "data",
-      "uuid": "8d97da78-2f3a-4c21-ac54-2effb9e98553",
+      "uuid": "741f05d7-5788-4fef-b183-dcbe343f682e",
       "version": [
         2,
         0,
@@ -12,11 +12,11 @@
     }
   ],
   "header": {
-    "uuid": "8251202b-a876-4e10-8838-f4a672a92748",
+    "uuid": "9517a377-cf99-4d90-a1b6-e834f9945859",
     "version": [
       2,
       0,
-      9
+      10
     ],
     "description": "",
     "name": "behavior_pack",

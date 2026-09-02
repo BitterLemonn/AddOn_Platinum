@@ -63,16 +63,15 @@ class PlatinumAttributeModifierService(BaseService):
         self._protectionMagicBaseMap = {}  # type: dict[str, dict | None]
         self.fortuneManager = FortuneManager()
 
-    def addModifier(self, entityId, attributeType, *modifierArgs):
-        if not self._validateModifier(entityId, attributeType, modifierArgs):
+    def addModifier(self, entityId, attributeType, modifierId, amount, operation, operand):
+        if not self._validateModifier(entityId, attributeType, modifierId, amount, operation, operand):
             return False
-        modifierId = modifierArgs[0]
         key = (entityId, attributeType)
         modifiers = self._modifierMap.setdefault(key, {})
         if modifierId in modifiers:
             logging.warning("实体 {} 已存在修饰符 {}".format(Entity(entityId).Identifier, modifierId))
             return False
-        modifier = self._createModifier(*modifierArgs)
+        modifier = self._createModifier(modifierId, amount, operation, operand)
         oldValue = self._getDebugAttributeValue(key)
         if key not in self._baseValueMap:
             baseValue = self._getBaseValue(entityId, attributeType)
@@ -90,9 +89,8 @@ class PlatinumAttributeModifierService(BaseService):
         logging.error("实体 {} 添加修饰符 {} 失败".format(Entity(entityId).Identifier, modifierId))
         return False
 
-    def updateModifier(self, entityId, attributeType, *modifierArgs):
-        modifierId = modifierArgs[0] if modifierArgs else None
-        if not self._validateModifier(entityId, attributeType, modifierArgs):
+    def updateModifier(self, entityId, attributeType, modifierId, amount, operation, operand):
+        if not self._validateModifier(entityId, attributeType, modifierId, amount, operation, operand):
             logging.warning("实体 {} 无效的修饰符 {}".format(Entity(entityId).Identifier, modifierId))
             return False
         key = (entityId, attributeType)
@@ -101,7 +99,7 @@ class PlatinumAttributeModifierService(BaseService):
             logging.warning("实体 {} 不存在修饰符 {}".format(Entity(entityId).Identifier, modifierId))
             return False
         oldModifier = modifiers[modifierId]
-        modifier = self._createModifier(*modifierArgs)
+        modifier = self._createModifier(modifierId, amount, operation, operand)
         modifiers[modifierId] = modifier
         if self._apply(key):
             return True
@@ -470,10 +468,7 @@ class PlatinumAttributeModifierService(BaseService):
     def _validateKey(self, entityId, attributeType, modifierId):
         return self._validateAttribute(entityId, attributeType) and isinstance(modifierId, str) and bool(modifierId)
 
-    def _validateModifier(self, entityId, attributeType, modifierArgs):
-        if len(modifierArgs) != 4:
-            return False
-        modifierId, amount, operation, operand = modifierArgs
+    def _validateModifier(self, entityId, attributeType, modifierId, amount, operation, operand):
         if not self._validateKey(entityId, attributeType, modifierId):
             return False
         if isinstance(amount, bool) or not isinstance(amount, integerTypes + (float,)):

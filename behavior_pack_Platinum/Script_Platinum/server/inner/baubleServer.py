@@ -53,9 +53,6 @@ class BaubleServer(serverApi.GetServerSystemCls()):
         slot = data["baubleSlot"]  # 饰品槽名称(旧版)
         slotId = data["baubleSlotId"]  # 饰品槽ID
         slotIndex = data["slotIndex"]  # 饰品槽索引
-        print(
-            "铂: 饰品装备事件,实体ID: {}, 槽位: {}, 槽位ID: {}, 槽位索引: {}".format(entityId, slot, slotId, slotIndex)
-        )
         if bauble["newItemName"] == "lemon_platinum:traveler_belt":
             modifierSystem = serverApi.GetSystem(
                 commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
@@ -79,9 +76,6 @@ class BaubleServer(serverApi.GetServerSystemCls()):
         slot = data["baubleSlot"]  # 饰品槽名称(旧版)
         slotId = data["baubleSlotId"]  # 饰品槽ID
         slotIndex = data["slotIndex"]  # 饰品槽索引
-        print(
-            "铂: 饰品脱落事件,实体ID: {}, 槽位: {}, 槽位ID: {}, 槽位索引: {}".format(entityId, slot, slotId, slotIndex)
-        )
         if bauble["newItemName"] == "lemon_platinum:traveler_belt":
             modifierSystem = serverApi.GetSystem(
                 commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
