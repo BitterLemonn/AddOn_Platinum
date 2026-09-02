@@ -167,7 +167,13 @@ class BaubleInfo(object):
         pass
 
     def _syncToClient(self):
-        pass
+        self._refreshOpenContainer()
+
+    def _refreshOpenContainer(self):
+        """饰品数据变化时, 刷新打开中的饰品栏容器界面物品(如API移除饰品后同步清除容器内物品)。"""
+        from Script_Platinum.server.player.baubleContainer import BaubleContainerServerService
+
+        BaubleContainerServerService.access().refreshTargetContainers(self._getTargetId())
 
     @abstractmethod
     def _save(self):

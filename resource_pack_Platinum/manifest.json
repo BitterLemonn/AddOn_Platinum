@@ -1,30 +1,18 @@
 {
-  "modules": [
-    {
-      "type": "resources",
-      "uuid": "62bb5755-3b84-4828-b6ce-30e668f54d43",
-      "version": [
-        2,
-        0,
-        3
-      ],
-      "description": ""
-    }
-  ],
-  "header": {
-    "uuid": "b1c88bde-1eb1-4bf0-839c-22abaadd3087",
-    "version": [
-      2,
-      0,
-      10
+    "modules": [
+        {
+            "type": "resources",
+            "uuid": "60a3e98b-ba84-4896-9e8e-9ea84fa834a4",
+            "version": [2, 0, 3],
+            "description": ""
+        }
     ],
-    "description": "",
-    "name": "resource_pack",
-    "min_engine_version": [
-      1,
-      18,
-      0
-    ]
-  },
-  "format_version": 2
+    "header": {
+        "uuid": "63a87020-5faf-4307-9002-4f027b992ebe",
+        "version": [2, 0, 10],
+        "description": "",
+        "name": "resource_pack",
+        "min_engine_version": [1, 18, 0]
+    },
+    "format_version": 2
 }

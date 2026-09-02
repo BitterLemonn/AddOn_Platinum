@@ -55,6 +55,7 @@ class PlayerBaubleInfo(BaubleInfo):
             "client/bauble/syncFromServer",
             QRequests.Args(baubleDict),
         )
+        self._refreshOpenContainer()
 
     def _save(self):
         PlayerBaubleInfoServerService.access().savePlayerBaubleInfo()

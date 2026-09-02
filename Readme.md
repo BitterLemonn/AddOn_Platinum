@@ -365,6 +365,7 @@ registerSys.OpenEntityBaubleContainer("playerId", "entityId")
 - 返回 `True` 表示容器打开指令执行成功，不代表界面已渲染。
 - 非玩家实体使用全局默认槽位；目标为玩家时使用该玩家自己的槽位。
 - 界面内穿脱直接写入目标实体饰品数据，并触发对应穿脱事件（玩家触发 `BaubleEquipped`/`BaubleUnequipped`，非玩家触发 `EntityBaubleEquipped`/`EntityBaubleUnequipped`）。
+- 界面打开期间目标饰品数据发生变化（如通过 `SetPlayerBaubleInfoWithSlot`、`SetEntityBaubleInfo` 等接口移除或更换饰品、饰品耐久耗尽），界面内对应槽位的物品会同步刷新（移除的饰品会从界面中消失）。
 - 被查看实体被移除（`EntityRemoveEvent`）时，查看者的界面自动关闭。
 
 #### 10. 特殊属性修饰符

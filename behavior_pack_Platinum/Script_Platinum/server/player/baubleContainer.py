@@ -93,12 +93,19 @@ class BaubleContainerServerService(BaseService):
             itemDict = itemStack.toDict() if itemStack is not None and not itemStack.isEmpty() else None
             itemComp.SetPlayerUIItem(playerId, _getContainerIndex(slotIndex), itemDict, False, True)
 
+    def refreshTargetContainers(self, targetId):
+        """目标饰品数据变化时, 刷新正查看该目标的容器界面物品(含API移除饰品后同步清除容器内物品)。"""
+        # ponytail: 界面关闭后 viewerTargets 记录保留, 刷新只是对已关闭界面的UI容器槽做无害写入,
+        # 下次打开时 _fillContainerItems 会全量覆盖; 需要精确开关追踪时改挂容器关闭事件。
+        for viewerId, viewTargetId in self.viewerTargets.items():
+            if viewTargetId == targetId:
+                self._fillContainerItems(viewerId, targetId)
+
     def _openContainer(self, playerId, entityId=None):
         if entityId is None or entityId == playerId:
             entityId = playerId
-            self.viewerTargets.pop(playerId, None)
-        else:
-            self.viewerTargets[playerId] = entityId
+        # 登记 viewer(含查看自己), 供饰品数据变化时刷新打开中的容器界面
+        self.viewerTargets[playerId] = entityId
         if playerId in self.pendingSlotIndices:
             self._syncPlayerSlots(playerId)
         self._fillContainerItems(playerId, entityId)
