@@ -435,11 +435,41 @@ modifierSystem.GetAttributeValue(entityId, modifierSystem.AttrType.STEP_HEIGHT)
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_SPRINT_JUMP`：疾跑跳跃饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_MINE`：挖掘方块饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_ATTACK`：攻击饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
-- `modifierSystem.AttrType.FORTUNE_LEVEL`（别名 `FORTUNE`）：时运等级（基准值 `0`，小数截断，结果不能为负数）。玩家带时运等级破坏已注册方块时，引擎掉落照常生成，另按原版时运算法。扩展注册方式（只注册方块名）：
+- `modifierSystem.AttrType.FORTUNE_LEVEL`（别名 `FORTUNE`）：时运等级（基准值 `0`，小数截断，结果不能为负数）。玩家带时运等级破坏已注册方块时，销毁引擎原始掉落实体，按原版时运算法计算全部掉落并接管生成。扩展注册方式（支持方块完整名或正则表达式，支持黑名单避开特定方块）：
   ```python
+  # 注册时运方块：支持完整方块名
   modifierSystem.RegisterFortuneBlock("custom:ore_block")
+  # 注册时运方块：支持正则表达式（如匹配所有 ore 矿石）
+  modifierSystem.RegisterFortuneBlock(r".*:.*_ore$")
+  # 也可以直接传入 re.compile 编译对象
+  import re
+  modifierSystem.RegisterFortuneBlock(re.compile(r"^custom:.*_ore$"))
+
+  # 注册黑名单：即使正则匹配，命中黑名单也绝不触发时运掉落（同样支持字符串与正则）
+  modifierSystem.RegisterFortuneBlacklist("custom:special_ore")
+  modifierSystem.RegisterFortuneBlacklist(r".*:silk_only_.*")
+  modifierSystem.UnregisterFortuneBlacklist("custom:special_ore")
+  fortuneBlacklist = modifierSystem.GetFortuneBlacklist()
+
   modifierSystem.UnregisterFortuneBlock("minecraft:diamond_ore")
   fortuneBlockList = modifierSystem.GetFortuneBlockList()
+  ```
+  走时运的全部掉落会触发服务端事件 `FortuneBlockDrop`（命名空间 `platinum`，系统 `broadcasterServer`）。事件广播后延迟一帧生成实际掉落实体，监听者可直接修改字典内的 `itemList`、`pos`、`dimensionId`，或将 `cancel` 设置为 `True` 直接取消掉落生成：
+  ```python
+  # 监听时运掉落事件
+  self.ListenForEvent("platinum", "broadcasterServer", "FortuneBlockDrop", self, self.onFortuneBlockDrop)
+
+  def onFortuneBlockDrop(self, data):
+      # data: {"itemList": list[dict], "pos": tuple, "dimensionId": int, "playerId": str, "cancel": bool}
+      # 方式一：设置 cancel 为 True，直接取消生成掉落物
+      if some_condition:
+          data["cancel"] = True
+          return
+
+      # 方式二：原地修改 itemList，一帧后按最新内容生成掉落物
+      itemList = data["itemList"]
+      for item in itemList:
+          item["count"] += 1
   ```
 - `modifierSystem.AttrType.LOOTING_LEVEL`（别名 `LOOTING`）：抢夺等级（仅玩家击杀者生效，基准值 `0`，小数截断，结果不能为负数）。击杀生物时按原版抢夺算法对生物掉落表模拟出的每种物品额外掉落 `0~等级` 个（抢夺 III 即等级 `3` 时每种额外 0~3 个）。不影响引擎自身掉落，与武器抢夺附魔效果叠加。
 - `modifierSystem.AttrType.PROTECTION_MAGIC`：魔法减伤比例（基准值 `0.0`，允许负数）。通过实体 `minecraft:damage_sensor` 的 `magic` 触发器修改魔法伤害倍率；最后一个修饰符移除时恢复实体原有组件。

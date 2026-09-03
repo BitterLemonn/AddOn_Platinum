@@ -11,6 +11,7 @@ except NameError:
     integerTypes = (int,)
     stringTypes = (str,)
 
+from Script_Platinum import commonConfig
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
 from Script_Platinum.QuModLibs.Server import Entity, System, compFactory, levelId, serverApi
 from Script_Platinum.data.attributeModifier import (
@@ -336,13 +337,12 @@ class PlatinumAttributeModifierService(BaseService):
         if not dropEntityIds:
             return
         multiplier = FortuneManager.rollFortuneMultiplier(level)
-        if multiplier <= 1:
-            return
         itemComp = compFactory.CreateItem(levelId)
         if not itemComp:
             return
         dimensionId = data.get("dimensionId", 0)
         pos = (data["x"] + 0.5, data["y"] + 0.5, data["z"] + 0.5)
+        itemList = []
         for itemEntityId in dropEntityIds:
             itemDict = itemComp.GetDroppedItem(itemEntityId, True)
             if not isinstance(itemDict, dict):
@@ -350,9 +350,43 @@ class PlatinumAttributeModifierService(BaseService):
             count = itemDict.get("count", 0)
             if isinstance(count, bool) or not isinstance(count, integerTypes) or count <= 0:
                 continue
-            extraItemDict = dict(itemDict)
-            extraItemDict["count"] = count * (multiplier - 1)
-            System.CreateEngineItemEntity(extraItemDict, dimensionId, pos)
+            fortuneItemDict = dict(itemDict)
+            fortuneItemDict["count"] = count * multiplier
+            itemList.append(fortuneItemDict)
+            # 销毁原版引擎生成的单倍原始掉落实体，由本系统全权接管时运后掉落
+            System.DestroyEntity(itemEntityId)
+
+        if not itemList:
+            return
+
+        eventDict = {
+            "itemList": itemList,
+            "pos": pos,
+            "dimensionId": dimensionId,
+            "playerId": playerId,
+            "cancel": False,
+        }
+        system = serverApi.GetSystem(
+            commonConfig.PLATINUM_NAMESPACE, commonConfig.PLATINUM_BROADCAST_SERVER
+        )
+        if system:
+            system.BroadcastEvent(commonConfig.FORTUNE_BLOCK_DROP_EVENT, eventDict)
+
+        def actualDrop():
+            if eventDict.get("cancel", False):
+                return
+            targetItems = eventDict.get("itemList", [])
+            targetDim = eventDict.get("dimensionId", dimensionId)
+            targetPos = eventDict.get("pos", pos)
+            for item in targetItems:
+                if item and isinstance(item, dict):
+                    System.CreateEngineItemEntity(item, targetDim, targetPos)
+
+        gameComp = compFactory.CreateGame(levelId)
+        if gameComp:
+            gameComp.AddTimer(0.0, actualDrop)
+        else:
+            actualDrop()
 
     @BaseService.Listen("EntityDieLoottableServerEvent")
     def onMobDieLooting(self, data):

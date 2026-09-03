@@ -1,5 +1,13 @@
 # coding=utf-8
 import random
+import re
+
+try:
+    stringTypes = (str, unicode)
+    regexPatternType = re._pattern_type
+except (NameError, AttributeError):
+    stringTypes = (str,)
+    regexPatternType = getattr(re, "Pattern", type(re.compile("")))
 
 
 class FortuneManager(object):
@@ -31,30 +39,110 @@ class FortuneManager(object):
     def __init__(self, registerDefaults=True):
         # type: (bool) -> None
         self._blockSet = set(self.DEFAULT_FORTUNE_BLOCKS) if registerDefaults else set()  # type: set[str]
+        self._patternDict = {}
+        self._blacklistSet = set()  # type: set[str]
+        self._blacklistPatternDict = {}
 
-    def registerBlock(self, blockName):
-        # type: (str) -> bool
-        """注册方块：玩家带时运等级破坏时取消引擎掉落，按自定义倍率独立重掷原始掉落表。"""
-        if not isinstance(blockName, str) or not blockName:
+    def _normalizePattern(self, pattern):
+        """解析并返回 (pattern_str, compiled_regex)，非法时返回 (None, None)。"""
+        if isinstance(pattern, regexPatternType):
+            return pattern.pattern, pattern
+        if isinstance(pattern, stringTypes) and pattern:
+            try:
+                compiled = re.compile(pattern)
+                return pattern, compiled
+            except re.error:
+                return None, None
+        return None, None
+
+    def registerBlock(self, pattern):
+        """注册方块或正则表达式：玩家带时运等级破坏时取消引擎掉落，按自定义倍率独立重掷原始掉落表。"""
+        patternStr, compiled = self._normalizePattern(pattern)
+        if not patternStr:
             return False
-        self._blockSet.add(blockName)
+        # 如果是无特殊正则字符的普通方块ID，优先放入集合以供 O(1) 检索
+        self._patternDict[patternStr] = compiled
+        self._blockSet.add(patternStr)
         return True
 
-    def unregisterBlock(self, blockName):
+    def unregisterBlock(self, pattern):
+        # type: (Any) -> bool
+        patternStr, _ = self._normalizePattern(pattern)
+        if not patternStr:
+            return False
+        removed = False
+        if patternStr in self._blockSet:
+            self._blockSet.remove(patternStr)
+            removed = True
+        if patternStr in self._patternDict:
+            del self._patternDict[patternStr]
+            removed = True
+        return removed
+
+    def registerBlacklist(self, pattern):
+        # type: (Any) -> bool
+        """注册黑名单方块或正则表达式：命中黑名单的方块绝不触发时运掉落。"""
+        patternStr, compiled = self._normalizePattern(pattern)
+        if not patternStr:
+            return False
+        self._blacklistPatternDict[patternStr] = compiled
+        self._blacklistSet.add(patternStr)
+        return True
+
+    def unregisterBlacklist(self, pattern):
+        # type: (Any) -> bool
+        """反注册黑名单方块或正则表达式规则。"""
+        patternStr, _ = self._normalizePattern(pattern)
+        if not patternStr:
+            return False
+        removed = False
+        if patternStr in self._blacklistSet:
+            self._blacklistSet.remove(patternStr)
+            removed = True
+        if patternStr in self._blacklistPatternDict:
+            del self._blacklistPatternDict[patternStr]
+            removed = True
+        return removed
+
+    def isBlacklisted(self, blockName):
         # type: (str) -> bool
-        if blockName in self._blockSet:
-            self._blockSet.remove(blockName)
+        """检查方块是否处于黑名单中。"""
+        if not isinstance(blockName, stringTypes) or not blockName:
+            return False
+        if blockName in self._blacklistSet:
             return True
+        for pattern in self._blacklistPatternDict.values():
+            if pattern.search(blockName):
+                return True
         return False
 
     def isRegistered(self, blockName):
         # type: (str) -> bool
-        return blockName in self._blockSet
+        if not isinstance(blockName, stringTypes) or not blockName:
+            return False
+        # 黑名单优先级最高，命中黑名单则直接不参与时运
+        if self.isBlacklisted(blockName):
+            return False
+        if blockName in self._blockSet:
+            return True
+        for pattern in self._patternDict.values():
+            if pattern.search(blockName):
+                return True
+        return False
 
     def getRegisteredBlocks(self):
         # type: () -> list[str]
-        """返回已注册时运方块的有序副本。"""
-        return sorted(self._blockSet)
+        """返回已注册时运方块与正则规则的有序列表。"""
+        allKeys = set(self._blockSet)
+        allKeys.update(self._patternDict.keys())
+        return sorted(allKeys)
+
+    def getBlacklistBlocks(self):
+        # type: () -> list[str]
+        """返回已注册黑名单方块与正则规则的有序列表。"""
+        allKeys = set(self._blacklistSet)
+        allKeys.update(self._blacklistPatternDict.keys())
+        return sorted(allKeys)
 
     @staticmethod
     def rollFortuneMultiplier(level):

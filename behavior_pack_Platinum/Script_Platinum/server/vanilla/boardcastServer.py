@@ -51,20 +51,36 @@ class BroadcasterServer(serverApi.GetServerSystemCls()):
         return PlatinumAttributeModifierService.access().getAttributeValue(entityId, attributeType)
 
     def RegisterFortuneBlock(self, blockName):
-        """注册由时运属性接管掉落的方块，并返回操作结果。"""
-        if not isinstance(blockName, str) or not blockName:
+        """注册由时运属性接管掉落的方块（支持方块完整名称字符串或正则表达式），并返回操作结果。"""
+        if not blockName:
             return False
         return PlatinumAttributeModifierService.access().fortuneManager.registerBlock(blockName)
 
     def UnregisterFortuneBlock(self, blockName):
-        """反注册由时运属性接管掉落的方块，并返回操作结果。"""
-        if not isinstance(blockName, str) or not blockName:
+        """反注册由时运属性接管掉落的方块或正则表达式规则，并返回操作结果。"""
+        if not blockName:
             return False
         return PlatinumAttributeModifierService.access().fortuneManager.unregisterBlock(blockName)
+
+    def RegisterFortuneBlacklist(self, blockName):
+        """注册时运黑名单方块（支持完整名称字符串或正则表达式），命中方块绝不触发时运掉落。"""
+        if not blockName:
+            return False
+        return PlatinumAttributeModifierService.access().fortuneManager.registerBlacklist(blockName)
+
+    def UnregisterFortuneBlacklist(self, blockName):
+        """反注册时运黑名单方块或规则。"""
+        if not blockName:
+            return False
+        return PlatinumAttributeModifierService.access().fortuneManager.unregisterBlacklist(blockName)
 
     def GetFortuneBlockList(self):
         """返回已注册时运方块的有序副本列表。"""
         return PlatinumAttributeModifierService.access().fortuneManager.getRegisteredBlocks()
+
+    def GetFortuneBlacklist(self):
+        """返回已注册时运黑名单规则的有序副本列表。"""
+        return PlatinumAttributeModifierService.access().fortuneManager.getBlacklistBlocks()
 
     def BaubleRegister(self, data):
         """

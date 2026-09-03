@@ -1,18 +1,30 @@
 {
-    "modules": [
-        {
-            "type": "resources",
-            "uuid": "60a3e98b-ba84-4896-9e8e-9ea84fa834a4",
-            "version": [2, 0, 3],
-            "description": ""
-        }
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "73bf38d5-a51f-4b94-b24d-953101964472",
+      "version": [
+        2,
+        0,
+        3
+      ],
+      "description": ""
+    }
+  ],
+  "header": {
+    "uuid": "8f272858-b572-421e-afa4-e9b150c89068",
+    "version": [
+      2,
+      0,
+      11
     ],
-    "header": {
-        "uuid": "63a87020-5faf-4307-9002-4f027b992ebe",
-        "version": [2, 0, 10],
-        "description": "",
-        "name": "resource_pack",
-        "min_engine_version": [1, 18, 0]
-    },
-    "format_version": 2
+    "description": "",
+    "name": "resource_pack",
+    "min_engine_version": [
+      1,
+      18,
+      0
+    ]
+  },
+  "format_version": 2
 }

@@ -1,19 +1,31 @@
 {
-    "modules": [
-        {
-            "type": "data",
-            "uuid": "23e4a3cd-031d-4a1f-bf79-9c8257f4cd35",
-            "version": [2, 0, 3],
-            "description": ""
-        }
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "5ba672b9-24c4-4b48-b005-8cdecffaf604",
+      "version": [
+        2,
+        0,
+        3
+      ],
+      "description": ""
+    }
+  ],
+  "header": {
+    "uuid": "4f77eff8-a57a-43cd-ab9d-e66cfc7866c3",
+    "version": [
+      2,
+      0,
+      11
     ],
-    "header": {
-        "uuid": "f47e9865-3c21-4c96-8055-e46f7d84b774",
-        "version": [2, 0, 10],
-        "description": "",
-        "name": "behavior_pack",
-        "min_engine_version": [1, 18, 0]
-    },
-    "dependencies": [],
-    "format_version": 2
+    "description": "",
+    "name": "behavior_pack",
+    "min_engine_version": [
+      1,
+      18,
+      0
+    ]
+  },
+  "dependencies": [],
+  "format_version": 2
 }
