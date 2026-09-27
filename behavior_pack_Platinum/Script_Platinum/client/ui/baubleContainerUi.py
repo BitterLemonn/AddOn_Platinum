@@ -166,6 +166,8 @@ class BaubleContainerProxy(ProxyCls):
             self.slotManager.removePlayerSlotListener(self.onSlotListChanged)
             self.baubleInfoManager.removeBaubleInfoListener(self.onBaubleInfoChanged)
         _entityContainerData = None
+        # 通知服务端清空界面容器槽位并注销 viewer, 防止关闭后残留物品被引擎结算回背包
+        BaseService().syncRequest("server/player/closeBaubleContainer", QRequests.Args())
         UnListenForEvent("PlayerTryPutCustomContainerItemClientEvent", self, self.onTryPutItem)
         UnListenForEvent("PlayerTryAddCustomContainerItemClientEvent", self, self.onTryPutItem)
         if _returnInventoryCategory is not None:

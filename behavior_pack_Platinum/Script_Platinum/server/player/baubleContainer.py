@@ -58,8 +58,10 @@ class BaubleContainerServerService(BaseService):
     def __init__(self):
         BaseService.__init__(self)
         self.pendingSlotIndices = {}
-        # 查看者玩家ID -> 被查看实体ID (查看他人饰品栏)
+        # 查看者玩家ID -> 被查看实体ID (查看他人饰品栏); 仅在界面打开期间保留
         self.viewerTargets = {}
+        # 正在清空界面容器槽位的玩家, 清空期间屏蔽容器物品变化事件
+        self.clearingPlayers = set()
 
     @staticmethod
     def _isBaubleContainer(data):
@@ -93,13 +95,35 @@ class BaubleContainerServerService(BaseService):
             itemDict = itemStack.toDict() if itemStack is not None and not itemStack.isEmpty() else None
             itemComp.SetPlayerUIItem(playerId, _getContainerIndex(slotIndex), itemDict, False, True)
 
+    def _clearContainerItems(self, playerId, slotCount):
+        """清空界面容器槽位, 避免关闭界面后残留物品被引擎结算回背包。"""
+        # 清空会触发容器移除事件, 屏蔽期间避免误走 _syncPlayerSlots 卸下饰品
+        self.clearingPlayers.add(playerId)
+        try:
+            itemComp = compFactory.CreateItem(playerId)
+            for slotIndex in range(min(slotCount, BAUBLE_CONTAINER_SLOT_LIMIT)):
+                itemComp.SetPlayerUIItem(playerId, _getContainerIndex(slotIndex), None, False, True)
+        finally:
+            self.clearingPlayers.discard(playerId)
+
     def refreshTargetContainers(self, targetId):
         """目标饰品数据变化时, 刷新正查看该目标的容器界面物品(含API移除饰品后同步清除容器内物品)。"""
-        # ponytail: 界面关闭后 viewerTargets 记录保留, 刷新只是对已关闭界面的UI容器槽做无害写入,
-        # 下次打开时 _fillContainerItems 会全量覆盖; 需要精确开关追踪时改挂容器关闭事件。
+        # viewerTargets 仅在界面打开期间保留, 关闭时经 closeBaubleContainer 清空容器槽位后注销
         for viewerId, viewTargetId in self.viewerTargets.items():
             if viewTargetId == targetId:
                 self._fillContainerItems(viewerId, targetId)
+
+    @BaseService.REG_API("server/player/closeBaubleContainer")
+    def closeBaubleContainer(self, _=None):
+        """界面关闭时清空容器槽位并注销 viewer, 防止残留物品被引擎结算回背包。"""
+        playerId = getLoaderSystem().rpcPlayerId
+        targetId = self.viewerTargets.get(playerId)
+        if targetId is None:
+            return
+        slotCount = len(_getEntitySlotList(targetId))
+        self.viewerTargets.pop(playerId, None)
+        self.pendingSlotIndices.pop(playerId, None)
+        self._clearContainerItems(playerId, slotCount)
 
     def _openContainer(self, playerId, entityId=None):
         if entityId is None or entityId == playerId:
@@ -108,12 +132,13 @@ class BaubleContainerServerService(BaseService):
         self.viewerTargets[playerId] = entityId
         if playerId in self.pendingSlotIndices:
             self._syncPlayerSlots(playerId)
-        self._fillContainerItems(playerId, entityId)
         # 先同步外部数据快照再打开界面, 避免客户端代理创建时读到旧数据
         if entityId != playerId:
             Call(playerId, "SyncEntityContainerData", self._getTargetSnapshot(entityId))
         playerComp = compFactory.CreatePlayer(playerId)
         isOpen = playerComp.OpenNeteaseContainer(BAUBLE_CONTAINER_SCREEN, BAUBLE_CONTAINER_NAME, False)
+        # 界面创建后再填充容器槽位, 与官方 PushScreenEvent 初始化时机一致
+        self._fillContainerItems(playerId, entityId)
         # ponytail: 客户端规则按打开界面时快照同步；运行时新增饰品后重新打开界面刷新。
         return {
             "opened": isOpen,
@@ -133,7 +158,7 @@ class BaubleContainerServerService(BaseService):
 
     @BaseService.Listen("PlayerTryPutCustomContainerItemServerEvent")
     def onTryPutItem(self, data):
-        if not self._isBaubleContainer(data):
+        if not self._isBaubleContainer(data) or data.get("playerId") in self.clearingPlayers:
             return
         slotData = self._getSlotData(data.get("playerId"), data.get("collectionIndex"))
         itemStack = _toItemStack(data.get("itemDict"))
@@ -146,7 +171,7 @@ class BaubleContainerServerService(BaseService):
 
     @BaseService.Listen("PlayerAddCustomContainerItemServerEvent")
     def onAddItem(self, data):
-        if not self._isBaubleContainer(data):
+        if not self._isBaubleContainer(data) or data.get("playerId") in self.clearingPlayers:
             return
         playerId = data.get("playerId")
         index = data.get("collectionIndex")
@@ -163,11 +188,14 @@ class BaubleContainerServerService(BaseService):
 
     @BaseService.Listen("PlayerRemoveCustomContainerItemServerEvent")
     def onRemoveItem(self, data):
-        if self._isBaubleContainer(data):
+        if self._isBaubleContainer(data) and data.get("playerId") not in self.clearingPlayers:
             self._queuePlayerSync(data.get("playerId"), data.get("collectionIndex"))
 
     def _queuePlayerSync(self, playerId, index):
         if not playerId:
+            return
+        # 界面已关闭(未登记 viewer)时不再同步, 避免关闭后残留事件卸下饰品
+        if playerId not in self.viewerTargets:
             return
         targetId = self._getTargetId(playerId)
         if _getSlotIndex(_getEntitySlotList(targetId), index) is None:
@@ -181,6 +209,9 @@ class BaubleContainerServerService(BaseService):
 
     def _syncPlayerSlots(self, playerId):
         changedIndices = self.pendingSlotIndices.pop(playerId, set())
+        # 界面已关闭(未登记 viewer)时丢弃延迟同步
+        if playerId not in self.viewerTargets:
+            return
         targetId = self._getTargetId(playerId)
         slotList = _getEntitySlotList(targetId)
         baubleInfo = _getEntityBaubleInfo(targetId)
@@ -250,7 +281,10 @@ class BaubleContainerServerService(BaseService):
 
     @BaseService.Listen("DelServerPlayerEvent")
     def onDelServerPlayer(self, data):
-        self.viewerTargets.pop(data.get("id"), None)
+        playerId = data.get("id")
+        self.viewerTargets.pop(playerId, None)
+        self.pendingSlotIndices.pop(playerId, None)
+        self.clearingPlayers.discard(playerId)
 
     @BaseService.Listen("EntityRemoveEvent")
     def onEntityRemoveEvent(self, data):
@@ -259,4 +293,5 @@ class BaubleContainerServerService(BaseService):
         for viewerId, targetId in self.viewerTargets.items():
             if targetId == entityId:
                 self.viewerTargets.pop(viewerId, None)
+                self.pendingSlotIndices.pop(viewerId, None)
                 Call(viewerId, "SyncEntityContainerData", None)

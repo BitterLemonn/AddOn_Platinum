@@ -8,7 +8,6 @@ from Script_Platinum.utils import developLogging as logging
 from Script_Platinum.utils.serverUtils import compFactory
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
 
-
 entityBaubleInfoDict = {}  # type: dict[str, EntityBaubleInfo]
 
 
@@ -31,9 +30,7 @@ class EntityBaubleInfo(BaubleInfo):
             "client/bauble/equipBaubleBoardcast": "client/bauble/equipEntityBaubleBoardcast",
             "client/bauble/unequipBaubleBoardcast": "client/bauble/unequipEntityBaubleBoardcast",
         }[requestName]
-        EntityBaubleInfoServerService.access().syncRequest(
-            "*", requestName, QRequests.Args(eventDict)
-        )
+        EntityBaubleInfoServerService.access().syncRequest("*", requestName, QRequests.Args(eventDict))
 
     def loadEntityDataInit(self):
         """从实体ModAttr加载饰品，并恢复穿戴事件。"""
@@ -41,9 +38,7 @@ class EntityBaubleInfo(BaubleInfo):
         baubleDict = comp.GetAttr(commonConfig.ENTITY_BAUBLE_INFO, {})
         dropProbDict = comp.GetAttr(commonConfig.ENTITY_BAUBLE_DROP_PROBABILITY, {})
         if isinstance(dropProbDict, dict):
-            self.dropProbability = {
-                k: float(v) for k, v in dropProbDict.items() if isinstance(v, (int, float))
-            }
+            self.dropProbability = {k: float(v) for k, v in dropProbDict.items() if isinstance(v, (int, float))}
         if not isinstance(baubleDict, dict):
             logging.warning("铂: 生物{}饰品ModAttr数据无效".format(self.targetId))
             return
