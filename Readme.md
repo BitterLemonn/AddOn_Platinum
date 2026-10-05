@@ -436,7 +436,7 @@ modifierSystem.GetAttributeValue(entityId, modifierSystem.AttrType.STEP_HEIGHT)
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_SPRINT_JUMP`：疾跑跳跃饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_MINE`：挖掘方块饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
 - `modifierSystem.AttrType.EXHAUSTION_RATIO_ATTACK`：攻击饥饿消耗倍率（仅玩家生效），结果必须大于等于 `0`。
-- `modifierSystem.AttrType.FORTUNE_LEVEL`（别名 `FORTUNE`）：时运等级（基准值 `0`，小数截断，结果不能为负数）。玩家带时运等级破坏已注册方块时，销毁引擎原始掉落实体，按原版时运算法计算全部掉落并接管生成。扩展注册方式（支持方块完整名或正则表达式，支持黑名单避开特定方块）：
+- `modifierSystem.AttrType.FORTUNE_LEVEL`（别名 `FORTUNE`）：时运等级（基准值 `0`，小数截断，结果不能为负数）。玩家带时运等级破坏已注册方块时，保留引擎原始掉落实体，按时运算法计算额外掉落并在原版基础上追加生成。扩展注册方式（支持方块完整名或正则表达式，支持黑名单避开特定方块）：
   ```python
   # 注册时运方块：支持完整方块名
   modifierSystem.RegisterFortuneBlock("custom:ore_block")
@@ -455,19 +455,19 @@ modifierSystem.GetAttributeValue(entityId, modifierSystem.AttrType.STEP_HEIGHT)
   modifierSystem.UnregisterFortuneBlock("minecraft:diamond_ore")
   fortuneBlockList = modifierSystem.GetFortuneBlockList()
   ```
-  走时运的全部掉落会触发服务端事件 `FortuneBlockDrop`（命名空间 `platinum`，系统 `broadcasterServer`）。事件广播后延迟一帧生成实际掉落实体，监听者可直接修改字典内的 `itemList`、`pos`、`dimensionId`，或将 `cancel` 设置为 `True` 直接取消掉落生成：
+  走时运的新增额外掉落会触发服务端事件 `FortuneBlockDrop`（命名空间 `platinum`，系统 `broadcasterServer`）。事件广播后延迟一帧生成实际掉落实体，监听者可直接修改字典内的 `itemList`、`pos`、`dimensionId`，或将 `cancel` 设置为 `True` 直接取消本次时运额外掉落生成：
   ```python
   # 监听时运掉落事件
   self.ListenForEvent("platinum", "broadcasterServer", "FortuneBlockDrop", self, self.onFortuneBlockDrop)
 
   def onFortuneBlockDrop(self, data):
       # data: {"itemList": list[dict], "pos": tuple, "dimensionId": int, "playerId": str, "cancel": bool}
-      # 方式一：设置 cancel 为 True，直接取消生成掉落物
+      # 方式一：设置 cancel 为 True，直接取消本次额外掉落物生成（原版掉落不受影响）
       if some_condition:
           data["cancel"] = True
           return
 
-      # 方式二：原地修改 itemList，一帧后按最新内容生成掉落物
+      # 方式二：原地修改 itemList，一帧后按最新内容生成额外掉落物
       itemList = data["itemList"]
       for item in itemList:
           item["count"] += 1

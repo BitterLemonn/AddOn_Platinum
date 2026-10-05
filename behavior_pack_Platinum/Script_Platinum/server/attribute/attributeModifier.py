@@ -329,20 +329,25 @@ class PlatinumAttributeModifierService(BaseService):
         playerId = data.get("playerId")
         if not playerId:
             return
+        level = self._getIntegerLevel(playerId, PlatinumAttributeType.FORTUNE_LEVEL)
+        if level <= 0:
+            return
         heldFactory = self._getHeldItemFactory(playerId)
-        level = self._getFortuneLevel(playerId, heldFactory)
         if self._isBlockDropHandled(playerId, heldFactory, level):
+            return
+        multiplier = FortuneManager.rollFortuneMultiplier(level)
+        if multiplier <= 1:
             return
         dropEntityIds = data.get("dropEntityIds")
         if not dropEntityIds:
             return
-        multiplier = FortuneManager.rollFortuneMultiplier(level)
         itemComp = compFactory.CreateItem(levelId)
         if not itemComp:
             return
         dimensionId = data.get("dimensionId", 0)
         pos = (data["x"] + 0.5, data["y"] + 0.5, data["z"] + 0.5)
-        itemList = []
+        extraMultiplier = multiplier - 1
+        extraItemList = []
         for itemEntityId in dropEntityIds:
             itemDict = itemComp.GetDroppedItem(itemEntityId, True)
             if not isinstance(itemDict, dict):
@@ -350,17 +355,15 @@ class PlatinumAttributeModifierService(BaseService):
             count = itemDict.get("count", 0)
             if isinstance(count, bool) or not isinstance(count, integerTypes) or count <= 0:
                 continue
-            fortuneItemDict = dict(itemDict)
-            fortuneItemDict["count"] = count * multiplier
-            itemList.append(fortuneItemDict)
-            # 销毁原版引擎生成的单倍原始掉落实体，由本系统全权接管时运后掉落
-            System.DestroyEntity(itemEntityId)
+            extraItemDict = dict(itemDict)
+            extraItemDict["count"] = count * extraMultiplier
+            extraItemList.append(extraItemDict)
 
-        if not itemList:
+        if not extraItemList:
             return
 
         eventDict = {
-            "itemList": itemList,
+            "itemList": extraItemList,
             "pos": pos,
             "dimensionId": dimensionId,
             "playerId": playerId,
@@ -393,10 +396,7 @@ class PlatinumAttributeModifierService(BaseService):
         attacker = data.get("attacker")
         if not attacker or not Entity(attacker).IsPlayer:
             return
-        heldFactory = self._getHeldItemFactory(attacker)
         level = self._getIntegerLevel(attacker, PlatinumAttributeType.LOOTING_LEVEL)
-        if heldFactory:
-            level += heldFactory.getEnchantLevel(EnchantType.WeaponLoot)
         if level <= 0:
             return
         deadEntityId = data.get("dieEntityId")
@@ -616,12 +616,11 @@ class PlatinumAttributeModifierService(BaseService):
             self._protectionMagicBaseMap.pop(entityId, None)
         return success
 
-    def _getFortuneLevel(self, playerId, heldFactory):
-        level = self._getIntegerLevel(playerId, PlatinumAttributeType.FORTUNE_LEVEL)
-        return level + (heldFactory.getEnchantLevel(EnchantType.MiningLoot) if heldFactory else 0)
+    def _getFortuneLevel(self, playerId, heldFactory=None):
+        return self._getIntegerLevel(playerId, PlatinumAttributeType.FORTUNE_LEVEL)
 
     def _isBlockDropHandled(self, playerId, heldFactory, fortuneLevel):
-        """时运接管判定：无总时运等级、创造模式或手持精准采集时交回引擎处理。"""
+        """时运接管判定：无自身时运等级、创造模式或手持精准采集时交回引擎处理。"""
         if fortuneLevel <= 0:
             return True
         gameComp = compFactory.CreateGame(levelId)
