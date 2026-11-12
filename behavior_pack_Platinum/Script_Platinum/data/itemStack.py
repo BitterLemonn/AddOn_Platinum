@@ -2,12 +2,13 @@
 
 
 class ItemStack(object):
-    def __init__(self, name="", count=0, aux=0, userData=None):
+    def __init__(self, name="", count=0, aux=0, userData=None, durability=None):
         self.name = name
         self.count = count
         self.aux = aux
         self.maxStackSize = 64  # 默认最大堆叠64，特殊物品可覆盖
         self.userData = userData
+        self.durability = durability
 
         self._checkMaxStackSize()
 
@@ -20,6 +21,7 @@ class ItemStack(object):
         itemStack.count = data.get("count", 0)
         itemStack.aux = data.get("newAuxValue", 0)
         itemStack.userData = data.get("userData", None)
+        itemStack.durability = data.get("durability")
         return itemStack
 
     def _checkMaxStackSize(self):
@@ -27,7 +29,15 @@ class ItemStack(object):
             self.maxStackSize = maxStackStore[self.name]
 
     def toDict(self):
-        return {"newItemName": self.name, "count": self.count, "newAuxValue": self.aux, "userData": self.userData}
+        itemDict = {"newItemName": self.name, "count": self.count, "newAuxValue": self.aux, "userData": self.userData}
+        durability = self.getDurability()
+        if durability is not None:
+            itemDict["durability"] = durability
+        return itemDict
+
+    def getDurability(self):
+        # 旧版 pickle 中的 ItemStack 没有 durability 字段。
+        return getattr(self, "durability", None)
 
     def isEnchanted(self):
         from Script_Platinum.utils import ItemFactory
@@ -59,6 +69,7 @@ class ItemStack(object):
         newStack.aux = self.aux
         newStack.userData = self.userData.copy() if isinstance(self.userData, dict) else self.userData
         newStack.maxStackSize = self.maxStackSize
+        newStack.durability = self.getDurability()
         return newStack
 
 

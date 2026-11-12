@@ -52,9 +52,10 @@ def _syncToClient(playerId):
         playerId, "client/slot/playerSlotSync", QRequests.Args([slot.__dict__ for slot in playerSlotList])
     )
     # 保存到世界信息
-    playerSlotInfo = compFactory.CreateExtraData(levelId).GetExtraData(PLAYER_SLOT_DATA) or {}
+    comp = compFactory.CreateExtraData(levelId)
+    playerSlotInfo = dict(comp.GetExtraData(PLAYER_SLOT_DATA) or {})
     playerSlotInfo[playerId] = [slot.__dict__ for slot in playerSlotList]
-    compFactory.CreateExtraData(levelId).SetExtraData(PLAYER_SLOT_DATA, playerSlotInfo)
+    return comp.SetExtraData(PLAYER_SLOT_DATA, playerSlotInfo)
 
 
 @BaseService.Init
@@ -93,19 +94,30 @@ class PlayerBaubleSlotServerService(BaseService):
     @BaseService.REG_API("server/player/syncCommandSlot")
     def syncCommandSlot(self, commandSlotList):
         """同步指令添加的槽位数据 (仅用于旧版本数据迁移, 不久后将移除)"""
-        if serverApi.IsInServer():
-            return
+        if serverApi.IsInServer() or not isinstance(commandSlotList, (list, tuple)):
+            return False
 
         playerId = getLoaderSystem().rpcPlayerId
+        if not playerId:
+            return False
 
         from Script_Platinum.utils.oldVersionFixer import oldSlotTypeToNew
 
         for slotData in commandSlotList:
-            # 注册新槽位
+            if not isinstance(slotData, dict):
+                return False
             isDefault = slotData.get("isDefault", False)
-            slotId = slotData["slotIdentifier"]
-            slotType = oldSlotTypeToNew(slotData["slotType"])
-            baubleSlotData = BaubleSlotData(None, None, slotId, slotType, isDefault, True)
-            self.slotRegistry.registerSlot(baubleSlotData)
-            if not isDefault:
-                addPlayerSlot(playerId, baubleSlotData)
+            slotId = slotData.get("slotIdentifier")
+            slotType = oldSlotTypeToNew(slotData.get("slotType"))
+            if not isinstance(slotId, basestring) or not slotId or not isinstance(slotType, basestring) or not slotType:
+                return False
+            registeredSlot = self.slotRegistry.getSlotDataById(slotId)
+            if registeredSlot is None:
+                if not self.slotRegistry.registerSlot(BaubleSlotData(None, None, slotId, slotType, isDefault, True)):
+                    return False
+                registeredSlot = self.slotRegistry.getSlotDataById(slotId)
+            elif registeredSlot.slotType != slotType or registeredSlot.isDefault != isDefault:
+                return False
+            if not any(slot.identifier == slotId for slot in getPlayerSlotList(playerId)):
+                addPlayerSlot(playerId, registeredSlot)
+        return _syncToClient(playerId)

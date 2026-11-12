@@ -1,4 +1,8 @@
 # coding=utf-8
+import pickle
+import traceback
+from copy import copy, deepcopy
+
 from Script_Platinum import commonConfig
 from Script_Platinum.QuModLibs.Server import *
 from Script_Platinum.data.eventData import BaubleEventData
@@ -6,7 +10,9 @@ from Script_Platinum.data.requestData import BaubleCheckRequestData, ChangeBaubl
 from Script_Platinum.data.responseData import BaubleCheckResponseData
 from Script_Platinum.data.itemStack import ItemStack
 from Script_Platinum.server.data.baubleInfo import BaubleInfo
-from Script_Platinum.server.player.playerBaubleSlot import checkSlotValid
+from Script_Platinum.server.player.playerBaubleSlot import getPlayerSlotList
+from Script_Platinum.server.registry.baubleRegistry import BaubleRegistry
+from Script_Platinum.server.registry.slotRegistry import SlotRegistry, checkSlotValid
 from Script_Platinum.utils import developLogging as logging
 from Script_Platinum.utils import serverUtils
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService, QRequests
@@ -18,8 +24,27 @@ isInit = False
 playerBaubleInfoDict = {}  # type: dict[str, PlayerBaubleInfo]
 
 
+def _loadSavedBaubleInfo():
+    global isInit
+    if isInit:
+        return
+    isInit = True
+    data = compFactory.CreateExtraData(levelId).GetExtraData(commonConfig.PLAYER_BAUBLE_INFO)
+    if not data:
+        return
+    try:
+        savedInfo = pickle.loads(data)
+    except (pickle.UnpicklingError, EOFError, AttributeError, ImportError, IndexError, TypeError, ValueError):
+        logging.error("铂: 玩家饰品信息加载失败\n{}".format(traceback.format_exc()))
+        return
+    if not isinstance(savedInfo, dict):
+        logging.error("铂: 玩家饰品存档格式无效")
+        return
+    playerBaubleInfoDict.update(savedInfo)
+
+
 def getPlayerBaubleInfo(playerId):  # type: (str) -> PlayerBaubleInfo
-    global playerBaubleInfoDict
+    _loadSavedBaubleInfo()
     if playerId not in playerBaubleInfoDict:
         playerBaubleInfoDict[playerId] = PlayerBaubleInfo(playerId)
     return playerBaubleInfoDict[playerId]
@@ -87,6 +112,7 @@ class PlayerBaubleInfoServerService(BaseService):
 
     def __init__(self):
         BaseService.__init__(self)
+        self.restoredPlayers = set()
 
     @BaseService.Listen("PlayerDieEvent")
     def onPlayerDieEvent(self, data):
@@ -105,24 +131,15 @@ class PlayerBaubleInfoServerService(BaseService):
 
     @BaseService.Listen("ClientLoadAddonsFinishServerEvent")
     def onClientLoadAddonsFinishServerEvent(self, data):
-        global isInit
-        if isInit:
+        playerId = data.get("playerId")
+        if not playerId or playerId in self.restoredPlayers:
             return
-        isInit = True
-        import pickle
+        getPlayerBaubleInfo(playerId).loadFromDataInit()
+        self.restoredPlayers.add(playerId)
 
-        playerBaubleInfoData = compFactory.CreateExtraData(levelId).GetExtraData(commonConfig.PLAYER_BAUBLE_INFO)
-        if playerBaubleInfoData:
-            try:
-                playerBaubleInfo = pickle.loads(playerBaubleInfoData)
-                global playerBaubleInfoDict
-                playerBaubleInfoDict = playerBaubleInfo
-                for _, baubleInfo in playerBaubleInfoDict.items():
-                    baubleInfo.loadFromDataInit()
-            except Exception as e:
-                logging.error("铂: 玩家饰品信息加载失败, 数据可能已损坏. 错误信息: {}".format(e))
-        else:
-            logging.info("铂: 玩家饰品信息加载完成, 无数据可加载")
+    @BaseService.Listen("DelServerPlayerEvent")
+    def onDelServerPlayer(self, data):
+        self.restoredPlayers.discard(data.get("id"))
 
     @BaseService.REG_API("server/player/requestBaubleInfo")
     def requestBaubleInfo(self, _=None):
@@ -137,60 +154,123 @@ class PlayerBaubleInfoServerService(BaseService):
     @BaseService.REG_API("server/player/baubleCheck")
     def checkBaubleAvailable(self, data):
         """检查饰品是否可以装备。"""
-        from Script_Platinum.server.registry.baubleRegistry import BaubleRegistry
-
+        if not isinstance(data, dict):
+            return BaubleCheckResponseData(False, None, None, -1).toDict()
         playerId = getLoaderSystem().rpcPlayerId
-        itemComp = compFactory.CreateItem(playerId)
         data = BaubleCheckRequestData.fromDict(data)
-        baubleItem = data.baubleInfo
-        invItem = itemComp.GetPlayerItem(minecraftEnum.ItemPosType.INVENTORY, data.index, True)
-        invItem = ItemStack.fromDict(invItem) if invItem is not None else None
-        if not baubleItem or not invItem or not checkSlotValid(data.slotId):
-            return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).toDict()
-        if not invItem.isSameItem(baubleItem):
-            return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).toDict()
-        if not BaubleRegistry().isValidBauble(baubleItem.name, data.slotType):
-            return BaubleCheckResponseData(False, baubleItem, data.slotId, data.index).toDict()
-        return BaubleCheckResponseData(True, baubleItem, data.slotId, data.index).toDict()
-
-    def _changeBable(self, playerId, slotId, baubleItem, index=-1):  # type: (str, str, ItemStack, int) -> None
-        """更换饰品的内部方法。"""
-        if baubleItem and not checkSlotValid(slotId):
-            return
+        slotData = self._getInventorySlotData(playerId, data.slotId, data.index)
+        if slotData is None:
+            return BaubleCheckResponseData(False, None, data.slotId, data.index).toDict()
         comp = compFactory.CreateItem(playerId)
-        comp.SetInvItemNum(index, 0)
-        getPlayerBaubleInfo(playerId).changeBaubleInfoBySlotId(slotId, baubleItem, index)
-        Call(playerId, "PlaySound", {"soundName": "armor.equip_iron", "targetId": playerId})
+        if not comp:
+            return BaubleCheckResponseData(False, None, data.slotId, data.index).toDict()
+        invItem = ItemStack.fromDict(comp.GetPlayerItem(minecraftEnum.ItemPosType.INVENTORY, data.index, True))
+        valid = self._matchesInventoryBauble(invItem, data.baubleInfo, slotData.slotType)
+        return BaubleCheckResponseData(valid, invItem if valid else None, data.slotId, data.index).toDict()
+
+    @staticmethod
+    def _getInventorySlotData(playerId, slotId, index):
+        if not playerId or not isinstance(slotId, basestring):
+            return None
+        if isinstance(index, bool) or not isinstance(index, (int, long)) or not 0 <= index < 36:
+            return None
+        if not any(slot.identifier == slotId for slot in getPlayerSlotList(playerId)):
+            return None
+        return SlotRegistry().getSlotDataById(slotId)
+
+    @staticmethod
+    def _matchesInventoryBauble(invItem, expectedItem, slotType):
+        return (
+            isinstance(expectedItem, ItemStack)
+            and expectedItem.count == invItem.count == 1
+            and not invItem.isEmpty()
+            and invItem.isSameItem(expectedItem)
+            and BaubleRegistry().isValidBauble(invItem.name, slotType)
+        )
+
+    def _changeBable(self, playerId, slotId, baubleItem, index=-1, playSound=True):
+        """从服务端背包格穿脱饰品，成功转移物品后再更新饰品数据。"""
+        slotData = self._getInventorySlotData(playerId, slotId, index)
+        if slotData is None:
+            return False
+        comp = compFactory.CreateItem(playerId)
+        if not comp:
+            return False
+        invItemDict = comp.GetPlayerItem(minecraftEnum.ItemPosType.INVENTORY, index, True)
+        invItem = ItemStack.fromDict(invItemDict)
+        baubleInfo = getPlayerBaubleInfo(playerId)
+        oldItem = baubleInfo.getBaubleInfoBySlotId(slotId)
+        hasOldItem = oldItem is not None and not oldItem.isEmpty()
+        if baubleItem is None:
+            if not invItem.isEmpty() or not hasOldItem:
+                return False
+        elif not self._matchesInventoryBauble(invItem, baubleItem, slotData.slotType) or not comp.SetInvItemNum(index, 0):
+            return False
+
+        if hasOldItem and not comp.SpawnItemToPlayerInv(oldItem.toDict(), playerId, index):
+            if baubleItem is not None and not comp.SpawnItemToPlayerInv(invItemDict, playerId, index):
+                serverUtils.givePlayerItem(invItemDict, playerId)
+            return False
+
+        baubleInfo.changeBaubleInfoBySlotId(slotId, invItem if baubleItem is not None else None, isChanged=False)
+        if playSound:
+            Call(playerId, "PlaySound", {"soundName": "armor.equip_iron", "targetId": playerId})
+        return True
 
     @BaseService.REG_API("server/player/changeBauble")
     def changeBauble(self, data):
         """更换饰品。"""
+        if not isinstance(data, dict):
+            return False
         playerId = getLoaderSystem().rpcPlayerId
         data = ChangeBaubleRequestData.fromDict(data)
-        comp = compFactory.CreateItem(playerId)
-        cursorItem = comp.GetPlayerUIItem(playerId, minecraftEnum.PlayerUISlot.CursorSelected)
-        baubleItem = data.baubleInfo
-        if baubleItem and not checkSlotValid(data.slotId):
-            return
-        if cursorItem is not None and not ItemStack.fromDict(cursorItem).isEmpty():
-            comp.SetPlayerUIItem(playerId, minecraftEnum.PlayerUISlot.CursorSelected, None, False)
-        comp.SetInvItemNum(data.index, 0)
-        getPlayerBaubleInfo(playerId).changeBaubleInfoBySlotId(data.slotId, baubleItem, data.index)
+        return self._changeBable(playerId, data.slotId, data.baubleInfo, data.index, playSound=False)
 
     @BaseService.REG_API("server/player/syncOldData")
     def syncOldData(self, data):
         """同步旧版本数据。"""
-        if serverApi.IsInServer():
-            return
-
+        if serverApi.IsInServer() or not isinstance(data, dict):
+            return False
         playerId = getLoaderSystem().rpcPlayerId
+        if not playerId:
+            return False
         playerBaubleInfo = getPlayerBaubleInfo(playerId)
         data = {slotId: itemDict for slotId, itemDict in data.items() if itemDict is not None}
-        playerBaubleInfo.setBaubleDict(data, isFirstLoad=True)
+        receipt = getattr(playerBaubleInfo, "legacyMigrationReceipt", None)
+        if receipt is not None:
+            return receipt == data
 
-    def savePlayerBaubleInfo(self):
+        ownedSlots = {slot.identifier for slot in getPlayerSlotList(playerId)}
+        updates = {}
+        for slotId, itemDict in data.items():
+            if slotId not in ownedSlots or not checkSlotValid(slotId) or not isinstance(itemDict, dict):
+                return False
+            item = ItemStack.fromDict(itemDict)
+            if not isinstance(item.name, basestring) or not isinstance(item.count, (int, long)) or item.isEmpty():
+                return False
+            currentItem = playerBaubleInfo.getBaubleInfoBySlotId(slotId)
+            if currentItem is None or currentItem.isEmpty():
+                updates[slotId] = item
+            elif currentItem.toDict() != item.toDict():
+                return False
+        # 与回执一并存盘，成功后再向游戏发布穿戴事件。
+        migratedInfo = copy(playerBaubleInfo)
+        migratedInfo.baubleInfo = dict(playerBaubleInfo.baubleInfo)
+        migratedInfo.baubleInfo.update(updates)
+        migratedInfo.legacyMigrationReceipt = deepcopy(data)
+        savedInfo = dict(playerBaubleInfoDict)
+        savedInfo[playerId] = migratedInfo
+        if not self.savePlayerBaubleInfo(savedInfo):
+            return False
+        playerBaubleInfo.baubleInfo.update(updates)
+        playerBaubleInfo.legacyMigrationReceipt = migratedInfo.legacyMigrationReceipt
+        if updates:
+            for slotId, item in updates.iteritems():
+                playerBaubleInfo.boardcastPutOnEvent(slotId, item, True)
+            playerBaubleInfo._syncToClient()
+        return True
+
+    def savePlayerBaubleInfo(self, savedInfo=None):
         """将玩家饰品信息保存到世界信息中。"""
-        import pickle
-
-        baubleInfo = pickle.dumps(playerBaubleInfoDict)
-        compFactory.CreateExtraData(levelId).SetExtraData(commonConfig.PLAYER_BAUBLE_INFO, baubleInfo)
+        baubleInfo = pickle.dumps(playerBaubleInfoDict if savedInfo is None else savedInfo)
+        return compFactory.CreateExtraData(levelId).SetExtraData(commonConfig.PLAYER_BAUBLE_INFO, baubleInfo)

@@ -114,10 +114,12 @@ class SlotRegistry(object):
             isDefault=isDefault,
             isCommandAdded=isCommandAdded,
         )
-        self._slots.append(newSlot)
         if isCommandAdded:
+            if not SlotRegistryService.access().saveCommandAddedSlots(self._commandAddedSlots + [newSlot]):
+                logging.error("铂: 槽位{}保存失败".format(baubleSlotId))
+                return False
             self._commandAddedSlots.append(newSlot)
-            SlotRegistryService.access().saveCommandAddedSlots(self._commandAddedSlots)
+        self._slots.append(newSlot)
 
         # 如果是默认槽位 需要广播到所有玩家
         if isDefault:
@@ -172,4 +174,4 @@ class SlotRegistryService(BaseService):
     def saveCommandAddedSlots(self, commandAddedSlots):
         """保存命令注册的槽位列表到世界信息"""
         commandAddedList = [slot.__dict__ for slot in commandAddedSlots]
-        compFactory.CreateExtraData(levelId).SetExtraData(COMMAND_ADDED_SLOTS_KEY, commandAddedList)
+        return compFactory.CreateExtraData(levelId).SetExtraData(COMMAND_ADDED_SLOTS_KEY, commandAddedList)

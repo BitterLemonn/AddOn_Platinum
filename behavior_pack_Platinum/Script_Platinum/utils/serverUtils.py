@@ -5,7 +5,6 @@ minecraftEnum = serverApi.GetMinecraftEnum()
 cooldownList = {}
 
 
-@AllowCall
 def givePlayerItem(itemDict, playerId, slot=-1):
     comp = compFactory.CreateItem(playerId)
     if slot == -1:
@@ -21,7 +20,6 @@ def getPlayerMode(playerId):
     return comp.GetPlayerGameType(playerId)
 
 
-@AllowCall
 def decreaseItem(playerId, count, slot=-1, isForce=False):
     if getPlayerMode(playerId) != minecraftEnum.GameType.Creative or isForce:
         comp = compFactory.CreateItem(playerId)

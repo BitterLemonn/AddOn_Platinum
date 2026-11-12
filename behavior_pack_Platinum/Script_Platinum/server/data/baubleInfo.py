@@ -5,7 +5,6 @@ from Script_Platinum import commonConfig
 from Script_Platinum.QuModLibs.Server import *
 from Script_Platinum.server.registry.slotRegistry import checkSlotValid
 from Script_Platinum.data.itemStack import ItemStack
-from Script_Platinum.utils.ItemFactory import ItemFactory
 from Script_Platinum.utils import developLogging as logging
 
 
@@ -26,12 +25,14 @@ class BaubleInfo(object):
             if itemStack is not None and not itemStack.isEmpty():
                 self.boardcastPutOnEvent(slotId, itemStack, True)
 
-    def getEmptyOrFirstSlotByList(self, slotTypeList):
+    def getEmptyOrFirstSlotByList(self, slotTypeList, slotList=None):
         """根据槽位类型列表获取一个空槽位，没有空槽位则返回该类型第一个槽位。"""
         from Script_Platinum.server.registry.slotRegistry import SlotRegistry
 
+        if slotList is None:
+            slotList = SlotRegistry().getBaubleSlotList()
         for slotType in slotTypeList:
-            slotIds = SlotRegistry().getSlotIdByType(slotType)
+            slotIds = [slot.identifier for slot in slotList if slot.slotType == slotType]
             if not slotIds:
                 continue
             for slotId in slotIds:
@@ -94,20 +95,16 @@ class BaubleInfo(object):
         if not checkSlotValid(slotId):
             logging.warning("铂: 尝试设置目标{}槽位{}的饰品耐久度,但该槽位ID无效".format(self._getTargetId(), slotId))
             return
-        if slotId in self.baubleInfo:
-            if durability <= 0:
-                self._playBreakSound()
-                self.boardcastTakeOffEvent(slotId, self.baubleInfo[slotId])
-                self.baubleInfo[slotId] = None
-                self._syncToClient()
-                self._save()
-                return
-            itemStack = self.baubleInfo[slotId]
-            itemStack.setDurability(durability)
-            self.baubleInfo[slotId] = itemStack
-            self._syncToClient()
-        else:
+        itemStack = self.baubleInfo.get(slotId)
+        if itemStack is None or itemStack.isEmpty():
             logging.warning("铂: 尝试设置目标{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self._getTargetId(), slotId))
+            return
+        if durability <= 0:
+            self._playBreakSound()
+            self.changeBaubleInfoBySlotId(slotId, None, isChanged=False)
+            return
+        itemStack.durability = durability
+        self._syncToClient()
         self._save()
 
     def decreaseBaubleDurabilityBySlotId(self, slotId, decreaseAmount):  # type: (str, int) -> None
@@ -115,19 +112,17 @@ class BaubleInfo(object):
         if not checkSlotValid(slotId):
             logging.warning("铂: 尝试减少目标{}槽位{}的饰品耐久度,但该槽位ID无效".format(self._getTargetId(), slotId))
             return
-        if slotId in self.baubleInfo:
-            itemStack = self.baubleInfo[slotId]
-            item = ItemFactory.fromDict(itemStack.toDict())
-            itemDict = item.setDurability(item.getDurability() - decreaseAmount).build()
-            itemDict = itemDict if item.getDurability() > 0 else None
-            self.baubleInfo[slotId] = ItemStack.fromDict(itemDict) if itemDict is not None else None
-            if itemDict is None:
-                self._playBreakSound()
-                self.boardcastTakeOffEvent(slotId, itemStack)
-            self._syncToClient()
-        else:
+        itemStack = self.baubleInfo.get(slotId)
+        if itemStack is None or itemStack.isEmpty():
             logging.warning("铂: 尝试减少目标{}槽位{}的饰品耐久度,但该槽位没有饰品".format(self._getTargetId(), slotId))
-        self._save()
+            return
+        durability = itemStack.getDurability()
+        if isinstance(durability, bool) or not isinstance(durability, (int, long)):
+            logging.warning("铂: 目标{}槽位{}的饰品没有可扣减的耐久度".format(self._getTargetId(), slotId))
+            return
+        if isinstance(decreaseAmount, bool) or not isinstance(decreaseAmount, (int, long)):
+            return
+        self.setBaubleDurabilityBySlotId(slotId, durability - decreaseAmount)
 
     def boardcastTakeOffEvent(self, slotId, itemStack):
         """广播目标饰品脱落事件。"""

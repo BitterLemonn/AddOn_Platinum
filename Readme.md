@@ -287,6 +287,8 @@ registerSys.DecreaseBaubleDurability("playerId", "slotId", 1)
 
 **⚠️注意: 当饰品耐久度降为0或更低时，饰品会自动从槽位中移除并触发饰品卸下事件**
 
+`durability` 字段随饰品数据保存和同步。对空槽或缺少有效耐久值的饰品调用扣减接口时，槽位内容保持原样。
+
 #### 9. 非玩家生物穿戴饰品及掉落
 
 非玩家生物没有饰品栏界面，通过服务端接口穿戴、卸下和查询饰品，支持设置饰品掉落几率（默认为 1.0 即 100%）：
@@ -367,7 +369,7 @@ registerSys.OpenEntityBaubleContainer("playerId", "entityId")
 - 界面内穿脱直接写入目标实体饰品数据，并触发对应穿脱事件（玩家触发 `BaubleEquipped`/`BaubleUnequipped`，非玩家触发 `EntityBaubleEquipped`/`EntityBaubleUnequipped`）。
 - 界面打开期间目标饰品数据发生变化（如通过 `SetPlayerBaubleInfoWithSlot`、`SetEntityBaubleInfo` 等接口移除或更换饰品、饰品耐久耗尽），界面内对应槽位的物品会同步刷新（移除的饰品会从界面中消失）。
 - 被查看实体被移除（`EntityRemoveEvent`）时，查看者的界面自动关闭。
-- 界面**关闭时容器槽位会被清空**，饰品数据仅保存在组件自身的存档中；容器槽位不承载持久数据，联动方不应依赖关闭后的界面容器内容。
+- 正常关闭时，组件先提交已完成的容器增删操作，再清空界面槽位。被查看实体移除时，组件会清空查看者的容器槽位并通知客户端关闭界面。持久数据以组件存档为准。
 
 #### 10. 特殊属性修饰符
 
@@ -495,6 +497,8 @@ modifierSystem.GetAttributeValue(entityId, modifierSystem.AttrType.STEP_HEIGHT)
 特殊属性修饰符统一仅支持 `OperandCurrent`。自定义属性修饰符按 `OperationAddition`、`OperationMultiplyBase`、`OperationMultiplyTotal`、`OperationCap` 顺序计算。`AddModifier` 遇到重复 `modifierId` 返回 `False`，已有修饰符必须使用 `UpdateModifier`。修饰符只保存在当前服务端运行期；实体或玩家数据加载、饰品恢复时应重新添加。自定义属性存在修饰符期间，不要绕过本接口直接修改同一属性。
 
 **⚠️注意: 使用特殊属性修饰符进行的属性不存盘，所有修饰的属性将会在系统关闭、玩家退出或实体移除后自动清理，建议在穿脱饰品事件中使用保持正常的生命周期**
+
+玩家每次加入并完成客户端模组加载后，组件为该玩家已穿戴的饰品广播 `BaubleEquippedEvent`，其中 `isFirstLoad` 为 `True`。在该事件中重新添加饰品的运行时修饰符。
 
 ### 六、示例代码
 

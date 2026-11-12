@@ -2,6 +2,7 @@
 from Script_Platinum.QuModLibs.Server import *
 from Script_Platinum.QuModLibs.Modules.Services.Server import BaseService
 from Script_Platinum.data.requestData import ItemStack
+from Script_Platinum.server.player.playerBaubleSlot import getPlayerSlotList
 from Script_Platinum.server.registry.baubleRegistry import BaubleRegistry
 from Script_Platinum.server.registry.slotRegistry import SlotRegistry
 from Script_Platinum.utils import serverUtils
@@ -72,7 +73,9 @@ class ItemService(BaseService):
                     PlayerBaubleInfoServerService,
                 )
 
-                emptySlotId = getPlayerBaubleInfo(playerId).getEmptyOrFirstSlotByList(baubleSlotTypeList)
+                emptySlotId = getPlayerBaubleInfo(playerId).getEmptyOrFirstSlotByList(
+                    baubleSlotTypeList, getPlayerSlotList(playerId)
+                )
                 if emptySlotId is None:
                     return
                 compFactory.CreateGame(levelId).AddTimer(

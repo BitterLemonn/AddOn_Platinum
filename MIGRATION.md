@@ -109,6 +109,8 @@ if data["slotType"] == BaubleEnum.Helmet:
 | 事件监听方式 | `GetPlayerBaubleInfo`、`GetGlobalBaubleSlotInfo`、`GetTargetBaubleSlotInfo` 仍会广播事件 |
 | `BaubleRegister` 接口 | `baubleSlot` 参数兼容旧版字符串和新版列表 |
 
+本地旧存档按命令槽位、饰品数据的顺序迁移。每个阶段都需要收到服务端的保存成功回执，客户端随后才清除旧记录。保存失败或新旧槽位内容冲突时，保留原始旧记录供后续重试。
+
 ---
 
 ## 三、迁移检查清单

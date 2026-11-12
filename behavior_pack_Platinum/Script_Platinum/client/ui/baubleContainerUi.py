@@ -22,12 +22,23 @@ baubleContainerRules = {}
 _returnInventoryCategory = None
 # 查看其他实体饰品栏时的外部数据源 {entityId, slotList, baubleDict}; None 表示查看自己
 _entityContainerData = None
+_containerSessionId = None
 
 
 @AllowCall
-def SyncEntityContainerData(data):
+def SetBaubleContainerSession(sessionId, viewingSelf):
+    global _containerSessionId, _entityContainerData
+    _containerSessionId = sessionId
+    if viewingSelf:
+        _entityContainerData = None
+
+
+@AllowCall
+def SyncEntityContainerData(data, sessionId=None):
     """服务端同步被查看实体的饰品栏数据; data 为 None 时退出查看模式并关闭界面。"""
     global _entityContainerData
+    if sessionId is not None and sessionId != _containerSessionId:
+        return
     if data is None:
         _entityContainerData = None
         if clientApi.GetTopUI() == "bauble_reborn_screen.screen":
@@ -144,6 +155,7 @@ class BaubleContainerProxy(ProxyCls):
         self.slotManager = PlayerBaubleSlotClientService.access()
         self.baubleInfoManager = PlayerBaubleInfoClientService.access()
         self.isExternal = _entityContainerData is not None
+        self.sessionId = _containerSessionId
         self.contentStackPath = (
             "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/"
             "safezone_screen_panel/root_screen_panel/root_panel/bauble_panel/content_stack"
@@ -165,9 +177,11 @@ class BaubleContainerProxy(ProxyCls):
         if not self.isExternal:
             self.slotManager.removePlayerSlotListener(self.onSlotListChanged)
             self.baubleInfoManager.removeBaubleInfoListener(self.onBaubleInfoChanged)
-        _entityContainerData = None
+        if self.sessionId == _containerSessionId:
+            _entityContainerData = None
         # 通知服务端清空界面容器槽位并注销 viewer, 防止关闭后残留物品被引擎结算回背包
-        BaseService().syncRequest("server/player/closeBaubleContainer", QRequests.Args())
+        args = QRequests.Args(self.sessionId) if self.sessionId is not None else QRequests.Args()
+        BaseService().syncRequest("server/player/closeBaubleContainer", args)
         UnListenForEvent("PlayerTryPutCustomContainerItemClientEvent", self, self.onTryPutItem)
         UnListenForEvent("PlayerTryAddCustomContainerItemClientEvent", self, self.onTryPutItem)
         if _returnInventoryCategory is not None:

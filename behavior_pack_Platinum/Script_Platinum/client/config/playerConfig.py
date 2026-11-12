@@ -23,10 +23,6 @@ class PlayerConfig(object):
     showBaubleSidebarButton = True
     showBaubleContainerButton = True
 
-    # 旧版本兼容
-    playerBaubleInfo = {}
-    baubleCommandModifyAdding = []
-
 
 @BaseService.Init
 class PlayerConfigService(BaseService):
@@ -135,36 +131,46 @@ class PlayerConfigService(BaseService):
             logging.error("铂: 玩家UID获取失败, 无法加载铂数据")
             return
         comp = clientApi.GetEngineCompFactory().CreateConfigClient(levelId)
-        data = comp.GetConfigData(DataAlias.PLATINUM_LOCAL_DATA + "_{}".format(self.uid))
-        if data:
-            logging.debug("铂: 发现旧数据, 开始迁移数据")
-            formatVersion = data.get(DataAlias.BAUBLE_FORMAT_VERSION, 0)
-            PlayerConfig.uiPosition = data.get(DataAlias.BAUBLE_BTN_POSITION, "left_top")
-            PlayerConfig.showBaubleSidebarButton = data.get(DataAlias.SHOW_BAUBLE_SIDEBAR_BUTTON, True)
-            PlayerConfig.showBaubleContainerButton = data.get(DataAlias.SHOW_BAUBLE_CONTAINER_BUTTON, True)
-            PlayerConfig.playerBaubleInfo = self.migrateData(formatVersion, data.get(DataAlias.BAUBLE_SLOT_INFO, {}))
-            PlayerConfig.baubleCommandModifyAdding = data.get(DataAlias.BAUBLE_COMMAND_MODIFY, [])
-
-            # 将当前的废弃数据发送至服务端 (不久后将移除此危险操作) TODO
-            if PlayerConfig.baubleCommandModifyAdding:
-                self.syncRequest(
-                    "server/player/syncCommandSlot", QRequests.Args(PlayerConfig.baubleCommandModifyAdding)
-                )
-                PlayerConfig.baubleCommandModifyAdding = []
-            if PlayerConfig.playerBaubleInfo:
-                self.syncRequest("server/player/syncOldData", QRequests.Args(PlayerConfig.playerBaubleInfo))
-                PlayerConfig.playerBaubleInfo = {}
-            # 同步完成后删除旧数据 避免重复发送
-            comp.SetConfigData(DataAlias.PLATINUM_LOCAL_DATA + "_{}".format(self.uid), {})
-            # 保存为新数据格式
-            self.mannalySaveData()
-            logging.debug("铂: 玩家数据迁移完成, 已删除旧数据")
-        else:
-            data = comp.GetConfigData(DataAlias.PLATINUM_LOCAL_DATA)
-            PlayerConfig.uiPosition = data.get(DataAlias.BAUBLE_BTN_POSITION, "left_top")
-            PlayerConfig.showBaubleSidebarButton = data.get(DataAlias.SHOW_BAUBLE_SIDEBAR_BUTTON, True)
-            PlayerConfig.showBaubleContainerButton = data.get(DataAlias.SHOW_BAUBLE_CONTAINER_BUTTON, True)
+        legacyKey = DataAlias.PLATINUM_LOCAL_DATA + "_{}".format(self.uid)
+        legacyData = comp.GetConfigData(legacyKey)
+        data = comp.GetConfigData(DataAlias.PLATINUM_LOCAL_DATA) or legacyData or {}
+        PlayerConfig.uiPosition = data.get(DataAlias.BAUBLE_BTN_POSITION, "left_top")
+        PlayerConfig.showBaubleSidebarButton = data.get(DataAlias.SHOW_BAUBLE_SIDEBAR_BUTTON, True)
+        PlayerConfig.showBaubleContainerButton = data.get(DataAlias.SHOW_BAUBLE_CONTAINER_BUTTON, True)
+        if legacyData:
+            self._migrateLegacyData(comp, legacyKey, legacyData)
         self.syncSettingDefaults()
+
+    def _migrateLegacyData(self, comp, legacyKey, data):
+        baubleDict = self.migrateData(data.get(DataAlias.BAUBLE_FORMAT_VERSION, 0), data.get(DataAlias.BAUBLE_SLOT_INFO, {}))
+        commandSlots = data.get(DataAlias.BAUBLE_COMMAND_MODIFY, [])
+        if baubleDict is None or not isinstance(commandSlots, (list, tuple)):
+            logging.warning("铂: 旧版饰品数据格式无效, 已保留原数据")
+            return
+
+        def finishMigration():
+            if comp.GetConfigData(legacyKey) == data and self._saveData() and comp.SetConfigData(legacyKey, {}):
+                logging.debug("铂: 玩家数据迁移完成, 已删除旧数据")
+
+        def sendMigration(api, payload, onSuccess):
+            def onResult(result):
+                if result.success and result.data is True:
+                    onSuccess()
+                else:
+                    logging.warning("铂: 服务端未确认迁移成功, 已保留旧数据")
+
+            self.syncRequest(api, QRequests.Args(payload).setCallBack(onResult))
+
+        def migrateBaubles():
+            if baubleDict:
+                sendMigration("server/player/syncOldData", baubleDict, finishMigration)
+            else:
+                finishMigration()
+
+        if commandSlots:
+            sendMigration("server/player/syncCommandSlot", commandSlots, migrateBaubles)
+        else:
+            migrateBaubles()
 
     def mannalySaveData(self):
         """手动保存数据"""
@@ -172,7 +178,7 @@ class PlayerConfigService(BaseService):
 
     @BaseService.Listen("UnLoadClientAddonScriptsBefore")
     def _saveData(self, _=None):
-        compFactory.CreateConfigClient(levelId).SetConfigData(
+        return compFactory.CreateConfigClient(levelId).SetConfigData(
             DataAlias.PLATINUM_LOCAL_DATA,
             {
                 DataAlias.BAUBLE_FORMAT_VERSION: PlayerConfig.formatVersion,
@@ -183,17 +189,14 @@ class PlayerConfigService(BaseService):
         )
 
     def migrateData(self, formatVersion, data):
-        if formatVersion != commonConfig.PLAYER_LOCAL_DATA_VERSION:
-            # 数据版本从0升级到1
-            if formatVersion == 0:
-                formatVersion = 1
-                for baubleName, value in data.items():
-                    newId = oldVersionFixer.oldSlotIdFixer(baubleName)
-                    data[newId] = value
-                    data.pop(baubleName)
-
-            elif formatVersion == 1:
-                formatVersion = 2
-
-            self.migrateData(formatVersion, data)
-        return data
+        if not isinstance(data, dict) or formatVersion not in (0, 1, commonConfig.PLAYER_LOCAL_DATA_VERSION):
+            return None
+        if formatVersion != 0:
+            return data
+        migrated = {}
+        for slotId, value in data.items():
+            newId = oldVersionFixer.oldSlotIdFixer(slotId)
+            if newId in migrated and migrated[newId] != value:
+                return None
+            migrated[newId] = value
+        return migrated
