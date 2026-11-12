@@ -46,6 +46,9 @@ def onBaubleInfoChanged(data):
 
 class BaubleUIClassicProxy(ProxyCls):
 
+    inventoryScreenName = "inventory_screen"
+    flyingItemScale = 1.0
+
     def __init__(self, screenName, screenNode):
         ProxyCls.__init__(self, screenName, screenNode)
         self.basePath = "variables_button_mappings_and_controls/safezone_screen_matrix/inner_matrix/safezone_screen_panel/root_screen_panel"
@@ -75,9 +78,13 @@ class BaubleUIClassicProxy(ProxyCls):
         self.entryPosition = PlayerConfig.uiPosition
         self.showBaubleSidebarButton = PlayerConfig.showBaubleSidebarButton
         self.showBaubleContainerButton = PlayerConfig.showBaubleContainerButton
+        self.useNewBaubleOperation = PlayerConfig.useNewBaubleOperation
 
-        self.baubleSelectedIndex = -1
-        self.baubleSelectedPath = ""
+        self.baubleSelection = None
+        self.touchItemPress = None
+        self.pendingTouchSlotClicks = []
+        self.cursorSlotPress = None
+        self.pendingCursorSwap = None
 
         self.optionComp = compFactory.CreatePlayerView(levelId)
         self.itemComp = compFactory.CreateItem(levelId)
@@ -92,8 +99,10 @@ class BaubleUIClassicProxy(ProxyCls):
 
     def ListenEvent(self):
         ListenForEvent("OnItemSlotButtonClickedEvent", self, self.onItemSlotButtonClickedEvent)
+        ListenForEvent("PlayerTryDropItemClientEvent", self, self.onTryDropItem)
 
     def OnCreate(self):
+        self._syncInputMode()
         self.ListenEvent()
         self.setEntryPosition()
 
@@ -112,10 +121,58 @@ class BaubleUIClassicProxy(ProxyCls):
         if recipeBagPage != self.recipeBagPage:
             self.recipeBagPage = recipeBagPage
             self.screen.UpdateScreen()
-        self.inputMode = self.optionComp.GetToggleOption(minecraftEnum.OptionId.INPUT_MODE)
+        self._updateSlotInput()
+
+    def _updateSlotInput(self):
+        self._syncInputMode()
+        self._flushTouchSlotClicks()
+
+        if self.pendingCursorSwap is not None:
+            request = self.pendingCursorSwap
+            self.pendingCursorSwap = None
+            self.cursorSlotPress = None
+            if self._isMouseSidebar():
+                BaseService().syncRequest("server/player/swapCursorBauble", QRequests.Args(*request))
+        elif self.cursorSlotPress is not None and not self._isMouseSidebar():
+            self.cursorSlotPress = None
 
     def OnDestroy(self):
         UnListenForEvent("OnItemSlotButtonClickedEvent", self, self.onItemSlotButtonClickedEvent)
+        UnListenForEvent("PlayerTryDropItemClientEvent", self, self.onTryDropItem)
+        self.isShowBaublePanel = False
+        self._clearSlotInteraction()
+
+    def _clearSlotInteraction(self):
+        self.baubleSelection = None
+        self.touchItemPress = None
+        del self.pendingTouchSlotClicks[:]
+        self.cursorSlotPress = None
+        self.pendingCursorSwap = None
+
+    def _syncInputMode(self):
+        inputMode = self.optionComp.GetToggleOption(minecraftEnum.OptionId.INPUT_MODE)
+        if self.inputMode != inputMode:
+            self._setBaubleSelection(None)
+            self.inputMode = inputMode
+        if self.inputMode != minecraftEnum.InputMode.Touch:
+            self.touchItemPress = None
+            del self.pendingTouchSlotClicks[:]
+
+    def _flushTouchSlotClicks(self):
+        if not self.pendingTouchSlotClicks:
+            return
+        clicks = self.pendingTouchSlotClicks
+        self.pendingTouchSlotClicks = []
+        if not self._isTouchSidebar():
+            return
+        for slotInfo, selection, buttonPath in clicks:
+            if selection is None:
+                continue
+            inventoryIndex, item, creativePos = selection
+            if inventoryIndex is None:
+                self._requestEquipFromCreative(slotInfo.identifier, item, creativePos, buttonPath)
+            else:
+                self._requestEquipFromInventory(slotInfo, inventoryIndex, item, buttonPath)
 
     def setEntryPosition(self):
         btn = self.screen.GetBaseUIControl(self.entryBtnPath)
@@ -144,15 +201,19 @@ class BaubleUIClassicProxy(ProxyCls):
         if self.showBaubleContainerButton != PlayerConfig.showBaubleContainerButton:
             self.showBaubleContainerButton = PlayerConfig.showBaubleContainerButton
             needUpdate = True
+        if self.useNewBaubleOperation != PlayerConfig.useNewBaubleOperation:
+            self.useNewBaubleOperation = PlayerConfig.useNewBaubleOperation
+            self._clearSlotInteraction()
+            self.tipsLabel = ""
+            needUpdate = True
         if needUpdate:
             self.screen.UpdateScreen()
 
     @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.bauble_button")
     def onBaubleButtonClick(self, args):
         self.isShowBaublePanel = not self.isShowBaublePanel
-        playerMode = compFactory.CreateGame(levelId).GetPlayerGameType(playerId)
-        if self.isShowBaublePanel and playerMode == minecraftEnum.GameType.Creative:
-            self.setToolTips("§c========注意========\n暂不支持直接从创造物品栏装备饰品\n请先获取到背包当中§r")
+        if not self.isShowBaublePanel:
+            self._clearSlotInteraction()
         self.screen.UpdateScreen()
 
     @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.bauble_layout_toggle")
@@ -162,6 +223,14 @@ class BaubleUIClassicProxy(ProxyCls):
     @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.bauble_button.visible")
     def bindingBaubleButtonVisible(self):
         return PlayerConfig.showBaubleSidebarButton
+
+    @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.new_operation.visible")
+    def bindingNewOperationVisible(self):
+        return self.useNewBaubleOperation
+
+    @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.legacy_operation.visible")
+    def bindingLegacyOperationVisible(self):
+        return not self.useNewBaubleOperation
 
     @Binding.binding(Binding.BF_BindBool, "#bauble_reborn.container_button.visible")
     def bindingBaubleContainerButtonVisible(self):
@@ -214,7 +283,22 @@ class BaubleUIClassicProxy(ProxyCls):
     # 饰品栏选择框
     @Binding.binding_collection(Binding.BF_BindBool, "platinum_bauble_collection", "#bauble_reborn.is_selected")
     def bindingBaubleSelected(self, index):
-        return index == self.baubleSelectedIndex
+        if self.baubleSelection is None:
+            return False
+        slotList = self.slotManager.getPlayerSlotList()
+        slotId = self.baubleSelection[0]
+        if not 0 <= index < len(slotList) or slotList[index].identifier != slotId:
+            return False
+        if self.useNewBaubleOperation and self.inputMode == minecraftEnum.InputMode.Touch:
+            item = self.baubleInfoManager.getBaubleInfoBySlot(slotId)
+            return item is not None and not item.isEmpty()
+        return True
+
+    def _setBaubleSelection(self, selection):
+        if self.baubleSelection != selection:
+            self.baubleSelection = selection
+            if self.inputMode == minecraftEnum.InputMode.Touch:
+                self.screen.UpdateScreen(False)
 
     # 饰品栏物品渲染
     @Binding.binding_collection(
@@ -244,44 +328,141 @@ class BaubleUIClassicProxy(ProxyCls):
                 return True
         return False
 
+    def _isMouseSidebar(self):
+        return (
+            self.useNewBaubleOperation
+            and self.isShowBaublePanel
+            and self.optionComp.GetToggleOption(minecraftEnum.OptionId.INPUT_MODE) == minecraftEnum.InputMode.Mouse
+            and clientApi.GetTopUI() == self.inventoryScreenName
+        )
+
+    def _isTouchSidebar(self):
+        return (
+            self.useNewBaubleOperation
+            and self.isShowBaublePanel
+            and self.inputMode == minecraftEnum.InputMode.Touch
+            and clientApi.GetTopUI() == self.inventoryScreenName
+        )
+
+    def _getRenderedItem(self, path):
+        control = self.screen.GetBaseUIControl(path)
+        renderer = control.asItemRenderer() if control else None
+        if not renderer:
+            return None
+        item = renderer.GetUiItem() or {}
+        itemName = item.get("itemName")
+        if itemName and itemName != "minecraft:air":
+            return ItemStack(itemName, 1, item.get("auxValue", 0))
+        return None
+
+    @Binding.binding(Binding.BF_ButtonClickDown, "#bauble_reborn.slot_button")
+    def onSlotButtonDown(self, args):
+        self._syncInputMode()
+        self.touchItemPress = None
+        if self._isTouchSidebar():
+            # 原版丢弃动作会清除选中态，先记录装备来源。
+            self.touchItemPress = (args["ButtonPath"], self._getTouchItemSelection())
+        cursorItem = self._getRenderedItem(self.cursorSlotPath) if self._isMouseSidebar() else None
+        self.cursorSlotPress = (args["ButtonPath"], cursorItem) if cursorItem is not None else None
+
+    @Binding.binding(Binding.BF_ButtonClickCancel, "#bauble_reborn.slot_button")
+    def onSlotButtonCancel(self, _):
+        self.touchItemPress = None
+        self.cursorSlotPress = None
+
+    def onTryDropItem(self, data):
+        if data.get("playerId") != playerId:
+            return
+        if self._isTouchSidebar():
+            if self.touchItemPress is not None or self.pendingTouchSlotClicks:
+                data["cancel"] = True
+            return
+        if self.cursorSlotPress is None or not self._isMouseSidebar():
+            return
+        _, cursorItem = self.cursorSlotPress
+        itemDict = data.get("itemDict") or {}
+        dropItem = ItemStack(
+            itemDict.get("newItemName") or itemDict.get("itemName", ""),
+            aux=itemDict.get("newAuxValue", itemDict.get("auxValue", 0)),
+        )
+        if cursorItem.isSameItem(dropItem, isIgnoreUserData=True):
+            data["cancel"] = True
+
     # 饰品栏点击
     @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.slot_button")
     def onSlotButtonClick(self, args):
-        index = args["#collection_index"]
+        cursorPress = self.cursorSlotPress
+        self.cursorSlotPress = None
+        touchPress = self.touchItemPress
+        self.touchItemPress = None
+        slotList = self.slotManager.getPlayerSlotList()
+        index = args.get("#collection_index", -1)
+        if not self.isShowBaublePanel or not 0 <= index < len(slotList):
+            return
+        slotInfo = slotList[index]
+        slotId = slotInfo.identifier
+        baubleItem = self.baubleInfoManager.getBaubleInfoBySlot(slotId)
+        hasBauble = baubleItem is not None and not baubleItem.isEmpty()
         buttonPath = args["ButtonPath"]
-        isSelectedInventory = False
-        if self.inputMode == minecraftEnum.InputMode.Touch:
-            isSelectedInventory = self.getIsTouchInventorySelected()
+        isMouseSidebar = self._isMouseSidebar()
+        cursorItem = None
+        if isMouseSidebar or self.inputMode != minecraftEnum.InputMode.Touch:
+            cursorItem = self._getRenderedItem(self.cursorSlotPath)
+        if isMouseSidebar:
+            self._setBaubleSelection(None)
+            if cursorItem is None and cursorPress is not None and cursorPress[0] == buttonPath:
+                cursorItem = cursorPress[1]
+            if cursorItem is not None:
+                self.cursorSlotPress = (buttonPath, cursorItem)
+                # 等这次点击的原版丢弃回调处理完，再提交交换请求。
+                self.pendingCursorSwap = (slotId, cursorItem.name, cursorItem.aux)
+            elif hasBauble:
+                self.pendingCursorSwap = (slotId,)
+            return
+
+        hasSelectedItem = cursorItem is not None
+        if self.useNewBaubleOperation and self.inputMode == minecraftEnum.InputMode.Touch:
+            selection = touchPress[1] if touchPress and touchPress[0] == buttonPath else self._getTouchItemSelection()
+            # 保留这次点按的丢弃拦截，下一帧再提交装备请求。
+            self.pendingTouchSlotClicks.append((slotInfo, selection, buttonPath))
+            if selection is not None:
+                self._setBaubleSelection(None)
+                return
+            if not hasBauble:
+                self._setBaubleSelection(None)
+                return
+        elif self.inputMode == minecraftEnum.InputMode.Touch:
+            hasSelectedItem = self._getTouchItemSelection() is not None
+
+        if not hasSelectedItem:
+            if self.baubleSelection is not None and self.baubleSelection[0] == slotId:
+                self._setBaubleSelection(None)
+            else:
+                self._setBaubleSelection((slotId, buttonPath))
         else:
-            cursorItem = self.screen.GetBaseUIControl(self.cursorSlotPath).asItemRenderer()
-            if cursorItem.GetUiItem().get("itemName"):
-                isSelectedInventory = True
-        if not isSelectedInventory:
-            self.baubleSelectedIndex = index if self.baubleSelectedIndex != index else -1
-            self.baubleSelectedPath = buttonPath if self.baubleSelectedIndex != -1 else ""
-        elif isSelectedInventory:
-            self.baubleSelectedIndex = -1
-            self.baubleSelectedPath = ""
+            self._setBaubleSelection(None)
             self.setToolTips("§c请先点击饰品栏\n再点击需要装备的饰品§r")
 
-        baubleItem = self.baubleInfoManager.getBaubleInfoBySlot(self.slotManager.getPlayerSlotList()[index].identifier)
         if baubleItem is not None:
-            baseInfo = self.itemComp.GetItemBasicInfo(baubleItem.name, baubleItem.aux)
-            name = baseInfo["itemName"]
-            itemCategory = baseInfo["itemCategory"]
-            categoryName = compFactory.CreateGame(levelId).GetChinese("craftingScreen.tab." + itemCategory)
-            if categoryName == "craftingScreen.tab." + itemCategory:
-                categoryName = itemCategory
-            customTips = ItemFactory(baubleItem.toDict()).getCustomTips() or ""
-            customTips = (
-                customTips.replace("%name%", "")
-                .replace("%category%", "")
-                .replace("%enchanting%", "")
-                .replace("%attack_damage%", "")
-            )
-            self.setToolTips(
-                "{name}\n§9{category}§r{customTips}".format(name=name, category=categoryName, customTips=customTips)
-            )
+            self._showBaubleToolTips(baubleItem)
+
+    def _showBaubleToolTips(self, baubleItem):
+        baseInfo = self.itemComp.GetItemBasicInfo(baubleItem.name, baubleItem.aux)
+        name = baseInfo["itemName"]
+        itemCategory = baseInfo["itemCategory"]
+        categoryName = compFactory.CreateGame(levelId).GetChinese("craftingScreen.tab." + itemCategory)
+        if categoryName == "craftingScreen.tab." + itemCategory:
+            categoryName = itemCategory
+        customTips = ItemFactory(baubleItem.toDict()).getCustomTips() or ""
+        customTips = (
+            customTips.replace("%name%", "")
+            .replace("%category%", "")
+            .replace("%enchanting%", "")
+            .replace("%attack_damage%", "")
+        )
+        self.setToolTips(
+            "{name}\n§9{category}§r{customTips}".format(name=name, category=categoryName, customTips=customTips)
+        )
 
     # 绑定耐久度数值
     @Binding.binding_collection(
@@ -331,108 +512,153 @@ class BaubleUIClassicProxy(ProxyCls):
 
     # 背包点击
     def onItemSlotButtonClickedEvent(self, data):
-        inventorySelectedIndex = data.get("slotIndex", -1)
-        if 0 <= inventorySelectedIndex < 36:
-            itemDict = self.itemComp.GetPlayerItem(minecraftEnum.ItemPosType.INVENTORY, inventorySelectedIndex, True)
-            slotList = self.slotManager.getPlayerSlotList()
-            slotInfo = slotList[self.baubleSelectedIndex] if self.baubleSelectedIndex != -1 else None
-            if self.baubleSelectedIndex != -1 and slotInfo:
-                # 装备饰品
-                if itemDict:
-                    BaseService().syncRequest(
-                        "server/player/baubleCheck",
-                        QRequests.Args(
-                            BaubleCheckRequestData(
-                                baubleInfo=ItemStack.fromDict(itemDict),
-                                slotType=slotInfo.slotType,
-                                slotId=slotInfo.identifier,
-                                index=inventorySelectedIndex,
-                            ).toDict()
-                        ).setCallBack(self.onCheckBaubleAvailable),
-                    )
-                elif self.baubleInfoManager.getBaubleInfoBySlot(slotInfo.identifier) and not itemDict:
-                    # 卸下饰品
-                    self.baubleInfoManager.popBaubleInfoBySlot(slotInfo.identifier, inventorySelectedIndex)
-                    # 播放飞行物品动画
-                    self.flyingItemParam(
-                        [
-                            FlyingItemRenderer.FlyingItemParam(
-                                itemDict=self.baubleInfoManager.getBaubleInfoBySlot(slotInfo.identifier).toDict(),
-                                fromPos=self.getBaubleSlotPos(self.baubleSelectedPath),
-                                toPos=self.getInventorySlotPos(inventorySelectedIndex),
-                                size=1.0,
-                            )
-                        ]
-                    )
-                    self.baubleSelectedIndex = -1
-                    self.baubleSelectedPath = ""
-                else:
-                    self.baubleSelectedIndex = -1
-                    self.baubleSelectedPath = ""
-        elif self.baubleSelectedIndex != -1:
-            self.baubleSelectedIndex = -1
-            self.baubleSelectedPath = ""
+        if not self.isShowBaublePanel or self.baubleSelection is None:
+            return
+        slotId, buttonPath = self.baubleSelection
+        self._setBaubleSelection(None)
+        if self._isMouseSidebar():
+            return
+        inventoryIndex = data.get("slotIndex", -1)
+        if not 0 <= inventoryIndex < 36:
+            return
+        slotInfo = next((slot for slot in self.slotManager.getPlayerSlotList() if slot.identifier == slotId), None)
+        if slotInfo is None:
+            return
 
-    # 检查饰品是否可用回调
-    def onCheckBaubleAvailable(self, data):
-        data = BaubleCheckResponseData.fromDict(data.data)
-        if data.suc:
-            BaseService().syncRequest(
-                "server/player/changeBauble",
-                QRequests.Args(ChangeBaubleRequestData(data.baubleInfo, data.slotId, data.index).toDict()),
+        baubleItem = self.baubleInfoManager.getBaubleInfoBySlot(slotId)
+        hasBauble = baubleItem is not None and not baubleItem.isEmpty()
+        if self.useNewBaubleOperation and self.inputMode == minecraftEnum.InputMode.Touch and not hasBauble:
+            return
+
+        item = self._getInventoryItem(inventoryIndex)
+        if item is not None:
+            self._requestEquipFromInventory(slotInfo, inventoryIndex, item, buttonPath)
+            return
+
+        if not hasBauble:
+            return
+        self.baubleInfoManager.popBaubleInfoBySlot(slotId, inventoryIndex)
+        fromPos = self.getBaubleSlotPos(buttonPath)
+        toPos = self.getInventorySlotPos(inventoryIndex)
+        if fromPos is not None and toPos is not None:
+            self.flyingItemParam(
+                [FlyingItemRenderer.FlyingItemParam(baubleItem.toDict(), fromPos, toPos, self.flyingItemScale)]
             )
-            oldBaubleItem = self.baubleInfoManager.getBaubleInfoBySlot(data.slotId)
-            # 脱下旧物品
-            itemParamList = []
-            if oldBaubleItem:
-                itemParamList.append(
-                    FlyingItemRenderer.FlyingItemParam(
-                        itemDict=oldBaubleItem.toDict(),
-                        fromPos=self.getBaubleSlotPos(self.baubleSelectedPath),
-                        toPos=self.getInventorySlotPos(data.index),
-                        size=1.0,
-                    )
-                )
-            itemParamList.append(
-                FlyingItemRenderer.FlyingItemParam(
-                    itemDict=data.baubleInfo.toDict(),
-                    fromPos=self.getInventorySlotPos(data.index),
-                    toPos=self.getBaubleSlotPos(self.baubleSelectedPath),
-                    size=1.0,
-                )
-            )
-            # 播放飞行物品动画
-            self.flyingItemParam(itemParamList)
-        self.baubleSelectedIndex = -1
-        self.baubleSelectedPath = ""
+
+    def _requestEquipFromInventory(self, slotInfo, inventoryIndex, item, buttonPath):
+        request = BaubleCheckRequestData(item, slotInfo.identifier, slotInfo.slotType, inventoryIndex)
+        BaseService().syncRequest(
+            "server/player/baubleCheck",
+            QRequests.Args(request.toDict()).setCallBack(lambda data: self.onCheckBaubleAvailable(data, buttonPath)),
+        )
+
+    def onCheckBaubleAvailable(self, result, buttonPath):
+        if not result.data:
+            return
+        data = BaubleCheckResponseData.fromDict(result.data)
+        if not data.suc:
+            return
+        BaseService().syncRequest(
+            "server/player/changeBauble",
+            QRequests.Args(ChangeBaubleRequestData(data.baubleInfo, data.slotId, data.index).toDict()),
+        )
+        if not self.isShowBaublePanel:
+            return
+        baublePos = self.getBaubleSlotPos(buttonPath)
+        inventoryPos = self.getInventorySlotPos(data.index)
+        if baublePos is None or inventoryPos is None:
+            return
+        scale = self.flyingItemScale
+        itemParamList = []
+        oldBaubleItem = self.baubleInfoManager.getBaubleInfoBySlot(data.slotId)
+        if oldBaubleItem is not None and not oldBaubleItem.isEmpty():
+            itemParamList.append(FlyingItemRenderer.FlyingItemParam(oldBaubleItem.toDict(), baublePos, inventoryPos, scale))
+        itemParamList.append(FlyingItemRenderer.FlyingItemParam(data.baubleInfo.toDict(), inventoryPos, baublePos, scale))
+        self.flyingItemParam(itemParamList)
+
+    def _requestEquipFromCreative(self, slotId, item, fromPos, buttonPath):
+        BaseService().syncRequest(
+            "server/player/equipCreativeBauble",
+            QRequests.Args(slotId, item.name, item.aux).setCallBack(
+                lambda result: self._onCreativeBaubleEquipped(result, fromPos, buttonPath)
+            ),
+        )
+
+    def _onCreativeBaubleEquipped(self, result, fromPos, buttonPath):
+        if not result.data or not self.isShowBaublePanel or fromPos is None:
+            return
+        toPos = self.getBaubleSlotPos(buttonPath)
+        if toPos is not None:
+            self.flyingItemParam([FlyingItemRenderer.FlyingItemParam(result.data, fromPos, toPos, self.flyingItemScale)])
 
     def getBaubleSlotPos(self, path):
         path = path[path.find("/") + 1 :]
-        slotPos = self.screen.GetGlobalPosition(path)
-        return slotPos
+        return self._getFlyingItemPosition(path)
+
+    def _getInventorySlotPathBase(self):
+        return self.inventorySlotPathBase
 
     def getInventorySlotPos(self, index):
-        index += 1
-        path = (
-            self.hotbarSlotPathBase.format(index=index)
-            if index < 10
-            else self.inventorySlotPathBase.format(index=index - 9)
-        )
-        slotPos = self.screen.GetGlobalPosition(path)
-        return slotPos
+        if index < 9:
+            path = self.hotbarSlotPathBase.format(index=index + 1)
+        else:
+            pathBase = self._getInventorySlotPathBase()
+            if not pathBase:
+                return None
+            path = pathBase.format(index=index - 8)
+        return self._getFlyingItemPosition(path)
 
-    def getIsTouchInventorySelected(self):
-        for i in range(9):
-            index = i + 1
-            path = self.hotbarSlotPathBase.format(index=index) + "/item_selected_image"
-            if self.screen.GetBaseUIControl(path).GetVisible():
-                return True
-        for i in range(27):
-            index = i + 1
-            path = self.inventorySlotPathBase.format(index=index) + "/item_selected_image"
-            if self.screen.GetBaseUIControl(path).GetVisible():
-                return True
-        return False
+    def _getFlyingItemPosition(self, path):
+        control = self.screen.GetBaseUIControl(path)
+        if not control:
+            return None
+        width, height = control.GetSize()
+        if width <= 0 or height <= 0:
+            return None
+        x, y = control.GetGlobalPosition()
+        # 原版飞行渲染器接收 16px 物品图标缩放后的左上角。
+        iconSize = 16.0 * self.flyingItemScale
+        return x + (width - iconSize) * 0.5, y + (height - iconSize) * 0.5
+
+    def _getInventoryItem(self, index):
+        item = ItemStack.fromDict(self.itemComp.GetPlayerItem(minecraftEnum.ItemPosType.INVENTORY, index, True))
+        return None if item.isEmpty() or item.name == "minecraft:air" else item
+
+    def _getTouchItemSelection(self):
+        slotGroups = ((0, 9, self.hotbarSlotPathBase), (9, 36, self._getInventorySlotPathBase()))
+        for start, stop, pathBase in slotGroups:
+            if not pathBase:
+                continue
+            for index in range(start, stop):
+                path = pathBase.format(index=index - start + 1) + "/item_selected_image"
+                control = self.screen.GetBaseUIControl(path)
+                if not control or not control.GetVisible():
+                    continue
+                item = self._getInventoryItem(index)
+                if item is not None:
+                    return index, item, None
+        if self.gameComp.GetPlayerGameType(playerId) == minecraftEnum.GameType.Creative:
+            return self._getTouchCreativeSelection()
+        return None
+
+    def _getTouchCreativeSelection(self):
+        control = self.screen.GetBaseUIControl(self.creativeBagScrollPath)
+        if not control or not control.GetVisible() or control.GetSize()[1] <= 0:
+            return None
+        scrollPanel = control.asScrollView()
+        contentPath = scrollPanel.GetScrollViewContentPath() if scrollPanel else None
+        if not contentPath:
+            return None
+        gridPath = contentPath + "/grid"
+        for slotName in self.screen.GetChildrenName(gridPath) or ():
+            slotPath = gridPath + "/" + slotName
+            selected = self.screen.GetBaseUIControl(slotPath + "/item_selected_image")
+            if not selected or not selected.GetVisible():
+                continue
+            item = self._getRenderedItem(slotPath + "/item_cell/item/common.item_renderer")
+            if item is not None:
+                return None, item, self._getFlyingItemPosition(slotPath)
+        return None
 
     def setToolTips(self, tips):
         img = self.screen.GetBaseUIControl(self.toolTipsImgPath)
@@ -450,6 +676,8 @@ class BaubleUIClassicProxy(ProxyCls):
 
 
 class BaubleUIPocketProxy(BaubleUIClassicProxy):
+    inventoryScreenName = "inventory_screen_pocket"
+    flyingItemScale = 1.5
     __instance = None
 
     def __new__(cls, *args, **kwargs):
@@ -468,15 +696,12 @@ class BaubleUIPocketProxy(BaubleUIClassicProxy):
             self.basePath
             + "/base_panel/hotbar_and_panels/gamepad_helper_border/both_panels/right_panel/armor_tab_content/content/equipment_and_renderer/armor_panel/armor_and_player/player_preview_border/player_bg/bauble_button"
         )
-        self.scrollPanelPath = (
+        leftPanelPath = (
             self.basePath
-            + "/base_panel/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel/inventory_tab_content/tab_content_search_bar_panel/scroll_pane"
+            + "/base_panel/hotbar_and_panels/gamepad_helper_border/both_panels/left_panel"
         )
-        self.scrollPanel = None
-        self.inventorySlotPathBase = (
-            self.basePath
-            + "/scroll_pane/scroll_touch/scroll_view/panel/background_and_viewport/scrolling_view_port/scrolling_content/grid/grid_item_for_inventory{index}"
-        )
+        self.scrollPanelPath = leftPanelPath + "/inventory_tab_content/tab_content_search_bar_panel/scroll_pane"
+        self.creativeBagScrollPath = leftPanelPath + "/recipe_book_tab_content/tab_content_search_bar_panel/scroll_pane"
         self.hotbarSlotPathBase = (
             self.basePath
             + "/base_panel/hotbar_and_panels/hotbar_section_panel/hotbar/hotbar_grid/hotbar_grid_item{index}"
@@ -492,15 +717,15 @@ class BaubleUIPocketProxy(BaubleUIClassicProxy):
     def OnDestroy(self):
         super(BaubleUIPocketProxy, self).OnDestroy()
 
-    def OnCreate(self):
-        super(BaubleUIPocketProxy, self).OnCreate()
-        self.scrollPanel = self.screen.GetBaseUIControl(self.scrollPanelPath).asScrollView()
-        self.inventorySlotPathBase = (
-            self.scrollPanel.GetScrollViewContentPath() + "/grid/grid_item_for_inventory{index}"
-        )
+    def _getInventorySlotPathBase(self):
+        control = self.screen.GetBaseUIControl(self.scrollPanelPath)
+        scrollPanel = control.asScrollView() if control else None
+        contentPath = scrollPanel.GetScrollViewContentPath() if scrollPanel else None
+        return contentPath + "/grid/grid_item_for_inventory{index}" if contentPath else None
 
     def OnTick(self):
         self.syncPlayerConfig()
+        self._updateSlotInput()
         # 锁定控制
         if self.isLockControl:
             self.lockTime += 1
@@ -527,35 +752,17 @@ class BaubleUIPocketProxy(BaubleUIClassicProxy):
 
     # 背包点击
     def onItemSlotButtonClickedEvent(self, data):
-        if not self.isLockControl:
+        if self.inputMode not in (minecraftEnum.InputMode.Mouse, minecraftEnum.InputMode.Touch):
+            if self.isLockControl:
+                return
             self.isLockControl = True
-            super(BaubleUIPocketProxy, self).onItemSlotButtonClickedEvent(data)
+        super(BaubleUIPocketProxy, self).onItemSlotButtonClickedEvent(data)
 
     # 饰品栏点击
     @Binding.binding(Binding.BF_ButtonClickUp, "#bauble_reborn.slot_button")
     def onSlotButtonClick(self, args):
-        if not self.isLockControl:
+        if self.inputMode not in (minecraftEnum.InputMode.Mouse, minecraftEnum.InputMode.Touch):
+            if self.isLockControl:
+                return
             self.isLockControl = True
-            super(BaubleUIPocketProxy, self).onSlotButtonClick(args)
-
-    def getIsTouchInventorySelected(self):
-        for i in range(9):
-            index = i + 1
-            path = self.hotbarSlotPathBase.format(index=index) + "/item_selected_image"
-            if self.screen.GetBaseUIControl(path).GetVisible():
-                return True
-        for i in range(27):
-            try:
-                index = i + 1
-                path = self.inventorySlotPathBase.format(index=index) + "/item_selected_image"
-                if self.screen.GetBaseUIControl(path).GetVisible():
-                    return True
-            except:
-                pass
-        return False
-
-    def flyingItemParam(self, itemParamList):
-        # 将size改为1.5倍以适配口袋背包界面
-        for param in itemParamList:
-            param.size = 1.5
-        super(BaubleUIPocketProxy, self).flyingItemParam(itemParamList)
+        super(BaubleUIPocketProxy, self).onSlotButtonClick(args)

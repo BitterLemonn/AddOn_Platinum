@@ -165,28 +165,85 @@ class PlayerBaubleInfoServerService(BaseService):
         if not comp:
             return BaubleCheckResponseData(False, None, data.slotId, data.index).toDict()
         invItem = ItemStack.fromDict(comp.GetPlayerItem(minecraftEnum.ItemPosType.INVENTORY, data.index, True))
-        valid = self._matchesInventoryBauble(invItem, data.baubleInfo, slotData.slotType)
+        valid = self._matchesBaubleItem(invItem, data.baubleInfo, slotData.slotType)
         return BaubleCheckResponseData(valid, invItem if valid else None, data.slotId, data.index).toDict()
 
-    @staticmethod
-    def _getInventorySlotData(playerId, slotId, index):
-        if not playerId or not isinstance(slotId, basestring):
-            return None
+    def _getInventorySlotData(self, playerId, slotId, index):
         if isinstance(index, bool) or not isinstance(index, (int, long)) or not 0 <= index < 36:
+            return None
+        return self._getPlayerSlotData(playerId, slotId)
+
+    @staticmethod
+    def _getPlayerSlotData(playerId, slotId):
+        if not playerId or not isinstance(slotId, basestring):
             return None
         if not any(slot.identifier == slotId for slot in getPlayerSlotList(playerId)):
             return None
         return SlotRegistry().getSlotDataById(slotId)
 
     @staticmethod
-    def _matchesInventoryBauble(invItem, expectedItem, slotType):
+    def _matchesBaubleItem(item, expectedItem, slotType, isIgnoreUserData=False):
         return (
             isinstance(expectedItem, ItemStack)
-            and expectedItem.count == invItem.count == 1
-            and not invItem.isEmpty()
-            and invItem.isSameItem(expectedItem)
-            and BaubleRegistry().isValidBauble(invItem.name, slotType)
+            and expectedItem.count == item.count == 1
+            and not item.isEmpty()
+            and item.isSameItem(expectedItem, isIgnoreUserData)
+            and BaubleRegistry().isValidBauble(item.name, slotType)
         )
+
+    @BaseService.REG_API("server/player/swapCursorBauble")
+    def swapCursorBauble(self, slotId, itemName=None, itemAux=0):
+        """把原版背包光标上的物品与玩家饰品槽交换。"""
+        playerId = getLoaderSystem().rpcPlayerId
+        slotData = self._getPlayerSlotData(playerId, slotId)
+        if slotData is None or not isinstance(itemAux, (int, long)):
+            return False
+        comp = compFactory.CreateItem(playerId)
+        if not comp:
+            return False
+
+        cursorSlot = minecraftEnum.PlayerUISlot.CursorSelected
+        cursorItem = ItemStack.fromDict(comp.GetPlayerUIItem(playerId, cursorSlot, True))
+        if itemName is None:
+            if not cursorItem.isEmpty() and cursorItem.name != "minecraft:air":
+                return False
+            cursorItem = None
+        elif not isinstance(itemName, basestring) or not self._matchesBaubleItem(
+            cursorItem, ItemStack(itemName, 1, itemAux), slotData.slotType, isIgnoreUserData=True
+        ):
+            return False
+
+        baubleInfo = getPlayerBaubleInfo(playerId)
+        oldItem = baubleInfo.getBaubleInfoBySlotId(slotId)
+        oldItemDict = oldItem.toDict() if oldItem is not None and not oldItem.isEmpty() else None
+        if cursorItem is None and oldItemDict is None:
+            return False
+        # 光标直接换成旧饰品，避免引擎把原光标物品额外返还背包。
+        if not comp.SetPlayerUIItem(playerId, cursorSlot, oldItemDict, False):
+            return False
+        baubleInfo.changeBaubleInfoBySlotId(slotId, cursorItem, isChanged=False)
+        return True
+
+    @BaseService.REG_API("server/player/equipCreativeBauble")
+    def equipCreativeBauble(self, slotId, itemName, itemAux=0):
+        """从创造物品目录直接装备一件饰品。"""
+        playerId = getLoaderSystem().rpcPlayerId
+        slotData = self._getPlayerSlotData(playerId, slotId)
+        if slotData is None or serverUtils.getPlayerMode(playerId) != minecraftEnum.GameType.Creative:
+            return False
+        if not isinstance(itemName, basestring) or not BaubleRegistry().isValidBauble(itemName, slotData.slotType):
+            return False
+        if isinstance(itemAux, bool) or not isinstance(itemAux, (int, long)) or not 0 <= itemAux <= 32767:
+            return False
+
+        itemAux = 0 if itemAux == 32767 else itemAux
+        comp = compFactory.CreateItem(playerId)
+        itemInfo = comp.GetItemBasicInfo(itemName, itemAux) if comp else None
+        if not itemInfo or itemInfo.get("maxStackSize") != 1:
+            return False
+        item = ItemStack(itemName, 1, itemAux, durability=itemInfo.get("maxDurability", 0))
+        getPlayerBaubleInfo(playerId).changeBaubleInfoBySlotId(slotId, item)
+        return item.toDict()
 
     def _changeBable(self, playerId, slotId, baubleItem, index=-1, playSound=True):
         """从服务端背包格穿脱饰品，成功转移物品后再更新饰品数据。"""
@@ -204,7 +261,7 @@ class PlayerBaubleInfoServerService(BaseService):
         if baubleItem is None:
             if not invItem.isEmpty() or not hasOldItem:
                 return False
-        elif not self._matchesInventoryBauble(invItem, baubleItem, slotData.slotType) or not comp.SetInvItemNum(index, 0):
+        elif not self._matchesBaubleItem(invItem, baubleItem, slotData.slotType) or not comp.SetInvItemNum(index, 0):
             return False
 
         if hasOldItem and not comp.SpawnItemToPlayerInv(oldItem.toDict(), playerId, index):

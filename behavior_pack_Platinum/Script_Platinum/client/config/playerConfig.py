@@ -11,6 +11,7 @@ class DataAlias(object):
     BAUBLE_BTN_POSITION = "bauble_btn_position"
     SHOW_BAUBLE_SIDEBAR_BUTTON = "show_bauble_sidebar_button"
     SHOW_BAUBLE_CONTAINER_BUTTON = "show_bauble_container_button"
+    USE_NEW_BAUBLE_OPERATION = "use_new_bauble_operation"
     BAUBLE_FORMAT_VERSION = "bauble_format_version"
     BAUBLE_COMMAND_MODIFY = "bauble_command_modify"
 
@@ -22,6 +23,7 @@ class PlayerConfig(object):
     uiPosition = "left_top"
     showBaubleSidebarButton = True
     showBaubleContainerButton = True
+    useNewBaubleOperation = True
 
 
 @BaseService.Init
@@ -32,6 +34,7 @@ class PlayerConfigService(BaseService):
     SETTING_SHOW_SIDEBAR_BUTTON = "show_bauble_sidebar_button"
     SETTING_SHOW_CONTAINER_BUTTON = "show_bauble_container_button"
     SETTING_ENTRY_POSITION = "bauble_entry_position"
+    SETTING_USE_NEW_OPERATION = DataAlias.USE_NEW_BAUBLE_OPERATION
     POSITION_OPTIONS = ["左上角", "右上角", "左下角", "右下角"]
     POSITION_BY_OPTION = ["left_top", "right_top", "left_bottom", "right_bottom"]
     OPTION_BY_POSITION = {
@@ -75,6 +78,13 @@ class PlayerConfigService(BaseService):
             3,
             self.OPTION_BY_POSITION.get(PlayerConfig.uiPosition, "左上角"),
         )
+        self.settingInst.AddToggle(
+            self.SETTING_USE_NEW_OPERATION,
+            "使用新版饰品栏操作",
+            self.onToggleChanged,
+            4,
+            PlayerConfig.useNewBaubleOperation,
+        )
         self.syncSettingDefaults()
 
     def onToggleChanged(self, *args):
@@ -85,6 +95,8 @@ class PlayerConfigService(BaseService):
             PlayerConfig.showBaubleSidebarButton = value
         elif key == self.SETTING_SHOW_CONTAINER_BUTTON:
             PlayerConfig.showBaubleContainerButton = value
+        elif key == self.SETTING_USE_NEW_OPERATION:
+            PlayerConfig.useNewBaubleOperation = value
         else:
             return
         self.mannalySaveData()
@@ -113,6 +125,7 @@ class PlayerConfigService(BaseService):
             return
         self.settingInst.SetToggleDefault(self.SETTING_SHOW_SIDEBAR_BUTTON, PlayerConfig.showBaubleSidebarButton)
         self.settingInst.SetToggleDefault(self.SETTING_SHOW_CONTAINER_BUTTON, PlayerConfig.showBaubleContainerButton)
+        self.settingInst.SetToggleDefault(self.SETTING_USE_NEW_OPERATION, PlayerConfig.useNewBaubleOperation)
         self.settingInst.SetDropDownDefault(
             self.SETTING_ENTRY_POSITION,
             self.OPTION_BY_POSITION.get(PlayerConfig.uiPosition, "左上角"),
@@ -137,6 +150,7 @@ class PlayerConfigService(BaseService):
         PlayerConfig.uiPosition = data.get(DataAlias.BAUBLE_BTN_POSITION, "left_top")
         PlayerConfig.showBaubleSidebarButton = data.get(DataAlias.SHOW_BAUBLE_SIDEBAR_BUTTON, True)
         PlayerConfig.showBaubleContainerButton = data.get(DataAlias.SHOW_BAUBLE_CONTAINER_BUTTON, True)
+        PlayerConfig.useNewBaubleOperation = data.get(DataAlias.USE_NEW_BAUBLE_OPERATION, True)
         if legacyData:
             self._migrateLegacyData(comp, legacyKey, legacyData)
         self.syncSettingDefaults()
@@ -185,6 +199,7 @@ class PlayerConfigService(BaseService):
                 DataAlias.BAUBLE_BTN_POSITION: PlayerConfig.uiPosition,
                 DataAlias.SHOW_BAUBLE_SIDEBAR_BUTTON: PlayerConfig.showBaubleSidebarButton,
                 DataAlias.SHOW_BAUBLE_CONTAINER_BUTTON: PlayerConfig.showBaubleContainerButton,
+                DataAlias.USE_NEW_BAUBLE_OPERATION: PlayerConfig.useNewBaubleOperation,
             },
         )
 
