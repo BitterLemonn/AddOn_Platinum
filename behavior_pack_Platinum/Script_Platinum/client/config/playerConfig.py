@@ -30,7 +30,8 @@ class PlayerConfig(object):
 class PlayerConfigService(BaseService):
     """玩家配置服务"""
 
-    SETTING_ITEM_ID = "4667732199784769754"
+    # 新版 RegisterSettingInst 首参为命名空间,由引擎按 Scripts 目录自动识别所属模组,不再需要商品ID
+    SETTING_NAMESPACE = commonConfig.PLATINUM_NAMESPACE
     SETTING_SHOW_SIDEBAR_BUTTON = "show_bauble_sidebar_button"
     SETTING_SHOW_CONTAINER_BUTTON = "show_bauble_container_button"
     SETTING_ENTRY_POSITION = "bauble_entry_position"
@@ -52,7 +53,7 @@ class PlayerConfigService(BaseService):
     @BaseService.Listen("LoadClientAddonScriptsAfter")
     def onLoadClientAddonScriptsAfter(self, data):
         comp = compFactory.CreateNeteaseWindow(levelId)
-        self.settingInst = comp.RegisterSettingInst(self.SETTING_ITEM_ID, "铂", "textures/ui/platinum_logo")
+        self.settingInst = comp.RegisterSettingInst(self.SETTING_NAMESPACE, "铂", "textures/ui/platinum_logo")
         if self.settingInst is None:
             logging.error("铂: 通用设置实例注册失败")
             return
