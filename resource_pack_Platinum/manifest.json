@@ -2,7 +2,7 @@
   "modules": [
     {
       "type": "resources",
-      "uuid": "44ab6aea-99b8-4f3b-b4f6-a46ef99412af",
+      "uuid": "b43d8258-8b52-464a-b7e4-684d627c7468",
       "version": [
         2,
         0,
@@ -12,11 +12,11 @@
     }
   ],
   "header": {
-    "uuid": "1d2b562f-500f-4594-bb7e-ecb408a834bc",
+    "uuid": "52323d7a-e55b-4df8-a188-4fa392eaea9a",
     "version": [
       2,
       0,
-      11
+      12
     ],
     "description": "",
     "name": "resource_pack",
