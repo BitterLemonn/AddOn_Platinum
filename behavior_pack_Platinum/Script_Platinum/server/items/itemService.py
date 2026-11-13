@@ -7,7 +7,7 @@ from Script_Platinum.server.registry.baubleRegistry import BaubleRegistry
 from Script_Platinum.server.registry.slotRegistry import SlotRegistry
 from Script_Platinum.utils import serverUtils
 from Script_Platinum.utils.ItemFactory import ItemFactory
-from Script_Platinum.utils.serverUtils import compFactory
+from Script_Platinum.utils.serverUtils import compFactory, minecraftEnum
 from Script_Platinum.utils import developLogging as logging
 
 
@@ -55,35 +55,42 @@ class ItemService(BaseService):
                     )
                 )
 
-        # 右键穿戴饰品
-
     @BaseService.Listen("ServerItemTryUseEvent")
     def onServerItemTryUseEvent(self, data):
-        itemStack = ItemStack.fromDict(data["itemDict"]) 
+        usedItem = ItemStack.fromDict(data["itemDict"])
+        bauble = self.baubleRegistry.getBaubleInfo(usedItem.name)
+        if bauble is None or usedItem.count != 1:
+            return
+
         playerId = data["playerId"]
         itemComp = compFactory.CreateItem(playerId)
-        itemInfo = itemComp.GetItemBasicInfo(itemStack.name)
-        if itemInfo["itemType"] != "armor" and itemInfo["itemType"] != "food":
-            if self.baubleRegistry.getBaubleInfo(itemStack.name) is not None:
-                baubleSlotTypeList = self.baubleRegistry.getBaubleInfo(itemStack.name).get("slot", [])
-                index = itemComp.GetSelectSlotId()
+        if not itemComp:
+            return
+        itemInfo = itemComp.GetItemBasicInfo(usedItem.name)
+        if not itemInfo or itemInfo["itemType"] in ("armor", "food"):
+            return
+        index = itemComp.GetSelectSlotId()
+        if index < 0:
+            return
 
-                from Script_Platinum.server.player.playerBaubleInfo import (
-                    getPlayerBaubleInfo,
-                    PlayerBaubleInfoServerService,
-                )
+        # 使用事件可能缺少 userData，延迟穿戴时用快捷栏的完整快照做校验。
+        heldItem = ItemStack.fromDict(itemComp.GetPlayerItem(minecraftEnum.ItemPosType.INVENTORY, index, True))
+        if heldItem.count != 1 or not heldItem.isSameItem(usedItem, isIgnoreUserData=True):
+            return
 
-                emptySlotId = getPlayerBaubleInfo(playerId).getEmptyOrFirstSlotByList(
-                    baubleSlotTypeList, getPlayerSlotList(playerId)
-                )
-                if emptySlotId is None:
-                    return
-                compFactory.CreateGame(levelId).AddTimer(
-                    0.0,
-                    lambda: PlayerBaubleInfoServerService.access()._changeBable(
-                        playerId, emptySlotId, itemStack, index
-                    ),
-                )
+        from Script_Platinum.server.player.playerBaubleInfo import (
+            getPlayerBaubleInfo,
+            PlayerBaubleInfoServerService,
+        )
+
+        slotId = getPlayerBaubleInfo(playerId).getEmptyOrFirstSlotByList(
+            bauble.get("slot", []), getPlayerSlotList(playerId)
+        )
+        if slotId is None:
+            return
+        compFactory.CreateGame(levelId).AddTimer(
+            0.0, lambda: PlayerBaubleInfoServerService.access()._changeBable(playerId, slotId, heldItem, index)
+        )
 
     # 死亡掉落物品
     @BaseService.Listen("PlayerDieEvent")
